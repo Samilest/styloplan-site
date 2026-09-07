@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Brand kits · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  /* a form, and a form has a reading measure. */
+  body { --page-max: 1100px; }
+  main { display: grid; grid-template-columns: 300px 1fr; gap: 24px; padding: 8px 24px 32px;
+         align-items: start; }
+  .kit { padding: 12px 12px; border: 1px solid var(--line); border-radius: var(--r-ctl); margin-bottom: 8px;
+         cursor: pointer; font-size: 13px; transition: border-color .12s ease; }
+  .kit:hover { border-color: var(--ink-3); }
+  /* Two DIFFERENT facts, so two different signals. The ring is the kit open in
+     the editor; the badge is the kit Studio actually uses. One highlight served
+     both and tracked only the second, so you could edit one kit while the list
+     pointed at another. */
+  .kit.editing { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .kit .top { display: flex; align-items: center; gap: 8px; }
+  .kit .top b { flex: 1; }
+  .kit .subtle { display: block; margin-top: 2px; }
+  .kit .sw { display: flex; border-radius: 3px; overflow: hidden; margin-top: 8px; width: 68px; }
+  .kit .sw i { flex: 1; height: 12px; display: block; }
+  .badge { font-size: var(--t-11); font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+           color: var(--ok); background: var(--ok-soft); padding: 2px 8px; border-radius: 999px; }
+
+  label { display: block; font-size: 11.5px; color: var(--ink-2); margin: 12px 0 4px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 24px; }
+  /* Each legend titles a section of the editor, so it takes the same rank as a
+     panel heading rather than sitting below the text it introduces. */
+  fieldset legend { padding: 0; font-size: 0.9375rem; font-weight: 600;
+                    letter-spacing: -0.005em; color: var(--ink); }
+  fieldset > label:first-of-type { margin-top: 12px; }
+  /* Each colour gets its own name. They were four bare swatches under one
+     "background / walls / floors / accent" caption — you had to map them by
+     position and count. */
+  .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+  .roles label { margin: 0 0 4px; }
+  /* Same control, same styling as Studio's — the two pages name the plan's look
+     with one vocabulary now, so they must also look like the same switch. */
+  .seg { display: flex; gap: 0; border: 1px solid var(--line-strong);
+         border-radius: var(--r-ctl); overflow: hidden; margin-top: 4px; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: var(--surface); font-weight: 500; }
+  .seg button + button { border-left: 1px solid var(--line-strong); }
+  .seg button:hover { background: #FBFAF7; }
+  .seg button.active { background: var(--accent); color: #fff; }
+  .logo-row { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+  #logoPreview { height: 40px; max-width: 150px; object-fit: contain; display: none;
+                 border: 1px solid var(--line); border-radius: 4px; padding: 4px; background: #fff; }
+  .row { display: flex; gap: 8px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+  .row .grow { flex: 1; }
+  /* What the brand will actually look like on an export — the page asked for
+     six settings and showed the result of none of them. */
+  .preview { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 24px 16px;
+             text-align: center; margin-top: 12px; }
+  .preview .co { font-size: 17px; font-weight: 700; letter-spacing: .04em; }
+  .preview .tag { font-size: 11px; margin-top: 4px; opacity: .75; }
+  .preview .bar { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+  .preview .bar i { width: 34px; height: 10px; border-radius: 2px; display: block; }
+  @media (max-width: 760px) { .roles { grid-template-columns: 1fr 1fr; } }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1>Brand kits</h1>
+  <span class="sub">One kit per client. Its logo, colors and type go on every image.</span>
+</div>
+<main>
+  <aside class="panel">
+    <h3>Kits</h3>
+    <div id="kitList"></div>
+    <button id="newKit" class="btn btn--secondary">+ New kit</button>
+  </aside>
+  <section class="panel">
+    <h3 id="editHead">Edit kit</h3>
+
+    <fieldset>
+      <legend>Identity</legend>
+      <label>Company name, printed on every image</label><input type="text" id="kCompany">
+      <label>Tagline / contact line</label><input type="text" id="kTagline">
+      <label>Kit name, for this list only</label><input type="text" id="kName">
+      <label>Logo</label>
+      <div class="logo-row">
+        <input type="file" id="kLogo" accept="image/png,image/svg+xml,image/jpeg">
+        <img id="logoPreview" alt="">
+        <button id="kLogoClear" class="btn btn--quiet" hidden>Remove</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">PNG with a transparent background works best.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Appearance</legend>
+      <label>Label font</label>
+      <select id="kFont">
+        <option>Inter</option><option>Roboto</option><option>Montserrat</option>
+        <option>DM Sans</option><option>Playfair Display</option><option>Cormorant Garamond</option>
+      </select>
+      <!-- Two modes, not six named presets. The six were left over from before
+           the plan's own look was reduced to Light and Dark: "Warm Sand",
+           "Porcelain" and "Editorial Light" all render the SAME light plan and
+           differed only in two page colours the user can already set directly
+           below. Six names promising six looks and delivering two is a menu
+           that teaches the user the product ignores them.
+
+           Worse, the mode chosen here was silently destroyed downstream:
+           Studio's Light/Dark switch loads its own default palette, so a kit
+           saved as "Warm Sand" came back as Editorial Light the first time
+           anyone toggled the mode and back. One control, one vocabulary, in
+           both places. -->
+      <label>Plan mode</label>
+      <div class="seg" id="kThemeSeg" role="group" aria-label="Plan mode">
+        <button type="button" data-theme="light" class="btn btn--secondary">Light</button>
+        <button type="button" data-theme="dark" class="btn btn--secondary">Dark</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">The two looks the plan is drawn in. Switching loads that mode's page colours.</div>
+      <!-- Two, not four. `floors` and `accent` were offered here for months and
+           reached nothing: no compositor code reads them, and the prompt
+           variables they fed were never substituted because the V3 prompts carry
+           no placeholders except {{CARS}}. Studio dropped them for the same
+           reason. A control that does nothing is worse than no control, because
+           the user reasonably concludes the product ignored them. -->
+      <div class="roles">
+        <div><label>Canvas</label><input type="color" id="kBg"></div>
+        <div><label>Text</label><input type="color" id="kWalls"></div>
+      </div>
+      <div class="subtle" style="margin-top:8px">The page around the plan, and the type on it. The plan's own light and dark looks are fixed.</div>
+
+      <!-- The COLOUR belongs to the brand; the decision to use it does not.
+           This used to carry an on/off switch as well, and saving it on meant
+           every plan the builder opened arrived already recoloured, with the
+           only clue a switch far down Studio's sidebar. Studio now always
+           starts with tinting off and picks the colour up from here, so the
+           switch here would have been a control that changes nothing — which
+           is the one thing this page has been cleared of twice already. -->
+      <div class="roles" style="margin-top:16px">
+        <div><label>Brand colour</label><input type="color" id="kMono"></div>
+      </div>
+      <div class="subtle" style="margin-top:8px">Used when you turn on <b>Tint the plan in one brand colour</b> in Studio. The whole plan then takes shades of this colour.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>House style</legend>
+      <div class="subtle" style="margin-bottom:12px">How your plans are labelled. Set once, applied to every plan. Leave empty to keep each plan's own wording.</div>
+
+      <label>Rename rooms. One rule per line, as <code>OLD, OLD → NEW</code></label>
+      <textarea id="kRenames" rows="5" spellcheck="false"
+        placeholder="MASTER BEDROOM, M BEDROOM, PRIMARY BEDROOM &#8594; M.BEDROOM"></textarea>
+
+      <label>Merge into one label, same form. Parts still count as rooms. Only one label prints.</label>
+      <textarea id="kMerges" rows="2" spellcheck="false"
+        placeholder="SUITE LIVING, SUITE KITCHEN, SUITE DINING &#8594; SUITE"></textarea>
+
+      <label>Never label these, comma separated. The space still counts as a room.</label>
+      <input type="text" id="kHide" spellcheck="false" placeholder="CLOSET, HALLWAY, ENTRY">
+
+      <label class="check" style="margin-top:16px">
+        <input type="checkbox" id="kRound">
+        Round dimensions to whole feet
+      </label>
+      <div class="subtle" id="kRoundEg" style="margin-top:4px"></div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn--secondary btn--sm" id="kStyleSuggest">Load a starting point</button>
+        <button class="btn btn--secondary btn--sm" id="kStyleClear">Clear</button>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Preview</legend>
+      <div class="preview" id="kPreview">
+        <div class="co" id="pvCo"></div>
+        <div class="tag" id="pvTag"></div>
+        <div class="bar" id="pvBar"></div>
+      </div>
+    </fieldset>
+
+    <div class="row">
+      <button id="kSave" class="btn btn--primary">Save kit</button>
+      <button id="kUse" class="btn btn--secondary">Set as active</button>
+      <span class="subtle" id="kMsg"></span>
+      <span class="grow"></span>
+      <button id="kDelete" class="btn btn--quiet">Delete kit</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { askConfirm } from './src/ask.js';
+import { renderChrome } from './src/chrome.js';
+await renderChrome();
+import * as store from './src/store.js';
+import { PRESETS } from './src/palettes.js';
+import { EMPTY_HOUSE_STYLE, SUGGESTED_HOUSE_STYLE, formatDim } from './src/house-style.js';
+
+const $ = (id) => document.getElementById(id);
+
+// ---- house style: plain text in the editor, plain data in the kit.
+// A builder types "MASTER BEDROOM, M BEDROOM → M.BEDROOM"; nobody writes a
+// pattern. The arrow may be typed as -> as well, because it will be.
+const ARROW = /\s*(?:→|->|=>)\s*/;
+
+function rulesToText(rules = []) {
+  return rules
+    .map((r) => {
+      // A rule saved in the older raw-pattern form has no plain equivalent, so
+      // it is shown read-only rather than silently dropped on the next save.
+      const left = r.any?.length ? r.any.join(', ') : r.match;
+      return left ? `${left} → ${r.to}` : '';
+    })
+    .filter(Boolean).join('\n');
+}
+
+function textToRules(text) {
+  return String(text || '').split('\n').map((line) => {
+    const [left, to] = line.split(ARROW);
+    if (!to || !left) return null;
+    const any = left.split(',').map((s) => s.trim()).filter(Boolean);
+    return any.length ? { any, to: to.trim() } : null;
+  }).filter(Boolean);
+}
+
+const listToText = (list = []) => list.join(', ');
+const textToList = (t) => String(t || '').split(',').map((s) => s.trim()).filter(Boolean);
+
+function showHouseStyle(hs) {
+  const s = { ...EMPTY_HOUSE_STYLE, ...(hs || {}) };
+  $('kRenames').value = rulesToText(s.renames);
+  $('kMerges').value = rulesToText(s.merges);
+  $('kHide').value = listToText(s.hide);
+  $('kRound').checked = Boolean(s.roundDimensions);
+  showRoundingExample();
+}
+
+/** Show the setting's actual effect on a real string, not a description of it. */
+function showRoundingExample() {
+  const on = $('kRound').checked;
+  const sample = `12'-8" x 11'-6"`;
+  $('kRoundEg').textContent =
+    `${sample}  prints as  ${formatDim(sample, { ...EMPTY_HOUSE_STYLE, roundDimensions: on })}`
+    + (on ? '. The plan’s exact figures are still kept on the verification report.' : '');
+}
+
+function readHouseStyle() {
+  return {
+    renames: textToRules($('kRenames').value),
+    merges: textToRules($('kMerges').value),
+    hide: textToList($('kHide').value),
+    roundDimensions: $('kRound').checked,
+    separator: ' X ',
+  };
+}
+store.ensureSeed();
+let editing = null;
+
+// One default per mode, and they are the SAME two Studio uses — these are the
+// palettes the styling prompts already encode, so the swatches match what the
+// model actually draws. Importing Studio's choice rather than repeating it is
+// the point: two lists that must agree eventually stop agreeing.
+const DEFAULTS = {
+  light: PRESETS.find((p) => p.id === 'editorial-light'),
+  dark: PRESETS.find((p) => p.id === 'ink-navy'),
+};
+let theme = 'light';
+
+function showTheme(t) {
+  theme = t === 'dark' ? 'dark' : 'light';
+  for (const b of $('kThemeSeg').children)
+    b.classList.toggle('active', b.dataset.theme === theme);
+}
+
+for (const b of $('kThemeSeg').children) {
+  b.onclick = () => {
+    if (theme === b.dataset.theme) return;
+    showTheme(b.dataset.theme);
+    // Switching mode loads that mode's page colours, because they are not
+    // independent: cream paper under a dark plan, or charcoal under a light
+    // one, is not a preference — it is a broken export. Editing a swatch
+    // afterwards keeps the mode.
+    const d = DEFAULTS[theme];
+    setSwatch('kBg', d.background); setSwatch('kWalls', d.walls);
+    renderPreview();
+  };
+}
+
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+function renderList() {
+  const kits = store.getKits();
+  const activeId = store.getActiveKit()?.id;
+  $('kitList').innerHTML = '';
+  for (const k of kits) {
+    const d = document.createElement('div');
+    // `editing` = open in the editor. `Active` = the kit Studio applies. They
+    // are not the same fact and must not share one signal.
+    d.className = 'kit' + (k.id === editing?.id ? ' editing' : '');
+    const p = k.palette || {};
+    d.innerHTML =
+      `<div class="top"><b>${esc(k.name)}</b>` +
+        (k.id === activeId ? '<span class="badge">Active</span>' : '') +
+      `</div>` +
+      // An empty company name is legitimate, so the separator is only spent
+      // when there is something on both sides of it — otherwise the row read
+      // as " · Inter", a dot dangling off the front of nothing.
+      `<span class="subtle">${[k.companyName, k.font].filter(Boolean).map(esc).join(' · ')}</span>` +
+      `<span class="sw">${['background', 'walls']
+        .map((r) => `<i style="background:${esc(p[r] || '#ccc')}"></i>`).join('')}` +
+        // The kit's brand colour, always shown: it is part of the kit whether
+        // or not any given plan is tinted with it.
+        (k.planTint?.brand
+          ? `<i style="background:${esc(k.planTint.brand)}" title="Brand colour"></i>` : '') +
+      `</span>`;
+    d.onclick = () => edit(k);
+    $('kitList').append(d);
+  }
+}
+
+function edit(k) {
+  if (!k) return;
+  editing = structuredClone(k);
+  $('editHead').textContent = `Editing ${k.name}`;
+  $('kName').value = k.name;
+  $('kCompany').value = k.companyName;
+  $('kTagline').value = k.tagline || '';
+  $('kFont').value = k.font;
+  showTheme(k.palette.theme);
+  setSwatch('kBg', k.palette.background);
+  setSwatch('kWalls', k.palette.walls);
+  showMono(k.planTint);
+  showLogo(k.logoDataUrl);
+  showHouseStyle(k.houseStyle);
+  $('kMsg').textContent = '';
+  renderList();          // move the ring to the kit now open
+  renderPreview();
+}
+
+// Only the colour is stored now; whether to use it is Studio's per-plan call.
+function showMono(tint) {
+  setSwatch('kMono', tint?.brand || '#2E6B4F');
+}
+$('kMono').addEventListener('input', renderPreview);
+
+function showLogo(dataUrl) {
+  $('logoPreview').style.display = dataUrl ? 'block' : 'none';
+  $('kLogoClear').hidden = !dataUrl;
+  if (dataUrl) $('logoPreview').src = dataUrl;
+}
+
+// The page asked for six settings and showed the result of none of them.
+function renderPreview() {
+  const bg = $('kBg').value, walls = $('kWalls').value;
+  const font = $('kFont').value;
+  const pv = $('kPreview');
+  pv.style.background = bg;
+  pv.style.color = walls;
+  pv.style.fontFamily = `"${font}", sans-serif`;
+  $('pvCo').textContent = ($('kCompany').value || 'Company name').toUpperCase();
+  $('pvTag').textContent = $('kTagline').value || 'Tagline / contact line';
+  // Only what the export actually shows: the two page colours, plus the tint
+  // when it is on.
+  const swatches = ['kBg', 'kWalls'].map((id) => $(id).value);
+  swatches.push($('kMono').value);
+  $('pvBar').innerHTML = swatches
+    .map((c) => `<i style="background:${c};box-shadow:0 0 0 1px rgba(128,128,128,.35)"></i>`).join('');
+}
+
+// Keep each color input's visible fill in sync with its value (the native
+// swatch is hidden — see ui.css).
+function setSwatch(id, color) { $(id).value = color; $(id).style.background = color; }
+for (const id of ['kBg', 'kWalls'])
+  $(id).addEventListener('input', () => {
+    $(id).style.background = $(id).value;
+    renderPreview();
+  });
+for (const id of ['kCompany', 'kTagline'])
+  $(id).addEventListener('input', renderPreview);
+$('kFont').addEventListener('change', renderPreview);
+
+$('kLogo').onchange = () => {
+  const f = $('kLogo').files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = () => { editing.logoDataUrl = fr.result; showLogo(fr.result); };
+  fr.readAsDataURL(f);
+};
+$('kLogoClear').onclick = () => {
+  if (!editing) return;
+  editing.logoDataUrl = null;
+  $('kLogo').value = '';
+  showLogo(null);
+  $('kMsg').textContent = 'Logo removed. Save to keep it that way.';
+};
+
+$('kRound').addEventListener('change', showRoundingExample);
+// Offered, never applied on its own — the same rule the shorter-name suggestion
+// follows. Loading it fills the boxes; nothing reaches a plan until Save.
+$('kStyleSuggest').onclick = () => {
+  showHouseStyle(SUGGESTED_HOUSE_STYLE);
+  $('kMsg').textContent = 'Loaded. Edit it to match your own wording, then Save.';
+};
+$('kStyleClear').onclick = () => {
+  showHouseStyle(EMPTY_HOUSE_STYLE);
+  $('kMsg').textContent = 'Cleared. Save to keep each plan’s own wording.';
+};
+
+$('kSave').onclick = () => {
+  if (!editing) return;
+  const base = DEFAULTS[theme];
+  // `id` records only whether these are still the mode's shipped colours or the
+  // builder's own. Nothing downstream branches on it — Studio keys its render
+  // cache on the THEME alone, because the image model was measured to ignore
+  // hex codes entirely — so it exists to be readable, not load-bearing.
+  const untouched = $('kBg').value.toLowerCase() === base.background.toLowerCase()
+                 && $('kWalls').value.toLowerCase() === base.walls.toLowerCase();
+  Object.assign(editing, {
+    name: $('kName').value || 'Untitled kit',
+    // An EMPTY company name is kept as empty. It used to be replaced with the
+    // literal word "Company", which then printed on every export — and a
+    // builder whose logo already carries their wordmark has a real reason to
+    // leave this blank rather than set the same name twice. The footer lays
+    // out around what is actually there.
+    companyName: $('kCompany').value.trim(),
+    tagline: $('kTagline').value,
+    font: $('kFont').value,
+    palette: {
+      id: untouched ? base.id : 'custom', name: untouched ? base.name : 'Custom', theme,
+      background: $('kBg').value, walls: $('kWalls').value,
+      // Carried unchanged from the mode's default. Nothing reads them, but
+      // dropping the keys would break a kit saved before this and read back as
+      // undefined.
+      floors: base.floors, accent: base.accent,
+    },
+    // `mode` is kept in the shape for older kits and for the cloud column, but
+    // nothing reads it any more — Studio always opens with tinting off.
+    planTint: { mode: 'off', brand: $('kMono').value },
+    houseStyle: readHouseStyle(),
+  });
+  store.saveKit(editing);
+  $('editHead').textContent = `Editing ${editing.name}`;
+  $('kMsg').textContent = 'Saved ✓';
+  renderList();
+};
+// Activating without saving would apply the STORED kit while the editor shows
+// unsaved edits — two different brands, one screen. Save first.
+$('kUse').onclick = () => {
+  if (!editing) return;
+  $('kSave').click();
+  store.setActiveKit(editing.id);
+  $('kMsg').textContent = 'Saved and set as active ✓';
+  renderList();
+};
+$('kDelete').onclick = async () => {
+  if (!editing) return;
+  if (store.getKits().length < 2) { $('kMsg').textContent = 'Keep at least one kit.'; return; }
+  // Deleting a kit takes its logo, palette and type with it and cannot be undone.
+  //
+  // AND IT REBRANDS EVERY PROJECT THAT WAS USING IT, which the old wording did
+  // not say. A project keeps the kit's id, and projects.html resolves a missing
+  // one with `|| kits[0]` — so deleting the kit for one client silently put a
+  // different client's company name on their plans, and the only warning was
+  // "this cannot be undone" about the kit alone.
+  //
+  // Two changes, and the second is what makes the first true: the confirmation
+  // names the projects and the kit they will move to, and they are actually
+  // moved. Leaving a dangling id behind would keep the outcome dependent on a
+  // fallback rule written somewhere else, which is how it went unnoticed.
+  const survivors = store.getKits().filter((k) => k.id !== editing.id);
+  const next = survivors[0];
+  const users = store.getProjects().filter((p) => p.brandKitId === editing.id);
+  const names = users.map((p) => `"${p.name}"`).join(', ');
+  const ok = await askConfirm({
+    title: `Delete the brand kit “${editing.name}”?`,
+    body: [
+      'This cannot be undone.',
+      users.length
+        ? `${users.length} project${users.length > 1 ? 's' : ''} `
+          + `use${users.length > 1 ? '' : 's'} it and will be rebranded to `
+          + `“${next.name}”: ${names}.`
+        : '',
+    ],
+    confirm: 'Delete kit',
+    danger: true,
+  });
+  if (!ok) return;
+  const wasActive = store.getActiveKit()?.id === editing.id;
+  for (const p of users) { p.brandKitId = next.id; store.saveProject(p); }
+  store.deleteKit(editing.id);
+  editing = null;
+  if (wasActive && next) store.setActiveKit(next.id);
+  edit(next);
+};
+$('newKit').onclick = () => {
+  const k = store.saveKit({
+    id: `kit-${Math.random().toString(36).slice(2, 8)}`,
+    name: 'New kit', companyName: 'New Client', tagline: '', logoDataUrl: null,
+    font: 'Inter', palette: { ...PRESETS[0] }, planTint: { mode: 'off', brand: '#2E6B4F' },
+    disclaimerOn: true, disclaimerText: null,
+  });
+  renderList();
+  edit(k);
+};
+
+renderList();
+edit(store.getActiveKit());
+</script>
+</body>
+</html>

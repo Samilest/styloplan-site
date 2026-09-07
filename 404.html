@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>StyloPlan: branded floor plan images for home builders</title>
+<meta name="description" content="Turn the technical floor plan you already have into a branded, presentation-ready image. Every room name and dimension is transcribed from your drawing and confirmed by you before anything is rendered.">
+<link rel="canonical" href="https://samilest.github.io/styloplan-site/">
+<meta name="theme-color" content="#F2F0EA">
+
+<!-- WHAT A SHARED LINK LOOKS LIKE. This product is sold by sending the link to a
+     builder -- in an email, a message, a LinkedIn post. With none of this, every
+     one of those renders as a bare URL with no title, no line of explanation and
+     no picture. The image is the app's own screenshot, which is the most
+     convincing thing on the page. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StyloPlan">
+<meta property="og:title" content="StyloPlan: branded floor plan images for home builders">
+<meta property="og:description" content="Restyle the plan your architect sent into a branded, presentation-ready image. Room names and dimensions are transcribed from your drawing and confirmed by you before anything is rendered.">
+<meta property="og:url" content="https://samilest.github.io/styloplan-site/">
+<meta property="og:image" content="https://samilest.github.io/styloplan-site/assets/app-studio.png">
+<meta property="og:image:width" content="1980">
+<meta property="og:image:height" content="1320">
+<meta property="og:image:alt" content="The StyloPlan Studio, showing a floor plan with its rooms labelled and dimensioned.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="StyloPlan: branded floor plan images for home builders">
+<meta name="twitter:description" content="Restyle the plan your architect sent. Dimensions transcribed from your drawing, confirmed by you.">
+<meta name="twitter:image" content="https://samilest.github.io/styloplan-site/assets/app-studio.png">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+
+<!-- WHY THIS PAGE DOES NOT LOAD src/ui.css.
+     ui.css is the APP's stylesheet: a dark work surface with panels, a stepper
+     and a credit meter. This page is a light drawing sheet. What the two share
+     is the token VALUES, copied below, so a colour that means something in the
+     product still means it here -- and one of them means enough to be worth a
+     rule of its own, at --paid.
+
+     The app's own screenshot further down is dark on this light page, and that
+     is deliberate: it reads as the tool inset into the page about it. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Archivo:wght@500;600;700&family=Lato:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    /* Copied from src/ui.css. Not chosen here. */
+    --paper: #F2F0EA;  --surface: #FFFFFF;  --inset: #FAF9F5;
+    --ink: #211E19;    --ink-2: #5F5A50;    --ink-3: #6E6759;
+    --line: #E3DFD6;   --line-strong: #CBC4B6;
+    --accent: #1C5A64; --accent-press: #14454D; --accent-soft: #E4EDEE;
+    /* THE YELLOW IS NOT A BRAND COLOUR. In the app #FFD517 appears in exactly
+       one place: the button that spends a credit. Using it for a hero button or
+       a badge here would teach a meaning and then break it. It is defined so
+       that the reason is written down, and it is used nowhere on this page. */
+    --paid: #FFD517;
+    --dark: #1F2125;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: Lato, system-ui, sans-serif; font-size: 16px; line-height: 1.6;
+  }
+  /* HEIGHT:AUTO IS NOT OPTIONAL HERE. The screenshot carries width and height
+     attributes so the browser can reserve its space before it loads -- which is
+     right -- but with only `max-width:100%` the width shrinks to the column and
+     the ATTRIBUTE height stays. Measured: a 1980x1320 image rendered 903x1320,
+     aspect 0.684 instead of 1.5, and the 718px it gained pushed the whole 3D
+     section down the page. Both of the things Saman saw, one missing property.
+     svg keeps its own sizing: the slider sets height:100% and needs it. */
+  img { max-width: 100%; height: auto; }
+  svg { max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+
+  /* THE DISPLAY FACE. The app's --display is Roboto and stays Roboto: it is a
+     UI face doing UI chrome at 13-20px, and at 80px it has no opinion. Archivo
+     is a grotesque with presence at display sizes and a technical rather than
+     an editorial voice, which is the subject of this product. */
+  .dsp { font-family: Archivo, system-ui, sans-serif; font-weight: 700; letter-spacing: -0.03em; }
+  /* Emphasis is a RULE UNDER THE WORD, the way a drawing underscores a label. */
+  .dsp em { font-style: normal; box-shadow: inset 0 -3px 0 var(--accent); }
+  .wm { font-family: Poppins, system-ui, sans-serif; font-weight: 600; }
+  .num, .an { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+              font-variant-numeric: tabular-nums; }
+  .an { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+  /* MOTION, ON THE PRODUCT'S OWN CURVE.
+     cubic-bezier(.2,.8,.2,1) and this duration family are src/ui.css's, not
+     invented here -- the site should move the way the tool moves. Everything
+     below is a REVEAL, never a loop: something that moves once as you reach it
+     is alive, something that moves forever is a distraction on a page a builder
+     is trying to read.
+
+     The default state is VISIBLE. `.rise` only becomes hidden once the observer
+     has confirmed it is running, so a browser without IntersectionObserver, or
+     one where the script fails, shows a complete page rather than a blank one --
+     the failure direction that matters. */
+  /* WHY NOT THE APP'S CURVE, having said the site should move like the tool.
+     cubic-bezier(.2,.8,.2,1) is right for what it does there -- a 120-180ms
+     toggle, where a fast start is what makes a control feel immediate. At 500ms
+     and over a whole section the same curve reads as a snap: almost all the
+     distance is covered in the first third and then it coasts. So the DURATIONS
+     stay in the product's family and the long reveals get an easeOutQuad, which
+     spends its time more evenly and is what "soft" actually means here.
+     Short interactions below still use the app's curve, unchanged. */
+  .rise { opacity: 1; }
+  html.reveal .rise { opacity: 0; transform: translateY(10px);
+    transition: opacity .75s cubic-bezier(.25,.46,.45,.94),
+                transform .75s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .rise.in { opacity: 1; transform: none; }
+
+  /* 10px, not 14. A reveal that travels far enough to notice as MOVEMENT
+     competes with the reading; far enough to notice as ARRIVAL does not. */
+
+  /* A group's children arrive in order, which on the pipeline strip reads as
+     the pipeline advancing rather than as four things appearing. Wider spacing
+     than before, because at .75s a .07s gap is no gap at all. */
+  html.reveal .rise[data-d="1"] { transition-delay: .10s; }
+  html.reveal .rise[data-d="2"] { transition-delay: .20s; }
+  html.reveal .rise[data-d="3"] { transition-delay: .30s; }
+
+  /* THE ONE MOVING THING ON THE PAGE, and it is the page's own subject: the
+     dimension line above the comparison draws itself across, once, the way a
+     drawing is dimensioned. 1.1s because a line being drawn is a gesture, and a
+     gesture that finishes in 300ms did not read as one. */
+  html.reveal .draw { transform: scaleX(0); transform-origin: left center;
+    transition: transform 1.4s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .draw.in { transform: scaleX(1); }
+
+  /* ── FOUR MICRO-ANIMATIONS, EACH ONE SOMETHING THE PRODUCT ACTUALLY DOES ──
+     The rule they all pass: if it could be dropped onto any other website it
+     does not belong here. A fade for its own sake is decoration; a wall
+     standing up on the section headed "standing up" is the sentence. */
+
+  /* THE SLOT KEEPS ITS SHAPE WHATEVER IS IN IT. The isometric's own viewBox is
+     1175x778, so the box is that ratio: an iframe dropped in later occupies
+     exactly the space the drawing does now and the section does not re-lay
+     itself out on the day it changes. */
+  .isoslot { aspect-ratio: 1175 / 778; position: relative; }
+  .isoslot > * { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+  /* 1. THE WALLS RISE OFF THE SLAB. The slab arrives first and flat, then each
+        wall stands, back to front in the same painter's order they are drawn
+        in -- so the building assembles the way it would be built rather than
+        appearing all at once. */
+  html.reveal .iso .slab { opacity: 0; transition: opacity .5s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .iso .wall { opacity: 0; transform: translateY(22px);
+    transition: opacity .5s cubic-bezier(.25,.46,.45,.94),
+                transform .55s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .iso.in .slab { opacity: 1; }
+  html.reveal .iso.in .wall { opacity: 1; transform: none;
+    transition-delay: calc(.22s + var(--i) * .055s); }
+
+  /* 2. THE TRACING IS TRACED. Frame 02 of the pipeline is captioned "Traced",
+        and a wipe left to right is what tracing looks like. It follows frame
+        01 rather than running with it, so the pair reads as one becoming the
+        other. */
+  html.reveal .trace { clip-path: inset(0 100% 0 0);
+    transition: clip-path 1.1s cubic-bezier(.25,.46,.45,.94) .25s; }
+  html.reveal .rise.in .trace { clip-path: inset(0 0 0 0); }
+
+  /* 3. THE PLATE IS REGISTERED. The corner marks are alignment marks on a
+        drawing sheet; they set themselves before the plate is readable. */
+  html.reveal .regs::before, html.reveal .regs::after,
+  html.reveal .regs > .r1, html.reveal .regs > .r2 {
+    opacity: 0; transition: opacity .4s cubic-bezier(.25,.46,.45,.94) .5s; }
+  html.reveal .regs.in::before, html.reveal .regs.in::after,
+  html.reveal .regs.in > .r1, html.reveal .regs.in > .r2 { opacity: 1; }
+
+  a, .btn, .pack, .dot { transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s; }
+  .pack:hover { border-color: var(--ink); }
+
+  /* 4. THE HANDLE SAYS IT MOVES. One nudge, once, when the comparison first
+        comes into view. The caption already says "drag the handle"; a caption
+        is read by the people who were going to try anyway. It runs a single
+        time and is not a loop -- a handle that wobbles forever is a fidget. */
+  @keyframes nudge {
+    0%, 100% { transform: translate(-50%, -50%); }
+    35%      { transform: translate(calc(-50% - 9px), -50%); }
+    70%      { transform: translate(calc(-50% + 5px), -50%); }
+  }
+  html.reveal .regs.in .handle { animation: nudge .9s cubic-bezier(.25,.46,.45,.94) .9s 1; }
+
+  /* NOBODY IS MADE TO WATCH ANY OF IT. Apple and Google both require this, and
+     it is not a token gesture: everything is returned to its finished state
+     rather than merely having its transition removed, and the slideshow stops
+     advancing on its own (see the script). */
+  @media (prefers-reduced-motion: reduce) {
+    html.reveal .rise, html.reveal .rise.in,
+    html.reveal .hl, html.reveal .hl.in,
+    html.reveal .hero-r, html.reveal .hero-r.in { opacity: 1; transform: none; transition: none; }
+    html.reveal .draw, html.reveal .draw.in { transform: none; transition: none; }
+    html.reveal .iso .slab, html.reveal .iso .wall,
+    html.reveal .iso.in .slab, html.reveal .iso.in .wall { opacity: 1; transform: none; transition: none; }
+    html.reveal .trace, html.reveal .rise.in .trace { clip-path: none; transition: none; }
+    html.reveal .regs::before, html.reveal .regs::after,
+    html.reveal .regs > .r1, html.reveal .regs > .r2 { opacity: 1; transition: none; }
+    html.reveal .regs.in .handle { animation: none; }
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  /* ── the app slideshow ── */
+  /* .shot-frame, which is what the element actually is. This said .shots for
+     one commit -- a class no element carried -- so the images never left normal
+     flow: all three stacked, overflow:hidden clipped the second and third, and
+     toggling .on changed nothing anyone could see. The state machine was
+     correct the whole time, which is why the test that asked it "which slide is
+     current" passed. It was asking the code, not the picture. */
+  .shot-frame img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: contain; opacity: 0; transition: opacity .9s cubic-bezier(.25,.46,.45,.94); }
+  .shot-frame img.on { opacity: 1; }
+  .shot-frame { position: relative; aspect-ratio: 3 / 2; background: var(--dark);
+    border: 1px solid var(--line-strong); overflow: hidden; }
+  .dots { display: flex; gap: 8px; margin-top: 14px; align-items: center; }
+  .dot { width: 44px; height: 44px; padding: 0; border: 0; background: none;
+    display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .dot i { display: block; width: 26px; height: 2px; background: var(--line-strong); }
+  .dot[aria-selected="true"] i { background: var(--ink); }
+  /* WCAG 2.2.2 asks for a mechanism to pause anything that moves by itself for
+     more than five seconds, and asks for it to be FINDABLE. Clicking a dot has
+     always stopped this one, but nothing said so. */
+  .pause { margin-left: 6px; min-height: 44px; display: inline-flex; align-items: center;
+           padding: 0 8px; background: none; border: 0; cursor: pointer;
+           font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px;
+           letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .pause:hover { color: var(--accent); }
+
+  /* THE SAFE AREA (Apple HIG). An iPhone with a notch held in landscape puts
+     the sensor housing over one side of the page and the home indicator over
+     the bottom; nothing here allowed for either, so the wordmark and the Start
+     free button would have sat underneath the cutout. env() resolves to 0 on
+     every device that has no inset, so it costs nothing anywhere else. */
+  .sheet { max-width: 1440px; margin: 0 auto;
+           padding-left: max(24px, env(safe-area-inset-left));
+           padding-right: max(24px, env(safe-area-inset-right)); }
+  @media (min-width: 900px) {
+    .sheet { padding-left: max(56px, env(safe-area-inset-left));
+             padding-right: max(56px, env(safe-area-inset-right)); }
+  }
+  footer .sheet { padding-bottom: env(safe-area-inset-bottom); }
+  .navstrip ul { padding-left: max(24px, env(safe-area-inset-left));
+                 padding-right: max(24px, env(safe-area-inset-right)); }
+  .rule { height: 1px; background: var(--line-strong); }
+
+  /* WCAG 2.2 §2.5.8 asks 24x24 CSS px of every target, on any input. The nav
+     and footer links are 15-17px of text; padding grows the hit box without
+     moving the layout. */
+  .tap { padding-top: 7px; padding-bottom: 7px; }
+  /* 24px is the floor for any input; a THUMB wants 44 (Apple) to 48 (Material).
+     Measured on a 390px viewport before this: the nav and footer links came out
+     34-38px tall, which clears the standard and not the finger. */
+  /* ASK ABOUT THE FINGER, NOT THE WIDTH. This was keyed to max-width, so a
+     1024px viewport got 29px targets -- and 1024 is an iPad in landscape, a
+     touch screen. (pointer: coarse) asks the question that actually matters and
+     is what src/ui.css already uses in the app. Width stays in the query too,
+     for a narrow window on a desktop where a finger is unlikely but the layout
+     is the compact one. */
+  @media (max-width: 959px), (pointer: coarse) {
+    .tap { padding-top: 15px; padding-bottom: 15px; }
+    header .bar > .wm { display: flex; align-items: center; min-height: 44px; }
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 48px; padding: 0 24px; border-radius: 2px;
+    font-weight: 700; font-size: 15px; white-space: nowrap;
+  }
+  .btn-a { background: var(--ink); color: var(--paper); }
+  .btn-a:hover { background: var(--accent); }
+  .btn-o { box-shadow: inset 0 0 0 1px var(--ink); }
+  .btn-o:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .nav-l { font-size: 15px; }
+  .nav-l:hover { color: var(--accent); box-shadow: inset 0 -1px 0 var(--accent); }
+
+  header .bar { height: 78px; display: flex; align-items: center; gap: 28px; }
+  header nav { display: none; gap: 28px; }
+  @media (min-width: 960px) { header nav { display: flex; } }
+
+  /* BELOW 1040px THE NAV WAS SIMPLY GONE. Measured on a 390px viewport: the
+     header offered the wordmark, Sign in and Start free, and nothing else --
+     on a page 10,036px tall. A visitor on a phone who wanted the price had to
+     scroll the whole thing or find the footer.
+     A scrolling strip rather than a hamburger: four links do not earn a menu, a
+     button to open one, and the script to run it. The links are simply there. */
+  .navstrip { display: block; border-top: 1px solid var(--line); overflow-x: auto;
+              -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .navstrip::-webkit-scrollbar { display: none; }
+  .navstrip ul { display: flex; gap: 22px; margin: 0; list-style: none;
+                 white-space: nowrap; }
+  .navstrip a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14.5px;
+                color: var(--ink-2); }
+  .navstrip a:hover { color: var(--accent); }
+  @media (min-width: 960px) { .navstrip { display: none; } }
+
+  /* A KEYBOARD USER SHOULD NOT TAB THE WHOLE HEADER TO REACH THE PAGE.
+     Off-screen until focused, which is the only state in which it is useful. */
+  .skip { position: absolute; left: -9999px; top: 0; z-index: 10;
+          background: var(--ink); color: var(--paper); padding: 12px 18px; }
+  .skip:focus { left: 0; }
+
+  /* The app's own drafting grid, on the hero only. */
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(33,30,25,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(33,30,25,.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  h1 { margin: 0; font-size: clamp(38px, 7.2vw, 92px); line-height: .96; }
+  h2 { margin: 14px 0 0; font-size: clamp(30px, 4.4vw, 46px); line-height: 1.02; }
+  h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+
+  .hero { display: grid; gap: 32px; align-items: end; }
+  /* The hero stays ONE column until 1040 on purpose: at 960 the headline would
+     get a 364px column and a 69px word does not wrap into that. So the
+     paragraph is capped rather than the layout changed -- it was running 897px
+     and 96 characters a line at 1024, which is the widest prose on the page and
+     the first anybody reads. A no-op at 1040 and up, where the column is 420px. */
+  .hero-r > p:first-child { max-width: 46ch; }
+  .hl { display: block; }
+
+  /* Gated on `html.reveal` like everything else, so a page whose script never
+     runs shows a finished headline rather than three invisible lines -- and the
+     eight-second net covers these too. They are NOT `.rise`: that class waits
+     for the element to be scrolled to, and the hero is already on screen, so
+     these run on load instead. */
+  html.reveal .hl, html.reveal .hero-r {
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .45s cubic-bezier(.25,.46,.45,.94),
+                transform .45s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .hl.in, html.reveal .hero-r.in { opacity: 1; transform: none; }
+  html.reveal .hl[data-h="1"] { transition-delay: .08s; }
+  html.reveal .hl[data-h="2"] { transition-delay: .16s; }
+  html.reveal .hero-r { transition-delay: .26s; }
+  @media (min-width: 1040px) {
+    .hero { grid-template-columns: minmax(0,1fr) 420px; gap: 64px; }
+  }
+
+  .two { display: grid; gap: 40px; }
+  @media (min-width: 960px) { .two { grid-template-columns: 320px minmax(0,1fr); gap: 72px; } }
+  @media (min-width: 1240px) { .two { gap: 90px; } }
+
+  section { padding: 64px 0; }
+  @media (min-width: 900px) { section { padding: 96px 0; } }
+
+  /* Plates: square corners, a hairline, no shadow. A rounded card with a drop
+     shadow is the shape every tool ships and says nothing about this one. */
+  .plate { border: 1px solid var(--line-strong); background: var(--surface); }
+  .regs { position: relative; }
+  .regs::before, .regs::after,
+  .regs > .r1, .regs > .r2 { content: ''; position: absolute; width: 14px; height: 14px; }
+  .regs::before { top: -7px; left: -7px; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+  .regs::after  { top: -7px; right: -7px; border-top: 1px solid var(--ink); border-right: 1px solid var(--ink); }
+  .regs > .r1 { bottom: -7px; left: -7px; border-bottom: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+  .regs > .r2 { bottom: -7px; right: -7px; border-bottom: 1px solid var(--ink); border-right: 1px solid var(--ink); }
+
+  /* .row, not `.steps > div` — the hairlines between the rows are divs too, and
+     the descendant rule turned each one into a 53px grey band. */
+  .steps .row { display: grid; grid-template-columns: 44px minmax(0,1fr); gap: 18px;
+                padding: 26px 0; align-items: baseline; }
+  @media (min-width: 900px) {
+    .steps .row { grid-template-columns: 56px minmax(0,1fr) 300px; gap: 32px; }
+  }
+  /* A MEASURE, applied to prose only. Measured before this: 108 characters a
+     line at 768px, 119 at 834 and 138 at 1024, because the two-column split
+     waited until 1040 and the text ran the full content width below it. Both
+     Apple and Google put comfortable reading well under 75; Material names
+     40-60. A cap holds at every width, including the ones between breakpoints
+     that nobody thinks to test.
+     The pricing note and the pack cards are deliberately not included: one is a
+     single line inside a box it should fill, the others are already narrow. */
+  .two > div:first-child p, .steps p, .steps h3 { max-width: 58ch; }
+  .steps p { margin: 6px 0 0; font-size: 15px; color: var(--ink-2); }
+  @media (min-width: 900px) { .steps p { margin: 0; } }
+
+  .slider { position: relative; width: 100%; aspect-ratio: 920 / 660;
+            overflow: hidden; border: 1px solid var(--line-strong);
+            touch-action: none; cursor: ew-resize; }
+  .slider svg { display: block; width: 100%; height: 100%; }
+  .handle {
+    position: absolute; top: 50%; transform: translate(-50%,-50%);
+    width: 46px; height: 46px; background: var(--paper);
+    border: 1px solid var(--ink); border-radius: 2px;
+    display: flex; align-items: center; justify-content: center; cursor: ew-resize;
+  }
+
+  .pipe { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 18px; }
+  /* Four across only when a quarter of the width still renders the labels;
+     below that they are illegible and the frames stack two by two. */
+  @media (min-width: 960px) { .pipe { grid-template-columns: repeat(4, minmax(0,1fr)); gap: 20px; } }
+
+  /* THREE EQUAL FRAMES, THREE DIFFERENT SHAPES INSIDE THEM. The plates used to
+     sit at their true relative sizes on one baseline, which said something real
+     -- these are different canvases -- and looked like a ragged row. The frame
+     is the same box three times now, and the SHAPE still differs inside it, so
+     the section is regular and the point survives. */
+  .fmts { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 20px; }
+  @media (max-width: 599px) { .fmts { grid-template-columns: 1fr; gap: 24px; } }
+  /* THE FRAME IS HOLLOW. It still exists -- it is what keeps the three plates on
+     one baseline and one footprint -- it is simply not drawn. Three filled,
+     bordered boxes made the row heavier than the thing it is showing. */
+  .fmt { aspect-ratio: 4 / 3;
+         display: flex; align-items: center; justify-content: center; padding: 14px; }
+  /* ONE HEIGHT, THREE WIDTHS. Setting a width and letting aspect-ratio give the
+     height meant max-height clamped two of them and the ratios came out 1.08
+     and 1.41 instead of 1.00 and 1.60 -- the shapes, which are the entire point
+     of this section, were wrong. Fixing the HEIGHT and letting the ratio give
+     the width cannot be clamped: 80% of the inner box leaves the widest, 16:10,
+     at 240px inside 260px. */
+  /* NO SHADOW. Every other box-shadow on this page is inset -- a drawn line,
+     not a cast shadow -- so this one was the only object on the page pretending
+     to sit above the paper. A dark plate on light paper already separates. */
+  .fmt-plate { background: var(--dark);
+               display: flex; flex-direction: column;
+               justify-content: space-between; padding: 10px 11px;
+               height: 80%; width: auto; }
+  /* ONE SIZE FOR THE WORDMARK, SET BY THE NARROWEST PLATE. At 11.5px
+     "Northgate Homes" measures 103.4px and the 4:5 plate offers 98px of inner
+     width, so it wrapped to two lines in that one plate and nowhere else. 10px
+     measures 89.9px and clears it by 8px; nowrap makes a wider font fallback
+     unable to reintroduce the wrap. Scaling the wordmark per plate (as the real
+     export does, to its canvas) was the other option and was rejected: three
+     different wordmark sizes side by side reads as an inconsistency, not as
+     proportion. */
+  .fmt-plate .wm { color: #F2F0EA; font-size: 10px; white-space: nowrap; }
+
+  /* THE TWO LOOKS, NEXT TO THE SENTENCE THAT CHARGES FOR THEM. Nine plan
+     drawings on this page and, before this, every rendered one was dark: a
+     builder who wants light marketing images had no evidence we make them.
+     It sits here rather than in the hero because the hero's job is proving the
+     transformation (technical drawing -> branded image), and because putting
+     the two looks in the hero would imply one credit buys both, which the
+     paragraph directly above these plates says it does not.
+     The light values are editorial-light out of src/palettes.js -- the real
+     preset -- mapped the way the dark plates on this page already map
+     gallery-dark: walls to --wall, floors to --outdoor, accent to --line-c. */
+  .looks { display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+           margin-top: 24px; max-width: 320px; }
+  .looks figure { margin: 0; }
+  /* A HAIRLINE ON BOTH, because editorial-light's background is #EDEAE3 and so
+     is this section's: without an edge the light plate does not exist. The dark
+     one does not need it, but an edge on one and not the other reads as a
+     mistake, and a drawn line is what this page uses everywhere it needs to
+     separate something. */
+  .look { aspect-ratio: 4 / 3; display: flex; align-items: center;
+          justify-content: center; padding: 9px 10px;
+          border: 1px solid var(--line-strong); }
+  .look svg { width: 100%; height: auto; }
+
+  .packs { display: grid; gap: 22px; }
+  @media (min-width: 700px) and (max-width: 959px) {
+    /* Two and then one, rather than three squeezed: a pack card holds a price,
+       three ruled rows and a button, and below about 240px wide the rows wrap. */
+    .packs { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .packs > :last-child { grid-column: 1 / -1; }
+  }
+  @media (min-width: 960px) { .packs { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  /* WHITE IS A CARD MATERIAL, NOT A GROUND. The page has two grounds now, warm
+     paper and dark; --surface is what sits ON one, the same way .plate and the
+     card-payment note already use it. These were --paper on a tinted section,
+     which is the roundabout way of saying "a card": the tint is gone and the
+     card is a card. */
+  .pack { background: var(--surface); border: 1px solid var(--line-strong);
+          border-top: 1px solid var(--ink); padding: 26px 24px 24px;
+          display: flex; flex-direction: column; }
+  /* The 2px the marked card's thicker top edge costs is taken back out of its
+     padding. Without it every line inside it sits 2px lower than the two beside
+     it -- measured, not guessed: name 5050 against 5048, price 5128 against
+     5126. Three headings on one row that do not share a baseline is the kind of
+     thing nobody names and everybody sees. */
+  .pack.mark { border-color: var(--accent); border-top: 3px solid var(--accent);
+               padding-top: 24px; }
+
+  /* A RULED LIST, which is what this page uses everywhere else a label sits
+     opposite a value -- the process rows in the first section and the title block in the
+     footer. Three rows of label-then-gap-then-figure with nothing between them
+     made the eye jump a void to pair them up, and the whole card read as one
+     crowded block. A hairline per row does the pairing instead. */
+  /* ONE UNIT PER ROW. The first row read `Credits | 6 floors`: the label named
+     one unit and the value named another, so the reader had to know that a
+     credit is a floor before the row made sense -- inside the row that is
+     supposed to state the quantity. It is `Floors | 6` now, which agrees with
+     `Per floor` below it and with `Roughly | 3 two-storey homes` under that:
+     quantity, unit price, real-world check, all in the unit a builder counts
+     in. Credits are not hidden -- they are what you own and what the app
+     shows -- they are just introduced where they belong: the heading above
+     ("One credit is one floor, in one look"), the paragraphs beside it, and
+     the "credits never expire" line under the button. */
+  .pack dl { margin: 22px 0 0; font-size: 13.5px; border-top: 1px solid var(--line-strong); }
+  .pack dl > div { display: flex; justify-content: space-between; align-items: baseline;
+                   gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); }
+  .pack dt { color: var(--ink-3); }
+  .pack dd { margin: 0; text-align: right; }
+  /* THE FIGURE CARRIES THE WEIGHT, THE SENTENCE DOES NOT.
+     A ruled list works when the value is plainly the answer and the label is
+     plainly the question. Both were 400, separated only by colour -- and a
+     mono face at the same weight sets LIGHTER than the Lato label beside it,
+     so the value could read weaker than the thing naming it, which is backwards.
+     600 on the figures. "3 two-storey homes" stays 400 because it is a
+     sentence: bolding prose makes a card shout, and the two numbers are what a
+     reader is comparing down the column. */
+  .pack dd.num { font-weight: 600; }
+  /* The price and the name each get their own air, so the card has one rhythm
+     rather than seven different gaps. */
+  .pack .price { margin-top: 22px; display: flex; align-items: baseline; gap: 8px; }
+  .pack .cta { margin-top: 4px; }
+  .pack .assure { margin: 14px 0 0; font-size: 12px; line-height: 1.5;
+                  color: var(--ink-3); text-align: center; }
+
+  footer { border-top: 1px solid var(--ink); background: var(--paper); }
+  .block { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line-strong); }
+  .block div { padding: 10px 12px; border-right: 1px solid var(--line-strong);
+               border-bottom: 1px solid var(--line-strong); }
+  .block div:nth-child(2n) { border-right: 0; }
+  .block .wide { grid-column: 1 / -1; border-bottom: 0; }
+</style>
+</head>
+<body>
+<a class="skip" href="#a01">Skip to content</a>
+
+<!-- ONE PLAN, DEFINED ONCE. Every frame on this page <use>s this symbol, so the
+     geometry is provably identical from the CAD sheet to the social crop --
+     which is the claim the page makes in words. Colour arrives through custom
+     properties, which DO inherit into a <use> shadow tree; a class would not.
+
+     It is drawn for this page. .gitignore rule 1 says a builder's plans AND the
+     renders made from them do not leave, and a public marketing site is as far
+     out as it gets. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="plan" viewBox="0 -80 920 560">
+  <g fill="none" stroke="var(--outdoor, currentColor)" stroke-width="3" stroke-dasharray="10 8">
+    <rect x="10" y="400" width="392" height="72"/><rect x="516" y="-68" width="262" height="72"/>
+  </g>
+  <g fill="var(--wall, currentColor)">
+    <rect x="10" y="4" width="900" height="8"/><rect x="10" y="392" width="900" height="8"/>
+    <rect x="10" y="4" width="8" height="396"/><rect x="902" y="4" width="8" height="396"/>
+    <rect x="332" y="4" width="8" height="212"/><rect x="332" y="208" width="264" height="8"/>
+    <rect x="588" y="208" width="8" height="192"/><rect x="588" y="122" width="322" height="8"/>
+    <rect x="144" y="208" width="196" height="8"/><rect x="144" y="208" width="8" height="192"/>
+  </g>
+  <g fill="none" stroke="var(--line-c, currentColor)" stroke-width="3">
+    <rect x="376" y="248" width="150" height="118"/>
+    <path d="M376 268h150M376 288h150M376 308h150M376 328h150M376 348h150"/>
+    <path d="M451 360v-90m0 0l-11 13m11-13l11 13"/>
+    <rect x="658" y="182" width="184" height="92" rx="26"/>
+  </g>
+</symbol></svg>
+
+<header>
+  <div class="sheet bar">
+    <a href="index.html" class="wm" style="font-size:21px">StyloPlan</a>
+    <nav aria-label="Sections">
+      <!-- 3D VIEW WAS MISSING FROM THIS LIST ONLY. The mobile strip below has
+           all five sections; this one had four, so a desktop visitor could not
+           reach the 3D section from the navigation and a phone visitor could.
+           Not a space decision: the bar carries 584px of slack at 1440 and 502
+           after this link. Placed in page order, as the strip has it. -->
+      <a href="#a01" class="nav-l tap">How it works</a>
+      <a href="#a03" class="nav-l tap">3D view</a>
+      <a href="#a02" class="nav-l tap">Inside the app</a>
+      <a href="#a04" class="nav-l tap">Formats</a>
+      <a href="#a05" class="nav-l tap">Pricing</a>
+    </nav>
+    <span style="flex-grow:1"></span>
+    <a href="projects.html" class="nav-l tap">Sign in</a>
+    <a href="projects.html" class="btn btn-a">Start free</a>
+  </div>
+  <nav class="navstrip" aria-label="Sections">
+    <ul>
+      <li><a href="#a01">How it works</a></li>
+      <li><a href="#a03">3D view</a></li>
+      <li><a href="#a02">Inside the app</a></li>
+      <li><a href="#a04">Formats</a></li>
+      <li><a href="#a05">Pricing</a></li>
+    </ul>
+  </nav>
+  <div class="rule"></div>
+</header>
+
+<main>
+
+<!-- ══════════════ HERO ══════════════ -->
+<section class="grid-bg" style="padding-top:56px">
+  <div class="sheet">
+    <div class="hero">
+      <!-- THE HEADLINE ARRIVES A LINE AT A TIME, and the three lines are the
+           sentence's own three clauses -- the animation follows the writing
+           rather than being applied to it. <br> became three block spans to do
+           it; a screen reader still reads one heading.
+
+           IT IS THE SHORTEST MOTION ON THE PAGE. Everything else reveals over
+           .75s as you reach it; this one is .45s and finishes in well under a
+           second all told, because it sits over the first sentence anybody
+           reads and an entrance that delays the message is an entrance that
+           costs more than it gives. -->
+      <h1 class="dsp">
+        <span class="hl">The drawing you build from</span>
+        <span class="hl" data-h="1">is not the drawing</span>
+        <span class="hl" data-h="2">that <em>sells</em>.</span>
+      </h1>
+      <div class="hero-r">
+        <p style="margin:0;font-size:16.5px;color:var(--ink-2)">
+          StyloPlan restyles the plan your architect sent into your own brand, in minutes.
+          Every room name and dimension is read off the drawing and confirmed by you before
+          anything is made.
+        </p>
+        <div style="display:flex;gap:14px;margin-top:24px;flex-wrap:wrap">
+          <a href="projects.html" class="btn btn-a">Start free</a>
+          <a href="#a01" class="btn btn-o">See the process</a>
+        </div>
+        <p class="num" style="font-size:12.5px;color:var(--ink-3);margin:16px 0 0">
+          No card to start &nbsp;·&nbsp; you see the plan before you spend
+        </p>
+      </div>
+    </div>
+
+    <div style="margin-top:56px;display:flex;align-items:center;gap:14px">
+      <div style="width:1px;height:12px;background:var(--ink-3)"></div>
+      <div class="draw" style="flex-grow:1;height:1px;background:var(--ink-3)"></div>
+      <div class="num" style="font-size:11px;color:var(--ink-3);letter-spacing:.08em">BEFORE &nbsp;·&nbsp; AFTER</div>
+      <div style="flex-grow:1;height:1px;background:var(--ink-3)"></div>
+      <div style="width:1px;height:12px;background:var(--ink-3)"></div>
+    </div>
+
+    <div class="regs rise" style="margin-top:26px"><span class="r1"></span><span class="r2"></span>
+      <div class="slider" id="cmp">
+        <!-- AFTER -->
+        <div style="position:absolute;inset:0;background:var(--dark)">
+          <svg viewBox="0 -80 920 660" style="--wall:#F2F0EA;--outdoor:#55585E;--line-c:#B9B2A2" aria-hidden="true">
+            <use href="#plan" x="46" y="-52" width="828" height="504"/>
+            <g fill="#F2F0EA" font-family="Lato,sans-serif" font-size="17" font-weight="700" letter-spacing="1.2">
+              <text x="156" y="92">GREAT ROOM</text><text x="628" y="60">KITCHEN</text><text x="194" y="304">BEDROOM</text>
+            </g>
+            <g fill="#A9A294" font-family="'IBM Plex Mono',monospace" font-size="13">
+              <text x="156" y="126">17'-3" &#215; 20'-4"</text><text x="628" y="94">12'-4" &#215; 10'-2"</text>
+              <text x="194" y="338">14'-9" &#215; 13'-9"</text>
+            </g>
+            <line x1="0" y1="512" x2="920" y2="512" stroke="#34373C"/>
+            <text x="14" y="546" font-size="15" font-weight="600" fill="#F2F0EA" font-family="Poppins,sans-serif">Northgate Homes</text>
+            <text x="906" y="546" font-size="11" fill="#8E877B" text-anchor="end" font-family="'IBM Plex Mono',monospace">PRESENTATION ONLY · NOT FOR CONSTRUCTION</text>
+          </svg>
+        </div>
+        <!-- BEFORE -->
+        <div id="cmpBefore" style="position:absolute;inset:0;background:#fff;clip-path:inset(0 50% 0 0)">
+          <svg viewBox="0 -80 920 660" style="--wall:#211E19;--outdoor:#9A948A;--line-c:#211E19" aria-hidden="true">
+            <use href="#plan" x="46" y="-52" width="828" height="504"/>
+            <g fill="#211E19" font-family="'IBM Plex Mono',monospace" font-size="15">
+              <text x="156" y="96">GREAT RM</text><text x="156" y="126">17'-3" &#215; 20'-4"</text>
+              <text x="628" y="64">KITCHEN</text><text x="628" y="94">12'-4" &#215; 10'-2"</text>
+              <text x="194" y="306">M. BED</text><text x="194" y="336">14'-9" &#215; 13'-9"</text>
+              <text x="20" y="452">COVERED PORCH</text>
+            </g>
+            <g stroke="#211E19" stroke-width="2" fill="none"><path d="M10 -30h900M10 -42v24M910 -42v24"/></g>
+            <text x="410" y="-48" font-size="14" fill="#211E19" font-family="'IBM Plex Mono',monospace">62'-0"</text>
+          </svg>
+        </div>
+        <div id="cmpLine" style="position:absolute;top:0;bottom:0;left:50%;width:1px;background:#F2F0EA;pointer-events:none"></div>
+        <div class="handle" id="cmpHandle" style="left:50%" role="slider" tabindex="0"
+             aria-label="Reveal the styled render" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="#211E19"
+               stroke-width="1.4" stroke-linecap="round" aria-hidden="true">
+            <path d="M8 5 L3.5 10 L8 15"/><path d="M12 5 L16.5 10 L12 15"/>
+          </svg>
+        </div>
+        <div class="an" style="position:absolute;top:16px;left:20px;color:var(--ink-2)">As supplied</div>
+        <div class="an" style="position:absolute;top:16px;right:20px;color:#A9A294">Rendered</div>
+      </div>
+    </div>
+    <p class="num" style="padding:18px 0 40px;font-size:12.5px;color:var(--ink-3)">
+      Drag the handle, or focus it and use the arrow keys.
+    </p>
+  </div>
+</section>
+
+<!-- ══════════════ HOW IT WORKS  (#a01) ══════════════ -->
+<section id="a01" style="border-top:1px solid var(--line-strong)">
+  <div class="sheet">
+    <!-- The pipeline as four pictures of the SAME plan: one <use> of one symbol
+         in all four, so the drawing never changes -- only what has been added to
+         it and what it is dressed in. That is literally the product. -->
+    <div class="pipe" style="margin-bottom:56px">
+      <figure class="rise" data-d="0" style="margin:0">
+        <div class="plate" style="padding:14px 12px;--wall:#9A948A;--outdoor:#C4BEB2;--line-c:#9A948A">
+          <svg viewBox="0 -80 920 560" style="display:block;width:100%;height:auto" aria-hidden="true"><use href="#plan"/>
+            <g fill="#6E6759" font-family="'IBM Plex Mono',monospace" font-size="33">
+              <text x="156" y="100">GREAT RM</text><text x="628" y="68">KITCHEN</text>
+              <text x="194" y="312">M. BED</text><text x="680" y="326">GARAGE</text></g>
+          </svg>
+        </div>
+        <figcaption style="margin-top:11px"><span class="num" style="font-size:11px;color:var(--accent)">01</span>
+          <span class="an" style="margin-left:8px">As supplied</span></figcaption>
+      </figure>
+      <figure class="rise" data-d="1" style="margin:0">
+        <div class="plate" style="padding:14px 12px;--wall:#211E19;--outdoor:#B4AEA2;--line-c:#5F5A50">
+          <svg class="trace" viewBox="0 -80 920 560" style="display:block;width:100%;height:auto" aria-hidden="true"><use href="#plan"/></svg>
+        </div>
+        <figcaption style="margin-top:11px"><span class="num" style="font-size:11px;color:var(--accent)">02</span>
+          <span class="an" style="margin-left:8px">Traced</span></figcaption>
+      </figure>
+      <figure class="rise" data-d="2" style="margin:0">
+        <div class="plate" style="padding:14px 12px;--wall:#211E19;--outdoor:#B4AEA2;--line-c:#5F5A50">
+          <svg viewBox="0 -80 920 560" style="display:block;width:100%;height:auto" aria-hidden="true"><use href="#plan"/>
+            <g fill="#E4EDEE"><rect x="146" y="66" width="232" height="46" rx="4"/><rect x="618" y="34" width="196" height="46" rx="4"/>
+              <rect x="184" y="278" width="176" height="46" rx="4"/><rect x="670" y="292" width="182" height="46" rx="4"/></g>
+            <g fill="#1C5A64" font-family="'IBM Plex Mono',monospace" font-size="33">
+              <text x="158" y="100">GREAT RM</text><text x="630" y="68">KITCHEN</text>
+              <text x="196" y="312">M. BED</text><text x="682" y="326">GARAGE</text></g>
+          </svg>
+        </div>
+        <figcaption style="margin-top:11px"><span class="num" style="font-size:11px;color:var(--accent)">03</span>
+          <span class="an" style="margin-left:8px">Confirmed by you</span></figcaption>
+      </figure>
+      <figure class="rise" data-d="3" style="margin:0">
+        <div class="plate" style="padding:14px 12px;background:var(--dark);border-color:var(--dark);--wall:#F2F0EA;--outdoor:#5A5D63;--line-c:#B9B2A2">
+          <svg viewBox="0 -80 920 560" style="display:block;width:100%;height:auto" aria-hidden="true"><use href="#plan"/>
+            <g fill="#F2F0EA" font-family="Lato,sans-serif" font-size="33" font-weight="700" letter-spacing="2.4">
+              <text x="156" y="94">GREAT ROOM</text><text x="628" y="62">KITCHEN</text><text x="194" y="306">BEDROOM</text></g>
+            <g fill="#A9A294" font-family="'IBM Plex Mono',monospace" font-size="27">
+              <text x="156" y="130">17'-3" &#215; 20'-4"</text><text x="628" y="98">12'-4" &#215; 10'-2"</text>
+              <text x="194" y="342">14'-9" &#215; 13'-9"</text></g>
+          </svg>
+        </div>
+        <figcaption style="margin-top:11px"><span class="num" style="font-size:11px;color:var(--accent)">04</span>
+          <span class="an" style="margin-left:8px">Rendered</span></figcaption>
+      </figure>
+    </div>
+
+    <div class="two">
+      <div>
+        <div class="an" style="color:var(--accent)">How it works</div>
+        <h2 class="dsp">Everything before the render is <em>free</em></h2>
+        <p style="margin:20px 0 0;font-size:15.5px;color:var(--ink-2)">
+          The tracing, the room list, your corrections. A credit buys the picture,
+          nothing else.
+        </p>
+      </div>
+      <div class="steps">
+        <div class="rule"></div>
+        <div class="row"><span class="num" style="font-size:13px;color:var(--accent)">01</span>
+          <h3>Drop in the plan your architect sent</h3>
+          <p>PDF, PNG, JPG or WebP. One project holds every floor of one model, so a plan and its basement stay together.</p></div>
+        <div style="height:1px;background:var(--line)"></div>
+        <div class="row"><span class="num" style="font-size:13px;color:var(--accent)">02</span>
+          <h3>Correct it before you pay, not after</h3>
+          <p>Every room name and dimension comes back to you off your own drawing. Fixing them costs nothing.</p></div>
+        <div style="height:1px;background:var(--line)"></div>
+        <div class="row"><span class="num" style="font-size:13px;color:var(--accent)">03</span>
+          <h3>Render it in your own brand</h3>
+          <p>Your palette, your logo, light or dark. When our own checks reject a render, the retry is free.</p></div>
+        <div style="height:1px;background:var(--line)"></div>
+        <div class="row"><span class="num" style="font-size:13px;color:var(--accent)">04</span>
+          <h3>Take three formats and a 3D view</h3>
+          <p>From the one render. No second credit.</p></div>
+        <div class="rule"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ ON YOUR OWN SITE  (#a03) ══════════════ -->
+<section id="a03" style="background:var(--dark);color:var(--paper)">
+  <div class="sheet">
+    <div class="two" style="align-items:center">
+      <div>
+        <!-- THE LINK IS NAMED FIRST NOW. This said only that the 3D view
+             "embeds on your own website", which speaks to the builders who
+             have one and tells the rest that the feature is not for them. The
+             customer receiving a plan is in a message, not on a website. Both
+             come from the same publish, so naming both costs a clause. -->
+        <div class="an" style="color:#7E8A8C">Send it or embed it</div>
+        <h2 class="dsp" style="color:var(--paper)">The same plan,<br><em style="box-shadow:inset 0 -3px 0 #5FA3AD">standing up</em></h2>
+        <p style="margin:20px 0 0;font-size:15.5px;color:#A9A294">
+          A walkable 3D view, built from the render you already paid for. Send the link in
+          an email or a message, or embed it on your own site. No second credit.
+        </p>
+      </div>
+      <div>
+        <!-- ══ THE 3D EMBED GOES HERE ══
+             The app already produces the embed this section is about, and the
+             two live on the SAME ORIGIN (samilest.github.io/styloplan-site/),
+             so there is no CORS and no framing policy to arrange. Swap the svg
+             below for:
+
+               <iframe src="view3d.html?p=PROJECT&f=FLOOR&look=dark&embed=1"
+                       title="A floor plan in three dimensions, turning slowly"
+                       loading="lazy" style="display:block;width:100%;height:100%;border:0"
+                       ></iframe>
+
+             The box around it is already the right shape, so nothing on the
+             page moves when it is swapped. Three things to settle first, all
+             written down in the reply that came with this comment: whose plan
+             it may be (rule 1), the turn against prefers-reduced-motion, and
+             1.21 MB of three.js arriving on a landing page. ══ -->
+        <div class="isoslot">
+        <svg class="iso" viewBox="-588 -428 1175 778" style="display:block;width:100%;height:auto"
+          role="img" aria-label="The same floor plan drawn in three dimensions: its walls standing up on the floor slab, seen from above at an angle.">
+          <polygon class="slab" points="-218.2,-324 561.2,126 218.2,324 -561.2,-126" fill="#26292E" stroke="#33373D" stroke-width="1.5"/>
+          <g class="wall" style="--i:0"><polygon points="-211.3,-398 -554.3,-200 -554.3,-122 -211.3,-320" fill="#4A4E55"/><polygon points="-554.3,-200 -561.2,-204 -561.2,-126 -554.3,-122" fill="#3A3E45"/><polygon points="-218.2,-402 -211.3,-398 -554.3,-200 -561.2,-204" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:1"><polygon points="-271.9,-229 -438.2,-133 -438.2,-55 -271.9,-151" fill="#4A4E55"/><polygon points="-438.2,-133 -445.1,-137 -445.1,-59 -438.2,-55" fill="#3A3E45"/><polygon points="-278.9,-233 -271.9,-229 -438.2,-133 -445.1,-137" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:2"><polygon points="67.5,-237 -116,-131 -116,-53 67.5,-159" fill="#4A4E55"/><polygon points="-116,-131 -123,-135 -123,-57 -116,-53" fill="#3A3E45"/><polygon points="60.6,-241 67.5,-237 -116,-131 -123,-135" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:3"><polygon points="-109.1,-135 -116,-131 -116,-53 -109.1,-57" fill="#4A4E55"/><polygon points="-116,-131 -285.8,-229 -285.8,-151 -116,-53" fill="#3A3E45"/><polygon points="-278.9,-233 -109.1,-135 -116,-131 -285.8,-229" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:4"><polygon points="112.6,-7 105.7,-3 105.7,75 112.6,71" fill="#4A4E55"/><polygon points="105.7,-3 -123,-135 -123,-57 105.7,75" fill="#3A3E45"/><polygon points="-116,-139 112.6,-7 105.7,-3 -123,-135" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:5"><polygon points="561.2,48 554.3,52 554.3,130 561.2,126" fill="#4A4E55"/><polygon points="554.3,52 -225.2,-398 -225.2,-320 554.3,130" fill="#3A3E45"/><polygon points="-218.2,-402 561.2,48 554.3,52 -225.2,-398" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:6"><polygon points="112.6,-7 -53.7,89 -53.7,167 112.6,71" fill="#4A4E55"/><polygon points="-53.7,89 -60.6,85 -60.6,163 -53.7,167" fill="#3A3E45"/><polygon points="105.7,-11 112.6,-7 -53.7,89 -60.6,85" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:7"><polygon points="459,107 452.1,111 452.1,189 459,185" fill="#4A4E55"/><polygon points="452.1,111 173.2,-50 173.2,28 452.1,189" fill="#3A3E45"/><polygon points="180.1,-54 459,107 452.1,111 173.2,-50" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:8"><polygon points="225.2,242 218.2,246 218.2,324 225.2,320" fill="#4A4E55"/><polygon points="218.2,246 -561.2,-204 -561.2,-126 218.2,324" fill="#3A3E45"/><polygon points="-554.3,-208 225.2,242 218.2,246 -561.2,-204" fill="#E8E4DA"/></g>
+          <g class="wall" style="--i:9"><polygon points="561.2,48 218.2,246 218.2,324 561.2,126" fill="#4A4E55"/><polygon points="218.2,246 211.3,242 211.3,320 218.2,324" fill="#3A3E45"/><polygon points="554.3,44 561.2,48 218.2,246 211.3,242" fill="#E8E4DA"/></g>
+        </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ INSIDE THE APP  (#a02) ══════════════ -->
+<!-- A REAL SCREENSHOT, OF THE REAL SCREEN. Drawn illustrations are what every
+     tool's landing page has; a photograph of the actual product is the thing a
+     builder is deciding about. The plan in it is the app's own bundled sample,
+     which is synthetic geometry drawn by src/mock-plan.js -- no customer's
+     drawing appears here, and .gitignore rule 1 is why. -->
+<!-- No border-top any more: it sits under the dark band now, and a hairline
+     between two colours that already differ is a stray line rather than a
+     boundary. The sections that follow a PAPER one keep theirs. -->
+<!-- PAPER, NOT WHITE. This was #FFFFFF: the only cold surface on a warm page,
+     the highest-contrast ground on it, and it sat directly after the 660px dark
+     band carrying screenshots whose measured mean luminance is 28 and 34 of
+     255. Dark band, then pure white, then near-black pictures on it -- that
+     sequence is the one place the page strobed. The screenshots keep all the
+     contrast they need against paper (239), and .shot-frame brings its own dark
+     ground and hairline.
+     NO RULE LINE ON THIS ONE. The page's rule is now: a hairline wherever paper
+     meets paper, nothing where the ground itself changes. This section follows
+     the dark band, so the change of ground is the separation and a line there
+     would separate nothing. -->
+<section id="a02">
+  <div class="sheet">
+    <div class="two" style="align-items:start">
+      <div>
+        <div class="an" style="color:var(--accent)">Inside the app</div>
+        <h2 class="dsp">This is the whole tool</h2>
+        <p style="margin:20px 0 0;font-size:15.5px;color:var(--ink-2)">
+          One screen. Your plan on the right, everything that changes it on the left.
+        </p>
+        <ul style="margin:22px 0 0;padding:0;list-style:none;font-size:14.5px;color:var(--ink-2)">
+          <li style="padding:9px 0;border-top:1px solid var(--line)">Room names and dimensions read off your drawing, shown in place</li>
+          <li style="padding:9px 0;border-top:1px solid var(--line)">Colour and typography change instantly, with no re-render</li>
+          <li style="padding:9px 0;border-top:1px solid var(--line)">Square, landscape and portrait from the one image</li>
+          <li style="padding:9px 0;border-top:1px solid var(--line)">Nothing renders until you press the button that says what it costs</li>
+        </ul>
+      </div>
+      <figure class="rise" style="margin:0">
+        <!-- THREE REAL SCREENS, NOT THREE PICTURES OF ONE. Each was captured
+             from the running app with headless Chrome; the content in them was
+             created by the app's own store.createSampleProject(), because a
+             screenshot of a state the product cannot reach is a lie about the
+             product. The plan is the bundled synthetic sample -- no customer's
+             drawing, which .gitignore rule 1 requires. -->
+        <div class="regs"><span class="r1"></span><span class="r2"></span>
+          <div class="shot-frame" id="shots">
+            <picture><source srcset="assets/app-studio.webp" type="image/webp"><img class="on" src="assets/app-studio.png" width="1980" height="1320"
+              alt="The Studio: plan style, colour and label controls on the left, and a floor plan on the right with its rooms labelled and dimensioned."></picture>
+            <picture><source srcset="assets/app-brand.webp" type="image/webp"><img src="assets/app-brand.png" width="1980" height="1320" loading="lazy"
+              alt="Brand kits: company name, logo, label font, Light or Dark plan mode, and the canvas, text and brand colours."></picture>
+            <picture><source srcset="assets/app-projects.webp" type="image/webp"><img src="assets/app-projects.png" width="1980" height="1320" loading="lazy"
+              alt="Projects: one card per home model, showing its floors and how many are confirmed."></picture>
+          </div>
+        </div>
+        <div class="dots" id="shotDots" role="tablist" aria-label="App screens"></div>
+        <figcaption class="num" id="shotCap" style="margin-top:6px;font-size:12.5px;color:var(--ink-3)">
+          The Studio, on the bundled sample plan, which is why it says so on the canvas.
+        </figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ FORMATS  (#a04) ══════════════ -->
+<section id="a04" style="border-top:1px solid var(--line-strong)">
+  <div class="sheet">
+    <div class="two" style="align-items:start">
+      <div>
+        <div class="an" style="color:var(--accent)">Formats</div>
+        <h2 class="dsp">Three formats, <em>nothing cropped</em></h2>
+        <p style="margin:20px 0 0;font-size:15.5px;color:var(--ink-2)">
+          Most tools crop to fit, and a wing of the house goes. Ours re-lays the page
+          instead, so the plan arrives whole and the dimensions stay readable.
+        </p>
+      </div>
+      <div class="fmts">
+        <figure style="margin:0">
+          <div class="fmt">
+            <div class="fmt-plate" style="aspect-ratio:1/1">
+              <div style="height:1px;background:#F2F0EA;opacity:.2"></div>
+              <svg viewBox="0 -80 920 560" style="width:100%;height:auto;--wall:#F2F0EA;--outdoor:#55585E;--line-c:#B9B2A2" aria-hidden="true"><use href="#plan"/></svg>
+              <div class="wm">Northgate Homes</div>
+            </div>
+          </div>
+          <figcaption class="num" style="margin-top:11px;font-size:11px;color:var(--ink-3);letter-spacing:.08em">1:1 · LISTING</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <div class="fmt">
+            <div class="fmt-plate" style="aspect-ratio:16/10">
+              <div style="height:1px;background:#F2F0EA;opacity:.2"></div>
+              <svg viewBox="0 -80 920 560" style="width:100%;height:auto;--wall:#F2F0EA;--outdoor:#55585E;--line-c:#B9B2A2" aria-hidden="true"><use href="#plan"/></svg>
+              <div class="wm">Northgate Homes</div>
+            </div>
+          </div>
+          <figcaption class="num" style="margin-top:11px;font-size:11px;color:var(--ink-3);letter-spacing:.08em">16:10 · BROCHURE</figcaption>
+        </figure>
+        <figure style="margin:0">
+          <div class="fmt">
+            <div class="fmt-plate" style="aspect-ratio:4/5">
+              <div style="height:1px;background:#F2F0EA;opacity:.2"></div>
+              <svg viewBox="0 -80 920 560" style="width:100%;height:auto;--wall:#F2F0EA;--outdoor:#55585E;--line-c:#B9B2A2" aria-hidden="true"><use href="#plan"/></svg>
+              <div class="wm">Northgate Homes</div>
+            </div>
+          </div>
+          <figcaption class="num" style="margin-top:11px;font-size:11px;color:var(--ink-3);letter-spacing:.08em">4:5 · SOCIAL</figcaption>
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════ PRICING  (#a05) ══════════════ -->
+<!-- PAPER HERE TOO. #EDEAE3 differs from paper by 5, 6 and 7 -- not a band a
+     reader can see, but it tinted 2121px, the largest section on the page. Its
+     only real job was to make the paper-coloured pack cards read as cards; the
+     cards are --surface now, which does that properly and leaves the page with
+     two grounds instead of four. The rule line above still separates it. -->
+<section id="a05" style="border-top:1px solid var(--line-strong)">
+  <div class="sheet">
+    <div class="two" style="align-items:start">
+      <div>
+        <div class="an" style="color:var(--accent)">Pricing</div>
+        <h2 class="dsp">One credit is one floor, in <em style="white-space:nowrap">one look</em></h2>
+        <p style="margin:20px 0 0;font-size:15.5px;color:var(--ink-2)">
+          That is the whole meter. Preparing a floor is free, changing your brand afterwards
+          is free, and a render our own checks reject is re-run free.
+        </p>
+        <!-- THE TRANSLATION, DONE FOR THE READER. We price per FLOOR because a
+             three-storey model costs three times as much to make; the customer
+             thinks in homes. Leaving them to do the arithmetic is how a pricing
+             table becomes the confusing part of a page. -->
+        <p style="margin:18px 0 0;font-size:14.5px;color:var(--ink-2)">
+          One storey, one credit. Two storeys, two. Add a basement and it is three.
+          Light and Dark are two looks, so two credits.
+        </p>
+        <div class="looks">
+          <figure>
+            <div class="look" style="background:#EDEAE3">
+              <svg viewBox="0 -80 920 560" style="--wall:#2B2B2B;--outdoor:#D6D2CA;--line-c:#4A453C" aria-hidden="true"><use href="#plan"/></svg>
+            </div>
+            <figcaption class="num" style="margin-top:9px;font-size:11px;color:var(--ink-3);letter-spacing:.08em">LIGHT</figcaption>
+          </figure>
+          <figure>
+            <div class="look" style="background:var(--dark)">
+              <svg viewBox="0 -80 920 560" style="--wall:#F2F0EA;--outdoor:#55585E;--line-c:#B9B2A2" aria-hidden="true"><use href="#plan"/></svg>
+            </div>
+            <figcaption class="num" style="margin-top:9px;font-size:11px;color:var(--ink-3);letter-spacing:.08em">DARK</figcaption>
+          </figure>
+        </div>
+      </div>
+
+      <div>
+        <div class="packs">
+          <div class="pack rise" data-d="0">
+            <div><span class="num" style="font-size:12px;color:var(--accent)">01</span></div>
+            <div class="dsp" style="font-size:19px;margin-top:10px">Starter</div>
+            <div style="font-size:14px;color:var(--ink-2);margin-top:3px">Trying it on your own plans</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>79</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">one-off</span>
+            </div>
+            <dl>
+              <div><dt>Floors</dt><dd class="num">6</dd></div>
+              <div><dt>Per floor</dt><dd class="num" style="color:var(--accent)">$13.17</dd></div>
+              <div><dt>Roughly</dt><dd>3 two-storey homes</dd></div>
+            </dl>
+            <div style="flex-grow:1;min-height:20px"></div>
+            <a href="projects.html" class="btn btn-o" style="width:100%">Start free</a>
+            <p class="assure">No card to start · credits never expire</p>
+          </div>
+
+          <div class="pack mark rise" data-d="1">
+            <div><span class="num" style="font-size:12px;color:var(--accent)">02</span>
+              <span class="an" style="color:var(--accent);margin-left:10px">Most builders</span></div>
+            <div class="dsp" style="font-size:19px;margin-top:10px">Builder</div>
+            <div style="font-size:14px;color:var(--ink-2);margin-top:3px">A working catalogue of models</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>259</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">one-off</span>
+            </div>
+            <dl>
+              <div><dt>Floors</dt><dd class="num">24</dd></div>
+              <div><dt>Per floor</dt><dd class="num" style="color:var(--accent)">$10.79</dd></div>
+              <div><dt>Roughly</dt><dd>12 two-storey homes</dd></div>
+            </dl>
+            <div style="flex-grow:1;min-height:20px"></div>
+            <a href="projects.html" class="btn btn-a" style="width:100%">Start free</a>
+            <p class="assure">No card to start · credits never expire</p>
+          </div>
+
+          <div class="pack rise" data-d="2">
+            <div><span class="num" style="font-size:12px;color:var(--accent)">03</span></div>
+            <div class="dsp" style="font-size:19px;margin-top:10px">Studio</div>
+            <div style="font-size:14px;color:var(--ink-2);margin-top:3px">Several communities at once</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>629</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">one-off</span>
+            </div>
+            <dl>
+              <div><dt>Floors</dt><dd class="num">72</dd></div>
+              <div><dt>Per floor</dt><dd class="num" style="color:var(--accent)">$8.74</dd></div>
+              <div><dt>Roughly</dt><dd>36 two-storey homes</dd></div>
+            </dl>
+            <div style="flex-grow:1;min-height:20px"></div>
+            <a href="projects.html" class="btn btn-o" style="width:100%">Start free</a>
+            <p class="assure">No card to start · credits never expire</p>
+          </div>
+        </div>
+
+        <!-- Said once, because it is true of all three. Repeating it per pack
+             would imply the packs differ in KIND. They differ in volume. -->
+        <!-- SAYING THE PART THAT IS NOT READY. Card payment is not connected yet,
+             so a button reading "Choose Builder" would take a visitor who has just
+             decided to buy and hand them an app with no way to pay -- the worst
+             possible moment to be vague. The prices are real and they are what
+             these packs will cost; the button offers the thing that does work. -->
+        <div style="margin-top:24px;border:1px solid var(--line-strong);background:var(--surface);padding:14px 16px">
+          <!-- Capped like the other prose. The BOX stays full width -- it is a
+               notice and it should look like one -- but the sentence inside it
+               was running 124 characters a line, which is prose somebody has to
+               parse, unlike the dot-separated summary below that is deliberately
+               one line and is left alone. -->
+          <p style="margin:0;font-size:14px;color:var(--ink-2);max-width:58ch">
+            <strong style="color:var(--ink)">Card payment opens shortly.</strong>
+            These are the pack prices. Until then your first floor renders on us, and
+            everything you set up now stays yours.
+          </p>
+        </div>
+
+        <div style="margin-top:24px;border-top:1px solid var(--line-strong);padding-top:15px">
+          <p class="num" style="margin:0;font-size:13px;color:var(--ink-3)">
+            Every plan &nbsp;·&nbsp; three formats &nbsp;·&nbsp; 3D embed &nbsp;·&nbsp;
+            unlimited brand changes &nbsp;·&nbsp; free re-run when our checks reject one
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ══════════════ TITLE BLOCK ══════════════ -->
+<footer>
+  <div class="sheet" style="padding-top:48px;padding-bottom:40px">
+    <div style="display:grid;gap:34px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))">
+      <div>
+        <div class="wm" style="font-size:19px">StyloPlan</div>
+        <p style="margin:10px 0 0;font-size:14px;color:var(--ink-2);max-width:260px">
+          Presentation images and 3D views, made from the plans you already have.
+          Built for home builders.
+        </p>
+      </div>
+      <nav aria-label="Product">
+        <div class="an">Product</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;font-size:14px">
+          <a href="#a01" class="tap">How it works</a>
+          <a href="#a02" class="tap">Inside the app</a>
+          <a href="#a04" class="tap">Formats</a>
+          <a href="#a05" class="tap">Pricing</a>
+        </div>
+      </nav>
+      <nav aria-label="Legal">
+        <div class="an">Legal</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:14px;font-size:14px">
+          <a href="legal.html#terms" class="tap">Terms of Service</a>
+          <a href="legal.html#privacy" class="tap">Privacy Policy</a>
+          <a href="legal.html#processors" class="tap">Who sees your plans</a>
+        </div>
+      </nav>
+      <div class="block num" style="font-size:11.5px;align-self:start">
+        <div><span style="color:var(--ink-3)">SCALE</span><br>N/A</div>
+        <div><span style="color:var(--ink-3)">ISSUED</span><br>2026</div>
+        <!-- RED LINE 7: process claims, never outcome guarantees. "Verified",
+             never "guaranteed", and the disclaimer defaults on. -->
+        <div class="wide"><span style="color:var(--ink-3)">DISCLAIMER</span><br>
+          <span style="color:var(--ink-2);line-height:1.5">Presentation material only. Dimensions and room
+          names are transcribed from the drawing you supply and confirmed by you before rendering;
+          StyloPlan does not measure, derive or certify them. Not for construction, permitting or survey.</span>
+        </div>
+      </div>
+    </div>
+    <div class="rule" style="margin-top:34px"></div>
+    <div class="num" style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;
+      padding-top:14px;font-size:11.5px;color:var(--ink-3)">
+      <span>© 2026 StyloPlan</span><span>REV 1.0 &nbsp;·&nbsp; SHEET 1 OF 1</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── REVEAL ────────────────────────────────────────────────────────────────
+// The class goes on <html> from script, so the hidden state exists ONLY once
+// something is running that can un-hide it. A page whose content starts at
+// opacity 0 in the stylesheet is a page that is blank when the script fails,
+// and this one is the whole pitch.
+(function () {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;   // already visible
+  document.documentElement.classList.add('reveal');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      e.target.classList.add('in');
+      io.unobserve(e.target);          // it happens once; this is not a loop
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+  var watched = [].slice.call(document.querySelectorAll('.rise, .draw, .iso'));
+  watched.forEach(function (el) { io.observe(el); });
+
+  // The hero is already on screen, so it does not wait to be scrolled to. Two
+  // frames, not zero: setting the hidden class and the visible one in the same
+  // frame gives the browser nothing to transition BETWEEN, and the headline
+  // would simply appear.
+  var hero = [].slice.call(document.querySelectorAll('.hl, .hero-r'));
+  watched = watched.concat(hero);
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      hero.forEach(function (el) { el.classList.add('in'); });
+    });
+  });
+
+  // A DEAD MAN'S SWITCH. Everything above is an effect; the content under it is
+  // the page. If the observer never delivers -- a browser quirk, an extension,
+  // a rendering path nobody tested -- the effect's hidden state becomes
+  // permanent and the pricing section is simply blank on a page whose job is to
+  // sell. So after eight seconds everything is shown whatever happened, which
+  // turns the worst case from "invisible forever" into "arrived late".
+  //
+  // Eight seconds and not one: a reader scrolling normally reaches the pricing
+  // section well after that, and firing early would throw away the effect on a
+  // slow connection for no reason.
+  setTimeout(function () {
+    watched.forEach(function (el) { el.classList.add('in'); });
+  }, 8000);
+})();
+
+// ── THE APP SLIDESHOW ─────────────────────────────────────────────────────
+// Three real screens. It advances itself, because the section's job is to show
+// that there is more than one screen and a visitor who does not click would
+// never learn it -- and it stops the moment a person takes over, because a
+// carousel that keeps moving under someone reading it is the reason carousels
+// have a bad name.
+(function () {
+  var frame = document.getElementById('shots');
+  if (!frame) return;
+  var imgs = [].slice.call(frame.querySelectorAll('img'));
+  var dots = document.getElementById('shotDots');
+  var cap = document.getElementById('shotCap');
+  var CAPS = [
+    'The Studio, on the bundled sample plan, which is why it says so on the canvas.',
+    'Brand kits: your logo, colours and type, applied to every image you make.',
+    'Projects: one card per home model, with its floors and what is confirmed.'
+  ];
+  var i = 0, timer = null, userPaused = false;
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  imgs.forEach(function (_, n) {
+    var b = document.createElement('button');
+    b.className = 'dot'; b.type = 'button'; b.setAttribute('role', 'tab');
+    b.setAttribute('aria-label', 'Screen ' + (n + 1) + ' of ' + imgs.length);
+    b.innerHTML = '<i></i>';
+    b.addEventListener('click', function () { userPaused = true; stop(); show(n); paintPause(); });
+    dots.appendChild(b);
+  });
+  var buttons = [].slice.call(dots.children);
+
+  function show(n) {
+    i = (n + imgs.length) % imgs.length;
+    imgs.forEach(function (im, k) { im.classList.toggle('on', k === i); });
+    buttons.forEach(function (b, k) { b.setAttribute('aria-selected', String(k === i)); });
+    if (cap && CAPS[i]) cap.textContent = CAPS[i];
+  }
+  function start() {
+    if (reduce || userPaused || timer) return;
+    timer = setInterval(function () { show(i + 1); }, 5200);
+  }
+  function stop() { clearInterval(timer); timer = null; }
+
+  // Taking over stops it for good; hovering only pauses. And it does not run at
+  // all while the section is off screen -- an unread carousel advancing in a
+  // background tab is work nobody asked for.
+  frame.addEventListener('pointerenter', stop);
+  frame.addEventListener('pointerleave', start);
+  dots.addEventListener('focusin', stop);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') start(); else stop();
+  });
+  dots.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    stop(); show(i + (e.key === 'ArrowRight' ? 1 : -1));
+    buttons[i].focus(); e.preventDefault();
+  });
+
+  // The findable half of WCAG 2.2.2. Clicking a dot already stopped it; this
+  // says so, and it latches -- moving the pointer off the frame must not undo a
+  // decision somebody made on purpose.
+  var pauseBtn = document.createElement('button');
+  pauseBtn.type = 'button';
+  pauseBtn.className = 'pause';
+  function paintPause() {
+    pauseBtn.textContent = userPaused ? 'Play' : 'Pause';
+    pauseBtn.setAttribute('aria-label',
+      userPaused ? 'Play the app screens' : 'Pause the app screens');
+  }
+  pauseBtn.addEventListener('click', function () {
+    userPaused = !userPaused;
+    if (userPaused) stop(); else start();
+    paintPause();
+  });
+  if (!reduce) { paintPause(); dots.appendChild(pauseBtn); }
+
+  show(0);
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) {
+      es.forEach(function (e) { e.isIntersecting ? start() : stop(); });
+    }, { threshold: 0.25 }).observe(frame);
+  } else { start(); }
+})();
+
+// The comparison slider. Pointer, click anywhere on the frame, and the keyboard
+// -- a control that only answers to a drag is a control a keyboard user cannot
+// reach, and this one is the page's main illustration of what the product does.
+(function () {
+  var box = document.getElementById('cmp');
+  if (!box) return;
+  var before = document.getElementById('cmpBefore');
+  var line = document.getElementById('cmpLine');
+  var handle = document.getElementById('cmpHandle');
+  var pos = 50, dragging = false;
+
+  function set(p) {
+    pos = Math.max(0, Math.min(100, p));
+    before.style.clipPath = 'inset(0 ' + (100 - pos) + '% 0 0)';
+    line.style.left = pos + '%';
+    handle.style.left = pos + '%';
+    handle.setAttribute('aria-valuenow', Math.round(pos));
+  }
+  function fromEvent(e) {
+    var r = box.getBoundingClientRect();
+    set(((e.clientX - r.left) / r.width) * 100);
+  }
+  box.addEventListener('pointerdown', function (e) {
+    dragging = true; box.setPointerCapture(e.pointerId); fromEvent(e);
+  });
+  box.addEventListener('pointermove', function (e) { if (dragging) fromEvent(e); });
+  box.addEventListener('pointerup', function () { dragging = false; });
+  box.addEventListener('pointercancel', function () { dragging = false; });
+  handle.addEventListener('keydown', function (e) {
+    var step = e.shiftKey ? 10 : 2;
+    if (e.key === 'ArrowLeft') { set(pos - step); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { set(pos + step); e.preventDefault(); }
+    else if (e.key === 'Home') { set(0); e.preventDefault(); }
+    else if (e.key === 'End') { set(100); e.preventDefault(); }
+  });
+  set(50);
+})();
+</script>
+</body>
+</html>

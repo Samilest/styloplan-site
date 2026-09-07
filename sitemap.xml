@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Submitted by hand to Search Console and Bing Webmaster Tools. A sitemap in a
+     SUBDIRECTORY is still read when it is submitted directly; robots.txt is not,
+     which is why there is no robots.txt here -- a crawler only reads the one at
+     the host root, and on a GitHub Pages project site that root belongs to
+     another repository. Both, properly, wait for a domain. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://samilest.github.io/styloplan-site/</loc>
+    <lastmod>2026-09-05</lastmod>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://samilest.github.io/styloplan-site/legal.html</loc>
+    <lastmod>2026-09-05</lastmod>
+    <priority>0.3</priority>
+  </url>
+</urlset>

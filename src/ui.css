@@ -1,0 +1,1423 @@
+/* ==========================================================================
+   StyloPlan — ui.css
+   One stylesheet. Plain custom properties. No build step, no dependencies.
+   Fonts: Roboto (headings) + Lato (body) — Omega document typefaces.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Lato:wght@400;600;700&display=swap');
+
+/* --------------------------------------------------------------------------
+   1. TOKENS — light (bare :root, always the full set)
+   -------------------------------------------------------------------------- */
+:root {
+  /* Surfaces & ink */
+  --paper:        #F2F0EA;   /* app background — warm, drafting-adjacent */
+  --surface:      #FFFFFF;   /* panels, cards */
+  --surface-2:    #FAF9F5;   /* inset / recessed */
+  --ink:          #211E19;   /* primary text        — 14.8:1 on --paper */
+  --ink-2:        #5F5A50;   /* secondary text      —  6.1:1 on --paper */
+  --ink-3:        #6E6759;   /* tertiary / hints    —  5.2:1 on --paper */
+  --line:         #E3DFD6;   /* hairlines */
+  --line-strong:  #CBC4B6;   /* control borders */
+
+  /* Accent — teal, kept */
+  --accent:       #1C5A64;   /* 6.4:1 on --paper, 7.0:1 on --surface */
+  --accent-press: #14454D;
+  --accent-soft:  #E4EDEE;
+  --accent-ink:   #FFFFFF;   /* text on --accent — 6.4:1 */
+
+  /* Selection — burnt orange, marking only. Never means "spend". */
+  --select:       #A8481A;   /* 4.9:1 on --paper */
+  --select-soft:  #F7E8DE;
+
+  /* Paid action — Omega safety yellow. This hue appears nowhere else. */
+  --paid:         #FFD517;
+  --paid-press:   #E8BF06;
+  --paid-ink:     #211E19;   /* 13.9:1 on --paid */
+  --paid-edge:    #C9A408;
+
+  /* Verdict / status */
+  --ok:           #2F6B41;   --ok-soft:   #E6EFE7;
+  --warn:         #8A5312;   --warn-soft: #F6EBDD;
+  --err:          #8E2E1E;   --err-soft:  #F6E3DF;
+  --neutral:      #5F5A50;   --neutral-soft: #EDEAE3;
+
+  /* Focus */
+  --focus:        #1C5A64;
+  --focus-halo:   #FFFFFF;
+
+  /* Radii — screen convention; Omega's 0px is print collateral only */
+  --r-panel: 12px;  --r-ctl: 8px;  --r-chip: 6px;  --r-pill: 999px;
+
+  /* Elevation — hairline first, two levels only */
+  --e-0: none;
+  --e-1: 0 1px 2px rgba(33,30,25,.06), 0 0 0 1px var(--line);
+  --e-2: 0 8px 28px rgba(33,30,25,.14), 0 0 0 1px var(--line);
+
+  /* Type */
+  --sans: 'Lato', system-ui, sans-serif;
+  --display: 'Roboto', system-ui, sans-serif;
+  --mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --t-11: 11px; --t-12: 12px; --t-13: 13px; --t-15: 15px;
+  --t-17: 17px; --t-20: 20px; --t-24: 24px; --t-30: 30px; --t-38: 38px;
+
+  /* Space — 4-based */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+
+  /* THE PAGE COLUMN. One width and one gutter for the header, the title row
+     and the content, so the three can never drift apart. They had drifted: six
+     different max-widths were in force across the app (1100, 1320, 1400, 1500,
+     1600, and the title row's own 1400), and at 1680px a Projects screen showed
+     three different left edges at once, the header at 24, the title at 164 and
+     the cards at 204. A page that wants a different measure overrides
+     --page-max on its own body, which moves all three together. */
+  --page-max: 1440px;
+  --gutter: var(--s-5);
+
+  /* Motion */
+  --d-micro: 120ms; --d-std: 180ms; --d-overlay: 260ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --ease-in: cubic-bezier(.4, 0, 1, 1);
+}
+
+/* --------------------------------------------------------------------------
+   2. TOKENS — dark by preference (no explicit light override)
+   Dark mode is not a tint: surfaces sit *behind* a dark plan raster, so the
+   page is darker than the plan and separation comes from hairlines, not fills.
+   -------------------------------------------------------------------------- */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:        #16181A;
+    --surface:      #1E2124;
+    --surface-2:    #23262A;
+    --ink:          #ECEAE5;   /* 13.1:1 on --surface */
+    --ink-2:        #A8A49C;   /*  5.4:1 on --surface */
+    --ink-3:        #9A958C;
+    --line:         #2E3236;
+    --line-strong:  #414650;
+
+    --accent:       #6FB9C4;   /* 7.2:1 on --surface */
+    --accent-press: #8FCDD6;
+    --accent-soft:  #1B2E32;
+    --accent-ink:   #10262A;
+
+    --select:       #E08A50;   --select-soft: #33231A;
+
+    --paid:         #FFD517;
+    --paid-press:   #FFE05C;
+    --paid-ink:     #1A1608;
+    --paid-edge:    #A8880A;
+
+    --ok:           #7DBE8E;   --ok-soft:   #1B2A20;
+    --warn:         #D9A15E;   --warn-soft: #2C2318;
+    --err:          #E0897A;   --err-soft:  #2E1D1A;
+    --neutral:      #A8A49C;   --neutral-soft: #262A2E;
+
+    --focus:        #8FCDD6;
+    --focus-halo:   #16181A;
+
+    --e-1: 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px var(--line);
+    --e-2: 0 10px 34px rgba(0,0,0,.6), 0 0 0 1px var(--line);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   3. TOKENS — dark by explicit choice (identical values, own block)
+   -------------------------------------------------------------------------- */
+:root[data-theme="dark"] {
+  --paper: #16181A;  --surface: #1E2124;  --surface-2: #23262A;
+  --ink: #ECEAE5;    --ink-2: #A8A49C;    --ink-3: #9A958C;
+  --line: #2E3236;   --line-strong: #414650;
+  --accent: #6FB9C4; --accent-press: #8FCDD6; --accent-soft: #1B2E32;
+  --accent-ink: #10262A;
+  --select: #E08A50; --select-soft: #33231A;
+  --paid: #FFD517;   --paid-press: #FFE05C; --paid-ink: #1A1608;
+  --paid-edge: #A8880A;
+  --ok: #7DBE8E;     --ok-soft: #1B2A20;
+  --warn: #D9A15E;   --warn-soft: #2C2318;
+  --err: #E0897A;    --err-soft: #2E1D1A;
+  --neutral: #A8A49C; --neutral-soft: #262A2E;
+  --focus: #8FCDD6;  --focus-halo: #16181A;
+  --e-1: 0 1px 2px rgba(0,0,0,.5), 0 0 0 1px var(--line);
+  --e-2: 0 10px 34px rgba(0,0,0,.6), 0 0 0 1px var(--line);
+}
+
+/* --------------------------------------------------------------------------
+   4. BASE
+   -------------------------------------------------------------------------- */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: 400 var(--t-15)/1.55 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
+}
+h1, h2, h3, h4 { font-family: var(--display); font-weight: 500; margin: 0; letter-spacing: -.01em; }
+h1 { font-size: var(--t-30); line-height: 1.15; }
+h2 { font-size: var(--t-20); line-height: 1.25; }
+h3 { font-size: var(--t-17); line-height: 1.3; }
+p  { margin: 0; }
+a  { color: var(--accent); text-decoration-color: color-mix(in oklab, var(--accent) 40%, transparent); }
+a:hover { color: var(--accent-press); text-decoration-color: currentColor; }
+
+.num, .dim { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--display); font-size: var(--t-11); font-weight: 500;
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+}
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--r-ctl);
+}
+
+/* --------------------------------------------------------------------------
+   5. BUTTONS
+   -------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  min-height: 36px; padding: 0 var(--s-4);
+  font: 600 var(--t-15)/1 var(--sans);
+  border: 1px solid transparent; border-radius: var(--r-ctl);
+  background: none; color: var(--ink); cursor: pointer;
+  transition: background var(--d-micro) var(--ease), border-color var(--d-micro) var(--ease),
+              color var(--d-micro) var(--ease), transform var(--d-micro) var(--ease);
+}
+.btn:active { transform: translateY(.5px); }
+.btn[disabled], .btn[aria-disabled="true"] {
+  cursor: not-allowed; opacity: 1;
+  background: var(--surface-2); color: var(--ink-3); border-color: var(--line);
+  box-shadow: none;
+}
+
+.btn--primary { background: var(--accent); color: var(--accent-ink); }
+.btn--primary:hover { background: var(--accent-press); }
+
+.btn--secondary { background: var(--surface); color: var(--ink); border-color: var(--line-strong); }
+.btn--secondary:hover { background: var(--surface-2); }
+
+.btn--quiet { color: var(--ink-2); }
+.btn--quiet:hover { background: var(--neutral-soft); color: var(--ink); }
+
+.btn--destructive { background: transparent; color: var(--err); border-color: color-mix(in oklab, var(--err) 45%, transparent); }
+.btn--destructive:hover { background: var(--err-soft); }
+
+/* Paid action — the only yellow in the product.
+   Cost is inside the control, so it can never be read without the price. */
+.btn--paid {
+  background: var(--paid); color: var(--paid-ink);
+  border-color: var(--paid-edge); border-bottom-width: 2px;
+  min-height: 44px; padding: 0 var(--s-5);
+  font-family: var(--display); font-weight: 500;
+}
+.btn--paid:hover { background: var(--paid-press); }
+.btn--paid .cost {
+  font-family: var(--mono); font-size: var(--t-13);
+  padding: 3px var(--s-2); border-radius: var(--r-chip);
+  background: color-mix(in oklab, var(--paid-ink) 12%, transparent);
+}
+.btn--sm { min-height: 30px; font-size: var(--t-13); padding: 0 var(--s-3); }
+.btn--icon { width: 36px; min-height: 36px; padding: 0; }
+
+@media (pointer: coarse) {
+  .btn, .btn--sm, .btn--icon { min-height: 44px; min-width: 44px; }
+}
+
+/* --------------------------------------------------------------------------
+   6. INPUTS, SELECT, SWITCH, SEGMENTED, SWATCH
+   -------------------------------------------------------------------------- */
+.field { display: grid; gap: var(--s-1); }
+.field > label { font-size: var(--t-13); color: var(--ink-2); }
+.input, .select, .textarea {
+  width: 100%; min-height: 36px; padding: var(--s-2) var(--s-3);
+  font: 400 var(--t-15)/1.4 var(--sans); color: var(--ink);
+  background: var(--surface); border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  transition: border-color var(--d-micro) var(--ease), background var(--d-micro) var(--ease);
+}
+.input::placeholder { color: var(--ink-3); }
+.input:hover, .select:hover { border-color: var(--ink-3); }
+.input:focus, .select:focus { border-color: var(--accent); }
+.input[aria-invalid="true"] { border-color: var(--err); background: var(--err-soft); }
+.input[disabled] { background: var(--surface-2); color: var(--ink-3); }
+.hint { font-size: var(--t-13); color: var(--ink-2); }
+.hint--err { color: var(--err); }
+
+.switch {
+  --w: 44px; --h: 26px;
+  position: relative; width: var(--w); height: var(--h); flex: 0 0 auto;
+  background: var(--line-strong); border-radius: var(--r-pill); border: 0;
+  cursor: pointer; transition: background var(--d-std) var(--ease);
+}
+.switch::after {
+  content: ''; position: absolute; top: 3px; left: 3px;
+  width: 20px; height: 20px; border-radius: 50%;
+  background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.25);
+  transition: transform var(--d-std) var(--ease);
+}
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(18px); }
+
+.segmented {
+  display: inline-flex; gap: 2px; padding: 2px;
+  background: var(--surface-2); border: 1px solid var(--line);
+  border-radius: var(--r-ctl);
+}
+.segmented > button {
+  min-height: 30px; padding: 0 var(--s-3); border: 0; cursor: pointer;
+  font: 600 var(--t-13)/1 var(--sans); color: var(--ink-2);
+  background: transparent; border-radius: 6px;
+  transition: background var(--d-micro) var(--ease), color var(--d-micro) var(--ease);
+}
+.segmented > button[aria-selected="true"] {
+  background: var(--surface); color: var(--ink); box-shadow: var(--e-1);
+}
+
+.swatch {
+  width: 32px; height: 32px; border-radius: var(--r-chip);
+  border: 1px solid var(--line-strong); cursor: pointer; padding: 0;
+}
+.swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+
+/* --------------------------------------------------------------------------
+   7. PANELS, CARDS, TABLES, CHIPS
+   -------------------------------------------------------------------------- */
+.panel {
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--r-panel); padding: var(--s-5);
+}
+.panel__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); margin-bottom: var(--s-4); }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-panel); overflow: hidden; }
+.card:hover { border-color: var(--line-strong); }
+
+.chip {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 3px var(--s-2); border-radius: var(--r-chip);
+  font-size: var(--t-13); color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line);
+}
+.chip--selected { background: var(--select-soft); border-color: var(--select); color: var(--select); }
+
+.table { width: 100%; border-collapse: collapse; font-size: var(--t-15); }
+.table th {
+  text-align: left; font: 500 var(--t-11)/1 var(--display);
+  letter-spacing: .09em; text-transform: uppercase; color: var(--ink-3);
+  padding: 0 var(--s-3) var(--s-2); border-bottom: 1px solid var(--line);
+}
+.table td { padding: var(--s-3); border-bottom: 1px solid var(--line); }
+.table tr:last-child td { border-bottom: 0; }
+
+/* --------------------------------------------------------------------------
+   8. STATUS DOTS & VERDICT BANNERS (four states)
+   -------------------------------------------------------------------------- */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; background: var(--ink-3); }
+.dot--ok { background: var(--ok); }
+.dot--warn { background: var(--warn); }
+.dot--err { background: var(--err); }
+.dot--busy { background: var(--accent); animation: pulse 1.4s var(--ease) infinite; }
+@keyframes pulse { 50% { opacity: .35; } }
+
+.verdict {
+  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s-3);
+  align-items: start;
+  padding: var(--s-3) var(--s-4);
+  background: var(--surface); color: var(--ink);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--neutral);
+  border-radius: var(--r-ctl);
+}
+.verdict__title { font: 500 var(--t-15)/1.3 var(--display); }
+.verdict__detail { font-size: var(--t-13); color: var(--ink-2); }
+.verdict--confirmed   { border-left-color: var(--ok); }
+.verdict--checking    { border-left-color: var(--warn); background: var(--warn-soft); }
+.verdict--unconfirmed { border-left-color: var(--err); background: var(--err-soft); }
+.verdict--acknowledged{ border-left-color: var(--line-strong); background: var(--surface-2); }
+
+/* --------------------------------------------------------------------------
+   9. STEPPER, DROP ZONE, SKELETON, TOAST, TOOLTIP, CANVAS CLUSTER, MODAL
+   -------------------------------------------------------------------------- */
+.stepper { display: flex; align-items: center; gap: var(--s-2); }
+.stepper__rail { flex: 1; height: 3px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.stepper__fill { height: 100%; background: var(--accent); transition: width var(--d-std) var(--ease); }
+.stepper__count { font-family: var(--mono); font-size: var(--t-13); color: var(--ink-2); }
+
+.drop {
+  display: grid; place-items: center; gap: var(--s-2);
+  padding: var(--s-8) var(--s-5); text-align: center;
+  border: 1px dashed var(--line-strong); border-radius: var(--r-panel);
+  background: var(--surface);
+  transition: border-color var(--d-std) var(--ease), background var(--d-std) var(--ease);
+}
+.drop[data-over="true"] { border-color: var(--accent); background: var(--accent-soft); }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2), var(--line), var(--surface-2));
+  background-size: 200% 100%; border-radius: var(--r-chip);
+  animation: shimmer 1.4s linear infinite;
+}
+@keyframes shimmer { to { background-position: -200% 0; } }
+
+.toast {
+  display: flex; gap: var(--s-3); align-items: center;
+  padding: var(--s-3) var(--s-4); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-ctl); box-shadow: var(--e-2);
+}
+.tooltip {
+  padding: 6px var(--s-2); font-size: var(--t-13);
+  background: var(--ink); color: var(--paper); border-radius: var(--r-chip);
+}
+.cluster {
+  display: inline-flex; gap: var(--s-1); padding: var(--s-1);
+  background: color-mix(in oklab, var(--surface) 82%, transparent);
+  backdrop-filter: blur(12px) saturate(1.2);
+  border: 1px solid var(--line); border-radius: var(--r-pill); box-shadow: var(--e-2);
+}
+.modal {
+  width: min(520px, 92vw); background: var(--surface);
+  border: 1px solid var(--line); border-radius: var(--r-panel);
+  box-shadow: var(--e-2); padding: var(--s-5);
+}
+.scrim { position: fixed; inset: 0; background: rgba(20,18,15,.5); }
+
+.empty { display: grid; gap: var(--s-3); justify-items: start; padding: var(--s-7) var(--s-5); }
+.empty h3 { font-size: var(--t-20); }
+.empty p { color: var(--ink-2); max-width: 46ch; }
+
+/* --------------------------------------------------------------------------
+   10. LAYOUT — Review is two-column, collapsing at tablet
+   -------------------------------------------------------------------------- */
+.shell { max-width: 1320px; margin: 0 auto; padding: var(--s-5); }
+.review { display: grid; grid-template-columns: minmax(380px, 5fr) 7fr; gap: var(--s-5); align-items: start; }
+.studio { display: grid; grid-template-columns: 7fr minmax(320px, 4fr); gap: var(--s-5); align-items: start; }
+@media (max-width: 1024px) {
+  .review, .studio { grid-template-columns: 1fr; }
+  .review > .review__plan { order: -1; }   /* plan first: it is the hero */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+
+/* ==========================================================================
+   COMPATIBILITY — tokens the eight existing pages still reference
+   ==========================================================================
+
+   The design system replaces the palette but not, yet, the markup. Measured
+   before this merge: the app references 32 custom properties across its pages
+   and modules, and 13 of them have no definition in the new sheet.
+
+   They are not leftovers. Every one exists because DARK MODE needed it — the
+   drafting grid, the header's frosted pane, the hover wash, the knob on a
+   switch, the neutral chip fill, and the two "text ON a filled slab" colours,
+   which stop being white the moment the slab can be pale. Left undefined they
+   do not fall back to something sensible, they fall back to nothing, and the
+   light patch in a dark page comes straight back.
+
+   So each is re-expressed IN TERMS OF the new palette rather than pinned to a
+   literal. They inherit the new colours automatically, in all three theme
+   states, and they leave this file one at a time as each page is migrated to
+   the component classes above.
+
+   Do not add to this list. It is a bridge, and it is meant to get shorter. */
+
+:root {
+  --bg:           var(--paper);
+  --grid:         color-mix(in oklab, var(--ink) 3%, transparent);
+  --chrome:       color-mix(in oklab, var(--surface) 78%, transparent);
+  --hover:        var(--surface-2);
+  --hover-line:   var(--line-strong);
+  --ink-hover:    color-mix(in oklab, var(--ink) 88%, var(--paper));
+  --on-ink:       var(--surface);
+  --on-accent:    var(--accent-ink);
+  --knob:         #FFFFFF;
+  --fill-soft:    var(--neutral-soft);
+  /* A PANEL IS NOT ELEVATED. It sits in the flow of the page; the things that
+     genuinely float -- menus, dialogs, toasts, the label tool -- keep --e-2 and
+     earn it. --e-1 gave .panel a 6%-alpha smudge plus `0 0 0 1px var(--line)`,
+     a second hairline drawn immediately outside the 1px border .panel already
+     has, in the same colour: the border rendered at double weight. Measured
+     side by side at 4x in both themes, removing it costs one hairline of edge
+     weight and nothing else. --e-0 rather than `none` so the token stays the
+     one place elevation is named. */
+  --shadow-panel: var(--e-0);
+}
+
+/* The one that cannot be derived: on a dark page the knob still has to read as
+   light against a filled track, and deriving it from --surface would make it
+   the same colour as the panel behind the switch. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --knob: #ECEAE5; }
+}
+:root[data-theme="dark"] { --knob: #ECEAE5; }
+
+/* ==========================================================================
+   LEGACY PAGE RULES — carried across unchanged, now on the new tokens
+   ==========================================================================
+
+   Measured before this merge: the pages use 112 distinct classes. Forty were
+   defined here; the other seventy-two live in per-page <style> blocks. The
+   forty below are carried over verbatim so that no screen loses its styling on
+   the day the palette changes, and because they reference tokens rather than
+   literals they pick up the new colours for free.
+
+   This section is what the migration deletes, screen by screen, as each one
+   moves to the component classes above. */
+
+* { box-sizing: border-box; }
+
+/* Type and spacing ride on rem so the user's own text-size setting scales the
+   whole interface, not just stray strings (apple-design §15, Dynamic Type). */
+body {
+  margin: 0;
+  font: 0.9375rem/1.55 var(--sans);   /* --t-15, in rem so Dynamic Type still scales it */
+  color: var(--ink);
+  background-color: var(--paper);
+  /* faint drafting grid, visible only in the gutters between panels */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* ---- app chrome: sticky translucent title-block header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: var(--s-5);
+  min-height: 56px;
+  padding-block: 0;
+  background: var(--chrome);
+  -webkit-backdrop-filter: blur(14px) saturate(1.5);
+  backdrop-filter: blur(14px) saturate(1.5);
+  border-bottom: 1px solid var(--line);
+  /* THE HEADER NEVER WIDENS THE PAGE.
+     On a real project it carries the brand, a breadcrumb, four pipeline steps,
+     two library links and the account block: 889px of content, measured. It
+     used to scroll internally only below 600px, so on anything from 601px to
+     about 890px (a small laptop, a split screen, a tablet) it pushed the
+     document 249px wide and gave EVERY page a horizontal scrollbar.
+     Content that does not fit now scrolls inside the header instead, which is
+     the header's problem to have rather than the page's. The bar below 900px
+     spends width first so this is a fallback, not the usual state.
+     overflow-y is pinned because setting overflow-x alone computes the other
+     axis to auto as well, and the header is a single row that must never
+     scroll vertically. Safe here because nothing pops out of it: the account
+     control opens a native confirm, not a menu. */
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+}
+.app-header::-webkit-scrollbar { display: none; }
+
+/* Between phone and desktop, spend width before resorting to scrolling. The
+   step numbers and the project name in the breadcrumb are the first things
+   worth losing: the step names and the floor name still say where you are. */
+@media (max-width: 900px) {
+  /* THE PR MARK IS THIS LINK: both go to /projects.html. Measured at 768px, the
+     header's content came to 760px in 752px of room and scrolled by eight, and
+     at 375px keeping both pushed the library links onto a third row and gave the
+     header 187px of an 812px screen. Dropping the duplicate is what lets the bar
+     stay one row on a tablet and two on a phone rather than scrolling on both. */
+  .app-header .libnav a[data-dup] { display: none; }
+  /* Gap only. The inset is the shared gutter, and restating it here put the
+     header on a 16px edge while the content below it sat on 24. */
+  .app-header { gap: var(--s-3); }
+  .pipeline, .libnav { gap: 0; }
+  .pipeline a, .libnav a, .pipeline .step-locked { padding: 0 8px; }
+  .pipeline a .n, .pipeline .step-locked .n { display: none; }
+  .crumbs .proj, .crumbs .sep { display: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .app-header { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+}
+/* Temporary square wordmark — a placeholder that reserves the logo's slot and,
+   because it is compact, leaves the nav room to breathe on every width.
+   Swap the "SP" text for an <img> logo later without touching layout. */
+.brand {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--on-ink);
+  background: var(--ink);
+  border-radius: 8px;
+  text-decoration: none;
+}
+.pipeline, .libnav { display: flex; gap: 2px; }
+.pipeline a, .libnav a {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  height: 56px;
+  padding: 0 var(--s-3);
+  /* Roboto, not the body face. The design system splits the two: Lato carries
+     prose the reader reads, Roboto carries the interface's own words —
+     headings, labels, eyebrows. Navigation is the interface naming itself, so
+     it belongs to the display face, and at 500 it holds its own beside the
+     breadcrumb without shouting. */
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 0.8125rem;
+  color: var(--ink-2);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.pipeline a .n { font: 500 var(--t-11)/1 var(--mono); color: var(--ink-3); letter-spacing: 0.04em; }
+.pipeline a:hover, .libnav a:hover { color: var(--ink); }
+.pipeline a[aria-current="page"], .libnav a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+  border-bottom-color: var(--accent);
+}
+.pipeline a[aria-current="page"] .n { color: var(--accent); }
+/* A step this floor has not reached yet: shown so the sequence stays legible,
+   but not a link — the page behind it would have nothing to work on. */
+.pipeline .step-locked {
+  display: flex; align-items: center; gap: 8px; height: 56px; padding: 0 12px;
+  font-size: 0.8125rem; color: var(--ink-3); cursor: default;
+}
+.pipeline .step-locked .n { font: 500 var(--t-11)/1 var(--mono); color: var(--ink-3); letter-spacing: 0.04em; }
+/* Which floor the pipeline is about. Without it the progress row is unanchored.
+   Link parts are links; the current floor is plain text with aria-current. */
+.crumbs {
+  display: flex; align-items: center; gap: var(--s-2); height: 56px;
+  margin-left: var(--s-2); padding-right: var(--s-3);
+  font-size: 0.8125rem; color: var(--ink-3); white-space: nowrap;
+  border-left: 1px solid var(--line); padding-left: var(--s-4);  /* detach from the mark */
+}
+.crumbs a { color: var(--ink-3); text-decoration: none; }
+.crumbs a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.crumbs .sep { color: var(--line-strong); }
+.crumbs b { font-weight: 600; color: var(--ink); }
+.spacer { flex: 1; }
+
+/* ---- account, at the end of the header
+   Hidden entirely where no Supabase is configured: the product runs without
+   accounts and a dead control is worse than no control. */
+.acct { display: flex; align-items: center; gap: 8px; margin-left: 12px; }
+.acct .acct-name {
+  max-width: 15ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+/* The number that decides whether the next render happens. Finding that out
+   from a failed render is the wrong moment, so it sits beside the name. */
+.acct-credits {
+  /* MONO, because this is a number the customer compares against a price.
+     The design system puts every dimension, area and credit count in the mono
+     face for one reason: those are figures, not words, and a proportional face
+     makes 9 and 11 render at widths that do not reflect their values. It
+     matters most right here — this is the balance someone checks before
+     pressing a 44px yellow button that spends one of them. */
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums; font-weight: 600; font-size: 0.75rem;
+  color: var(--ink-3); background: var(--fill-soft);
+  border: 1px solid var(--line); border-radius: 999px; padding: 0.15em 0.6em;
+}
+.acct-credits.low { color: var(--err); border-color: color-mix(in oklab, var(--err) 45%, transparent); }
+
+/* WORK THAT DID NOT REACH THE ACCOUNT.
+   Loud on purpose, and the only thing in this header that is. Everything else
+   here reports a state the customer chose; this reports one they did not, about
+   the one thing they cannot afford to be wrong about — where their work is. It
+   sits to the LEFT of the credit count so it reads before the name, because it
+   is the sentence that changes what they should do next. */
+.acct-sync-warn {
+  font-size: 0.75rem; font-weight: 600; white-space: nowrap;
+  color: var(--err);
+  background: color-mix(in oklab, var(--err) 10%, transparent);
+  border: 1px solid color-mix(in oklab, var(--err) 45%, transparent);
+  border-radius: 999px; padding: 0.15em 0.7em;
+}
+/* "Syncing…" is the same shape without the alarm: it is the retry working, and
+   a spinner that looks like the failure it replaced would teach people to
+   ignore the failure. */
+span.acct-sync-warn {
+  color: var(--ink-3); background: var(--fill-soft); border-color: var(--line);
+  font-weight: 500;
+}
+button.acct-sync-warn:hover { background: color-mix(in oklab, var(--err) 18%, transparent); }
+button.acct-sync-warn[disabled] { opacity: 0.55; }
+
+/* ---- sign-in dialog */
+.auth-dialog {
+  border: 1px solid var(--line); border-radius: 14px; padding: 0;
+  background: var(--surface); color: var(--ink);
+  /* 380 was measured too narrow by its own footer. In create-account mode the
+     aside reads "I already have an account" and the confirm reads "Create
+     account", and the three buttons came to 368px inside a 331px row — so the
+     aside was pushed to x = -37 and clipped by the dialog's own edge. */
+  /* Same elevation as every other dialog — see the note on `dialog` above. */
+  width: min(92vw, 420px); box-shadow: var(--e-2);
+}
+.auth-dialog::backdrop { background: rgba(20,18,15,.38); }
+/* PROXIMITY HAS TO MATCH THE GROUPING. A uniform 8px gap plus the label's own
+   bottom margin put each label 12px above the field it names and only 8px below
+   the field above it — so every label read as belonging to the wrong control.
+   The label now sits tight to its own field and the gap opens between groups. */
+/* A LABEL THAT STARTS INSIDE THE FIELD AND MOVES UP.
+   Three label-above-input pairs is six rows of chrome for three answers, and
+   this dialog already carries a Google button and a divider above them.
+   NOT `.field`, deliberately. Nothing in this app has ever used that class and
+   a rule once hung off `.field label` and styled nothing — see the note at
+   `.fld`. A name that is already a known ghost is not a name to reuse. */
+.fld-float { position: relative; margin-top: var(--s-3); }
+/* QUALIFIED BY `.auth-form`, AND THAT IS THE WHOLE BUG.
+   This was `.fld-float input`, which is (0,1,1) — exactly the specificity of
+   the `input:not([type=checkbox], …)` rule further down this file, which sets
+   the `padding` SHORTHAND. Equal specificity, and that rule is later, so it
+   won and reset padding-top to 8px. The label still floated to its place at the
+   top of the field, but there was no longer any room reserved for it, so the
+   value was typed straight through it: "Email" and the address on one line,
+   which is what Saman photographed. Measured, not guessed — computed
+   padding-top read 8px against the 16px this rule asked for.
+   The shorthand is the trap. Any component that reserves padding on one side of
+   a field has to outrank it, so this is qualified rather than moved: order
+   would fix it too, and would break again the next time the file is
+   reorganised. */
+.auth-form .fld-float input {
+  /* Room at the top for the label to move into, so the value does not shift
+     when it does — and enough of it that the two boxes do not touch. The label
+     occupies 7px to 18px; the value starts at 21px. */
+  padding-top: calc(var(--s-4) + var(--s-1));
+  padding-bottom: var(--s-2);
+}
+.fld-float label {
+  position: absolute; left: var(--s-3); top: 50%; transform: translateY(-50%);
+  color: var(--ink-3); font-size: 0.8125rem;
+  /* Fixed, so the floated label's box is exactly its font size and the gap
+     below it can be reasoned about rather than inherited from `normal`. */
+  line-height: 1;
+  /* Clicks belong to the field underneath; the `for` attribute already gives
+     the label its own job for assistive technology. */
+  pointer-events: none;
+  transition: top 120ms ease, font-size 120ms ease, color 120ms ease;
+}
+/* Empty AND unfocused is the only state where it sits in the middle. Both
+   conditions, because a focused empty field is being answered right now and the
+   label has to be out of the way of the caret. */
+.fld-float input:focus + label,
+.fld-float input:not(:placeholder-shown) + label {
+  top: 7px; transform: none;
+  font-size: var(--t-11); font-weight: 500;
+}
+.fld-float input:focus + label { color: var(--accent); }
+
+/* CONTINUE WITH GOOGLE.
+   Full width, because it is one of two roads and not an ornament beside the
+   other one, and it is the road most people will take: no password to invent,
+   and the same button signs in and signs up.
+   SECONDARY, not primary. The primary in this dialog is the submit at the
+   bottom, and two filled buttons of equal weight in one card is a form with no
+   answer to "which one". Google's own guidance allows a neutral surface with
+   the mark and the wording intact, which is what this is. */
+.auth-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; margin-top: var(--s-3); font-weight: 600;
+}
+.auth-google svg { flex: none; }
+/* The mark keeps its own colours in both themes — it is a trademark, not an
+   icon we are free to re-tint. */
+.auth-google[disabled] { opacity: 0.6; }
+
+/* A rule with the reason written in the middle of it, rather than a bare line.
+   "or" alone leaves the reader to work out what the two halves are. */
+.auth-or {
+  display: flex; align-items: center; gap: 10px;
+  margin: var(--s-3) 0 0; color: var(--ink-3); font-size: var(--t-12);
+}
+.auth-or::before, .auth-or::after {
+  content: ''; flex: 1; height: 1px; background: var(--line);
+}
+
+.auth-form { display: flex; flex-direction: column; gap: 6px; padding: 24px; }
+.auth-form .fld { margin: var(--s-2) 0 0; }
+.auth-form h3 { margin: 0; font-size: 1.05rem; }
+.auth-form .subtle { margin: 0 0 8px; }
+.auth-form input { width: 100%; box-sizing: border-box; }
+/* A DIALOG FOOTER IS ONE ROW: what you might do on the left, the way out on the
+   right. This had `align-items: center` and no `display: flex`, which does
+   nothing at all — so the footer's buttons stacked as blocks, and because a
+   destructive button carries a border and a quiet one does not, the two ended up
+   at visibly different left edges. */
+/* WRAPPING IS THE SAFETY NET, not the normal case. The width above is set so
+   the longest footer fits on one line; this makes sure that when it does not —
+   a longer string, a bigger font size, a narrow phone — the row drops a button
+   onto a second line instead of pushing one off the left edge, which is what a
+   nowrap flex row does with an auto margin and no room. */
+.auth-actions {
+  display: flex; align-items: center; justify-content: flex-end;
+  flex-wrap: wrap; row-gap: var(--s-2);
+  gap: var(--s-2); margin-top: var(--s-4);
+}
+/* Anything the footer marks as secondary sits opposite the confirm. */
+.auth-actions > .act-aside { margin-right: auto; }
+/* AN INFORMATION ICON, and the note it opens. For the one thing on a screen
+   that a person cannot work out by looking at it. It is a real button, not a
+   title attribute: a tooltip cannot be reached by touch and cannot be read by
+   someone who needs longer than a hover. */
+/* A real button variant, not a one-off class. The smoke test asks every button
+   to declare what KIND of button it is, and an information icon is a kind. */
+/* IT SAYS WHAT IT DOES. A bare circled "i" is recognised by people who already
+   know the product and read past by everyone else, and at 20px it is also under
+   any reasonable touch target. So the label IS the control: the word carries the
+   meaning, the mark makes it findable, and the chevron says it opens something.
+   It reads as pressable at a glance, which a glyph on its own does not. */
+.btn--info {
+  min-height: 32px;
+  margin-left: var(--s-3); padding: 0 var(--s-3) 0 var(--s-2);
+  gap: var(--s-2);
+  border-radius: var(--r-pill);
+  border-color: var(--line-strong); background: var(--surface-2);
+  color: var(--ink-2); font: 600 var(--t-12)/1 var(--sans);
+  vertical-align: middle;
+}
+.btn--info > [aria-hidden="true"]:first-child {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.05rem; height: 1.05rem; border-radius: var(--r-pill);
+  background: var(--ink-3); color: var(--surface); font-size: 0.6875rem;
+}
+/* Turns a quarter when the note is open, so the control shows its own state
+   rather than leaving the reader to look elsewhere for it. */
+.btn--info-chev {
+  transition: transform var(--d-micro) var(--ease);
+  font-size: 1rem; line-height: 1;
+}
+.btn--info[aria-expanded="true"] .btn--info-chev { transform: rotate(90deg); }
+.btn--info:hover { color: var(--ink); border-color: var(--accent); }
+.btn--info:hover > [aria-hidden="true"]:first-child { background: var(--accent); }
+.btn--info[aria-expanded="true"] {
+  color: var(--ink); border-color: var(--accent); background: var(--accent-soft);
+}
+.btn--info[aria-expanded="true"] > [aria-hidden="true"]:first-child { background: var(--accent); }
+@media (pointer: coarse) { .btn--info { min-height: 44px; } }
+/* The heading is a line of text with a control on it, so it must be allowed to
+   wrap on a narrow screen instead of pushing the control off the side. */
+h3:has(.btn--info) { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-1); }
+.infonote {
+  margin: var(--s-3) 0 0;
+  padding: var(--s-3) var(--s-4);
+  border-radius: var(--r-ctl);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  font-size: var(--t-13); line-height: 1.55; color: var(--ink-2);
+}
+.infonote p { margin: 0 0 var(--s-2); }
+.infonote p:last-child { margin-bottom: 0; }
+.infonote b { color: var(--ink); font-weight: 600; }
+.auth-msg {
+  margin: 8px 0 0; font-size: 0.8rem; line-height: 1.4;
+  color: var(--err);
+}
+.auth-msg.ok { color: var(--ok); }
+/* Neutral, for a message that explains rather than reports a failure — "sign in
+   to start a project" is the rule, not an error the person made. */
+.auth-msg.info { color: var(--ink-2); }
+button.link {
+  background: none; border: none; padding: 0; font-size: 0.78rem;
+  color: var(--ink-3); text-decoration: underline; text-underline-offset: 3px;
+  cursor: pointer;
+}
+button.link:hover { color: var(--ink); }
+
+@media (max-width: 640px) {
+  /* A 24px gutter on a 320px screen spends 15% of the width on nothing. */
+  :root { --gutter: var(--s-4); }
+  /* On a narrow header the name is the first thing worth dropping — the credit
+     count is what the user actually needs to see. */
+  .acct .acct-name { max-width: 8ch; }
+}
+
+/* ONE LEFT EDGE AND ONE RIGHT EDGE, for every band of every page.
+   `max(gutter, (100% - max) / 2)` keeps the header's background full bleed while
+   its contents sit on the same column as the cards below. Centring each band
+   separately with its own max-width is what let them drift apart. */
+.app-header,
+.page-head,
+body main,
+.page-column {
+  padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+}
+
+/* ---- page head: title row under the chrome */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+  padding-block: var(--s-5) var(--s-1);
+}
+.page-head h1 {
+  margin: 0;
+  /* Fluid, and both ends sit on the type scale: 17px on phones to 20px on
+     desktop. It used to run 18.4px to 21px, which is on no scale at either end. */
+  font-size: clamp(1.0625rem, 0.95rem + 0.6vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+.page-head .sub { color: var(--ink-2); font-size: 0.8125rem; }
+.page-head .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+/* ---- panels & sections */
+/* RESPONSIVE PADDING, on the scale at both ends. It was a flat 20px: on the 4
+   grid, but not a step of this scale, and 20px of inset on a 320px screen is
+   12% of the width spent on nothing. 16 where space is scarce, 24 where it is
+   not. */
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-panel);
+  padding: var(--s-4);
+  box-shadow: var(--shadow-panel);
+}
+@media (min-width: 640px) {
+  .panel { padding: var(--s-5); }
+}
+/* A SECTION HEADING, not an eyebrow.
+   These were 11px uppercase in --ink-2 while the body text beneath them was
+   13px in --ink: the heading was smaller and paler than its own content, and
+   carried its rank only through capitals and letter-spacing. Nothing said "this
+   is a new section" at a glance; you had to read to find out where you were.
+   Size, weight and colour now agree with each other, and sentence case is
+   simply faster to read than caps at this length. */
+.panel h3 {
+  margin: 0 0 12px;
+  font-size: 0.9375rem;      /* 15px against 13px body */
+  font-weight: 600;
+  letter-spacing: -0.005em;  /* the small negative tracking larger type wants */
+  line-height: 1.3;
+  color: var(--ink);
+  text-transform: none;
+}
+/* Still available where something genuinely IS a label above a group rather
+   than the title of a section. */
+.eyebrow {
+  margin: 0 0 16px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+/* ---- controls
+   Sized in rem/em, never px. Measured before this change: with the user's text
+   size raised, body copy went 14px → 21px while every button stayed 13px and
+   31px tall — so the further someone turns text up for legibility, the smaller
+   the controls become relative to everything around them. Font size follows the
+   root (rem); padding follows the button's own font (em), so a control keeps
+   its proportions at any size. */
+button {
+  font: 500 0.8125rem var(--sans);
+  padding: 0.54em 1.08em;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  cursor: pointer;
+  /* A label must not break mid-phrase. In a cramped row "Open Studio" wrapped
+     to two lines and stood 47px tall beside 31px siblings of the same class,
+     and "Re-review" 36px beside 22px ones — the same control reading as two
+     different sizes depending on where it happened to sit. Rows that cannot fit
+     scroll in their own box instead. */
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease;
+}
+button:hover { background: var(--hover); border-color: var(--hover-line); }
+/* Press feedback lands on pointer-DOWN, not on release — waiting for the click
+   to acknowledge a press is the moment an interface stops feeling direct
+   (apple-design §1). Links that act as buttons get it too: they were missed
+   because they are not <button>, and a control that looks pressable and does
+   not react reads as broken. */
+button:active,
+a.brand:active, a.linkbtn:active { transform: scale(0.97); }
+/* A disabled control must RECEDE. As a filled grey slab it outweighed the
+   live bordered button beside it, so the one card where the user most needed
+   direction pointed at the thing they could not do. */
+button:disabled {
+  background: transparent;
+  border-color: var(--line);
+  color: var(--ink-3);
+  cursor: not-allowed;
+  transform: none;
+}
+button:disabled:hover { background: transparent; border-color: var(--line); }
+/* A secondary action that should stay available without competing with the
+   primary one. Three equal-weight buttons in a row read as three choices; this
+   leaves exactly one thing that looks like the thing to do. */
+button.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+/* Touch targets.
+   Measured on the Projects page: 12 of 13 controls were under Apple's 44px
+   minimum, `.quiet` at 22px — and "Delete project" is a `.quiet`. A destructive
+   action half the height of a fingertip is a mis-tap waiting to happen.
+   Gated on `pointer: coarse` on purpose: 44px is a FINGER minimum, and applying
+   it to a mouse-driven desktop would inflate a dense working UI for no gain.
+   Padding grows rather than the type, so the visual weight is unchanged. */
+@media (pointer: coarse) {
+  button,
+  .pipeline a, .libnav a {
+    min-height: 44px;
+  }
+  /* WIDTH TOO. Only the height was pinned, so a step's target was as wide as
+     its word: "Upload" measured 57px and "3D" measured 32, on the same row of
+     the same control. Measured under device emulation, not in a narrow
+     desktop window, where the rule does not apply at all. */
+  .pipeline a, .libnav a { min-width: 44px; }
+  button { display: inline-flex; align-items: center; justify-content: center; }
+      /* Inputs are targets too — a 31px field is as hard to hit as a 31px button. */
+  /* THE SAME INCOMPLETE LIST THAT LEFT email AND password UNSTYLED left them
+     under the touch minimum too: 37px against 44px, on the one form somebody
+     fills in on a phone. The audit could not catch it because it cannot see
+     inside a closed dialog. Named by exclusion here for the same reason as the
+     styling rule below. */
+  input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"],
+            [type="button"], [type="submit"], [type="reset"], [type="image"]),
+  select { min-height: 44px; }
+
+  /* MEASURED under touch emulation, and these four were missed the first time
+     the rule above was written — it named buttons, selects and text fields and
+     stopped there.
+
+     The slider is the worst of them and the reason this is not cosmetic: it is
+     a control you DRAG, and it stood 16px tall. A drag target has to be caught
+     before it can be moved, so a thin one fails twice. The box grows to 44px
+     while the track stays where it was — the visual weight is unchanged, only
+     the reachable area. */
+  input[type="range"] {
+    /* Box grows to a fingertip; the track keeps its native look so
+       `accent-color` still paints the filled portion, which is what tells you
+       where in the range you are. Overriding the track to get a bigger thumb
+       cost that fill — a worse control, just an easier one to hit. */
+    height: 44px;
+  }
+
+  /* A colour swatch is a button that happens to be a colour. 24px is a chip. */
+  input[type="color"] { min-width: 44px; min-height: 44px; }
+
+  /* Links that act as buttons are buttons. `.brand` is the way back to the
+     projects list, which is the one control someone reaches for when lost. */
+  a.brand, a.linkbtn {
+    min-height: 44px; min-width: 44px;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* NAMED BY WHAT A FIELD IS NOT, because naming what it is kept missing some.
+   This read `input[type="text"], input[type="number"]` and stopped there, so
+   the sign-in dialog's email and password fields — the only two of their kind
+   in the app — fell through to the browser's own styling: 21px tall, 1px of
+   padding, square corners and a grey system border, on a dark dialog. An input
+   with no type attribute at all is a text field too, and it was missed as well.
+   A negation covers every text-like type there is and every one added later. */
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"],
+          [type="file"], [type="button"], [type="submit"], [type="reset"],
+          [type="image"]),
+select, textarea {
+  font: inherit;
+  /* In rem, so a bigger text setting grows the field with the text instead of
+     cropping it. Same reason the padding below is not in pixels. */
+  font-size: 0.8125rem;
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  color: var(--ink);
+  /* RECESSED, WHICH IS WHAT --surface-2 IS FOR. A field painted --surface sits
+     on panels and dialogs that are also --surface, so the only thing marking it
+     as a field was a hairline — and at fractional device pixels that hairline
+     is barely there. This was invisible while dialogs were accidentally white:
+     the field looked dark against them. Fixing the dialog exposed it. */
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+}
+input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"],
+          [type="file"], [type="button"], [type="submit"], [type="reset"],
+          [type="image"]):focus,
+select:focus, textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* THE FIELD LABEL. This styling used to hang off `.field label`, and nothing in
+   the app has ever carried a `.field` class — every label in Studio, Projects
+   and the auth dialog says `.fld`. So thirteen labels rendered at the inherited
+   body size, heavier than the text in the field they name, which inverts the
+   hierarchy: the label should recede and the value should lead. */
+.fld {
+  display: block;
+  font-size: var(--t-12);
+  font-weight: 500;
+  color: var(--ink-2);
+  margin: 0 0 var(--s-1);
+}
+/* ---- SWITCH.
+   Every on/off in the product is one of these. A native checkbox is a 13px
+   target that says nothing about which state it is in until you look closely,
+   and on a phone it is genuinely hard to hit; a switch reads its state from
+   across the room and gives the whole row — label included — as the tap area.
+
+   The real <input type=checkbox> is still there, only visually replaced. It
+   keeps the checkbox role, the label association, keyboard focus, Space to
+   toggle and `.checked` in JS, so every existing handler and every existing
+   test keeps working. `appearance: none` rather than hiding it, because a
+   visually-hidden input takes focus somewhere the focus ring cannot be seen. */
+label.check {
+  display: flex; gap: 12px; align-items: center;
+  font-size: 13px; margin: 8px 0;
+  min-height: 32px;              /* the row is the target, not the switch */
+  cursor: pointer;
+  user-select: none;
+}
+label.check > input[type="checkbox"],
+input[type="checkbox"].switch {
+  appearance: none; -webkit-appearance: none;
+  flex: none;
+  position: relative;
+  width: 38px; height: 22px; margin: 0; padding: 0;
+  border-radius: 999px;
+  background: var(--line-strong);
+  border: none;
+  cursor: pointer;
+  /* Colour and knob travel together, and the knob leads slightly — the motion
+     points at the state it is going to (hint in the direction of the gesture). */
+  transition: background-color .18s cubic-bezier(.32,.72,0,1);
+}
+label.check > input[type="checkbox"]::after,
+input[type="checkbox"].switch::after {
+  content: "";
+  position: absolute; top: 2px; left: 2px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: 0 1px 2px rgba(28, 25, 20, .28);
+  transition: transform .18s cubic-bezier(.32,.72,0,1);
+}
+label.check > input[type="checkbox"]:checked,
+input[type="checkbox"].switch:checked { background: var(--accent); }
+label.check > input[type="checkbox"]:checked::after,
+input[type="checkbox"].switch:checked::after { transform: translateX(16px); }
+label.check > input[type="checkbox"]:focus-visible,
+input[type="checkbox"].switch:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+/* A switch that is waiting on something, not one that is broken: the row dims
+   and stops responding, and the reason is printed underneath it. */
+label.check.is-locked { opacity: .5; cursor: not-allowed; }
+label.check > input[type="checkbox"]:disabled { cursor: not-allowed; }
+label.check:hover > input[type="checkbox"]:not(:checked),
+label:hover > input[type="checkbox"].switch:not(:checked) { background: var(--ink-3); }
+@media (prefers-reduced-motion: reduce) {
+  label.check > input[type="checkbox"],
+  label.check > input[type="checkbox"]::after,
+  input[type="checkbox"].switch,
+  input[type="checkbox"].switch::after { transition: none; }
+}
+/* House-style rules are lists, so the box must read as one: monospace keeps
+   the arrow column aligned and makes a stray comma visible. */
+textarea { resize: vertical; line-height: 1.5;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
+
+/* The `hidden` attribute comes from the UA stylesheet at the lowest possible
+   weight, so ANY author rule that sets `display` silently outranks it and the
+   element stays on screen while the code believes it is gone. That is not a
+   hypothetical: `.roles { display: block }` kept Studio's Brand colour swatch
+   visible with the tint checkbox switched OFF, and `.roles { display: grid }`
+   did the same in the brand kit — a control that changes nothing, sitting in
+   front of the user, which is precisely what the rest of this file works to
+   avoid. One rule closes it everywhere, including for elements added later.
+   `hidden` means hidden. */
+[hidden] { display: none !important; }
+
+/* ---- THE FILE PICKER LOOKS LIKE THE REST OF THE APP.
+   A visible <input type=file> renders the browser's own grey "Choose File | No
+   file chosen" — the one control on the Brand kit page that was not drawn by
+   this design system, in the middle of a form where every other field is. It
+   also says nothing useful: "No file chosen" beside a label that already reads
+   "Logo".
+   Styled through ::file-selector-button rather than the usual hide-and-label
+   trick, which needs markup on every page and takes the control off the tab
+   path unless the label is wired up exactly right — the fault this file has
+   already had to fix once, in Studio's colour swatches.
+   Inputs the page hides on purpose keep hiding: `[hidden]` above is
+   `!important`, and these rules never set display. */
+input[type="file"] {
+  font: inherit; color: var(--ink-2); font-size: var(--t-13);
+  max-width: 100%;
+}
+input[type="file"]::file-selector-button {
+  font: inherit; font-size: var(--t-13); font-weight: 600;
+  margin-right: var(--s-2); padding: 6px 12px;
+  min-height: 32px;
+  color: var(--ink); background: var(--surface);
+  border: 1px solid var(--line-strong); border-radius: var(--r-ctl);
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+input[type="file"]:hover::file-selector-button { border-color: var(--accent); }
+/* The ring goes on the INPUT, which is what actually takes focus. */
+input[type="file"]:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+/* ---- A TAB RUNNING YESTERDAY'S CODE says so, at the top, once. Not a toast:
+   it does not time out, because the fact does not stop being true, and the
+   reload it offers is the user's to press — this page may be holding a review
+   nobody has confirmed yet. */
+.buildbar {
+  position: sticky; top: 0; z-index: 60;
+  display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap;
+  padding: var(--s-2) var(--s-4);
+  background: var(--accent-soft); color: var(--ink);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--t-13);
+}
+
+/* ---- DISCLOSURE. One fold, shared by Review and Studio, because a control
+   that behaves one way on one page and another way on the next is two controls
+   to learn. It lived in both files separately and had already started to
+   differ. The summary is the tap target, so it gets real padding — as a bare
+   line of 12px text it measured 18px tall against the 44px everything else on
+   a phone is built to. */
+.more { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 8px; }
+.more > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--ink-2);
+  list-style: none;
+  padding: 8px 2px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  border-radius: 5px;
+}
+.more > summary::-webkit-details-marker { display: none; }
+.more > summary::before { content: '\25B8'; color: var(--ink-3); margin-right: 4px; }
+.more[open] > summary::before { content: '\25BE'; }
+.more > summary:hover { color: var(--ink); }
+.more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* A setting left off while folded away has to be readable from the summary. */
+.more > summary .flag { color: var(--warn); }
+
+input[type="color"] {
+  width: 100%;
+  height: 32px;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  cursor: pointer;
+  /* drop the native color-well chrome (rainbow swatch) — show a clean solid fill */
+  -webkit-appearance: none;
+  appearance: none;
+  overflow: hidden;
+}
+/* Hide the native swatch entirely; the input's own background-color (kept in
+   sync with .value by JS) is the visible solid fill. Deterministic across the
+   quirky headless-Chromium color-well rendering. */
+input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+input[type="color"]::-webkit-color-swatch { border: none; background: transparent; }
+input[type="color"]::-moz-color-swatch { border: none; background: transparent; }
+input[type="range"] { accent-color: var(--accent); }
+
+/* ---- data from the plan (transcribed values) reads as drafting annotation */
+.data { font: 12px var(--mono); letter-spacing: 0.01em; }
+
+/* ---- tables */
+table { border-collapse: collapse; width: 100%; font-size: 13px; }
+th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line-strong);
+}
+td { text-align: left; padding: var(--s-3); border-bottom: 1px solid var(--line); }
+
+/* ---- chips & messages */
+.chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 500;
+  padding: var(--s-1) var(--s-3);
+  border-radius: 999px;
+  background: var(--fill-soft);
+  color: var(--ink-2);
+}
+.chip.confirmed, .chip.ok { background: var(--ok-soft); color: var(--ok); }
+.chip.busy { background: var(--warn-soft); color: var(--warn); }
+/* Reviewed but not yet rendered — distinct from "ready", which has an image. */
+.chip.accent { background: var(--accent-soft); color: var(--accent); }
+.chip.live { background: var(--ok-soft); color: var(--ok); }
+/* "Sample" — the one label that must survive a glance at a busy list. */
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+
+/* First run, and any time the list is emptied. One heading, one sentence, and
+   the two things a person can actually do — the primary weight on making
+   something of their own, the sample beside it as an offer, not a default. */
+.empty-state {
+  /* ACROSS THE WHOLE ROW, not into the first column.
+     Its only parent is the projects grid, so without this it becomes one grid
+     item in track one and the auto margins have nothing to centre against —
+     on a wide screen the whole empty state sat in the left card slot while the
+     rest of the page stayed blank. Harmless anywhere the parent is not a grid. */
+  grid-column: 1 / -1;
+  max-width: 34rem;
+  margin: clamp(2rem, 8vh, 5rem) auto;
+  padding: 0 1.25rem;
+  text-align: center;
+}
+.empty-state h2 { font-size: 1.375rem; margin: 0 0 0.5rem; }
+.empty-state p { margin: 0; line-height: 1.55; }
+.empty-state .row { flex-wrap: wrap; }
+.msg { padding: var(--s-3) var(--s-4); border-radius: var(--r-ctl); margin: var(--s-2) 0; font-size: var(--t-13); }
+.msg.err { background: var(--err-soft); color: var(--err); }
+.msg.warn { background: var(--warn-soft); color: var(--warn); }
+.msg.ok { background: var(--ok-soft); color: var(--ok); }
+.subtle { color: var(--ink-2); font-size: 12px; }
+/* Studio's label checklist: outstanding work is stated plainly, and finishing
+   it is the only state that earns colour. */
+.subtle.done { color: var(--ok, #2f7a4d); }
+
+canvas.view, canvas.preview { border: 1px solid var(--line); border-radius: 6px; }
+
+/* A DIALOG PAINTS ITS OWN SURFACE. This rule set the border, the radius and the
+   padding and left background and colour to the browser, whose default is
+   white — so in dark mode every dialog on every page came up as a white card
+   printing near-white token text on it. Add-a-floor was the one reported; the
+   name, reuse and history dialogs had it too, because they are all bare
+   <dialog> and only .auth-dialog ever set a surface of its own. */
+dialog {
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-panel);
+  padding: 24px;
+  width: calc(100vw - 32px);
+  max-width: 460px;
+  font-size: 0.9375rem;   /* --t-15 */
+  background: var(--surface);
+  color: var(--ink);
+  /* THE ELEVATION TOKEN, NOT A HAND-WRITTEN SHADOW.
+     This was `0 12px 40px rgba(33,30,25,.18)` and .auth-dialog carried a
+     similar one of its own — both written for the light theme, where a warm
+     shadow on warm paper reads as lift. In dark mode there is nothing for a
+     40-60px black blur to lift off: it lands on a backdrop that is already
+     dark and only 38% opaque, so the page shows through it and the card sits
+     in a soft grey smudge. Saman's word for it was unprofessional, and looking
+     at it with the shadow switched off settled which of the two it was.
+     --e-2 is defined per theme for exactly this, and it carries a hairline
+     ring, which is what actually separates a card from a dark ground. */
+  box-shadow: var(--e-2);
+}
+dialog::backdrop { background: rgba(33, 30, 25, 0.35); }
+
+/* ============================================================
+   Responsive. Two collapse points:
+   - ≤900px  multi-column page layouts stack to one column
+   - ≤600px  header tightens, page padding shrinks, controls
+             grow to a comfortable touch target
+   `body main` (0,0,2) outranks each page's own `main` rule
+   (0,0,1), so these win without !important or touching pages.
+   ============================================================ */
+@media (max-width: 900px) {
+  /* THE PLAN COMES FIRST WHEN THE COLUMNS STACK.
+     Studio's markup is <aside> controls then <section> preview, which is right
+     for two columns and wrong for one: measured on a phone, the controls are
+     1762px tall, so a builder scrolled that far past knobs to reach the drawing
+     they came to look at. Review already made this call for the same reason
+     ("plan first: it is the hero"); the rule now covers both, and 3D, by
+     targeting the last panel in <main> rather than a class only one page has. */
+  body main > aside ~ section.panel:last-of-type { order: -1; }
+  body main > aside { order: 0; }
+
+  /* minmax(0, 1fr), NOT 1fr. A `1fr` track is `minmax(auto, 1fr)`, and `auto`
+     resolves to min-content, so a single child wider than the column widens the
+     TRACK and pushes the page sideways. Measured on Studio at 320px: the format
+     tab strip wants 272px, the column grew to 313 inside a 288px content box,
+     and the page scrolled 9px. The floor of 0 lets the track be as narrow as
+     the screen and leaves the overflow to the child, where it can be handled. */
+  body main { grid-template-columns: minmax(0, 1fr) !important; }
+  /* `body .sideby` (0,1,1) outranks the page's own `.sideby` (0,1,0) so the
+     original / wireframe pair stacks and each stays legible on a phone. */
+  body .sideby { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+  /* THE GUTTER IS A TOKEN NOW, so this block no longer restates it. Setting
+     12px here while the content sat on a 16px gutter put the brand mark four
+     pixels outside the column it heads. */
+  .app-header {
+    gap: var(--s-2);
+    min-height: 52px;
+  }
+  /* TWO ROWS ON A PHONE, because one row does not fit and never did.
+     Measured at 375px: brand 44 + crumbs 80 + pipeline 212 + libnav 138 +
+     theme 44 + account 64 comes to 678px of content in a 375px bar. It scrolled
+     sideways, which put Sign in and the theme control off the screen entirely
+     and left them unreachable without dragging the header.
+     Row one is identity, where you are, and the account, with the account
+     pushed to the same gutter the mark sits on. Row two is navigation: the
+     pipeline steps and the library links, 350px of content that now fits.
+     The break is a zero-height flex item between the two order groups. */
+  .app-header { flex-wrap: wrap; padding-block: var(--s-1); }
+  .app-header .spacer { flex: 1; }
+  .app-header::after { content: ''; flex: 0 0 100%; height: 0; order: 1; }
+  .app-header .pipeline, .app-header .libnav { order: 2; }
+  /* Row two carries no gutter of its own: the steps line up under the mark. */
+  .app-header .pipeline { margin-inline-start: calc(var(--s-2) * -1); }
+  .pipeline, .libnav { gap: 0; }
+  .pipeline a, .libnav a, .pipeline .step-locked { padding: 0 8px; height: 52px; }
+  .pipeline a .n, .pipeline .step-locked .n { display: none; }  /* drop 01/02/03 to save width on phones */
+  /* Narrow: keep only where you ARE and the way out. The project name and the
+     extra separator are the first things worth losing. */
+  .crumbs { height: 52px; margin-left: 2px; padding: 0 8px 0 8px; gap: 4px; }
+  .crumbs .proj, .crumbs .sep { display: none; }   /* keep only where you are */
+
+  .page-head { padding-block: var(--s-4) var(--s-1); }
+  .page-head .actions { margin-left: 0; width: 100%; }
+
+  /* The shared column rule already resolves to the phone gutter here. */
+
+  /* comfortable tap targets (apple-design §10, ~44px) */
+  button { padding: 8px 16px; }
+    input[type="text"], input[type="number"], select { padding: var(--s-3); }
+  /* The whole row is the target, so it is the row that has to reach 44px — the
+     switch itself grows a little too, because a thumb is not a mouse pointer. */
+  label.check { min-height: 44px; }
+  label.check > input[type="checkbox"],
+  input[type="checkbox"].switch { width: 44px; height: 26px; }
+  label.check > input[type="checkbox"]::after,
+  input[type="checkbox"].switch::after { width: 22px; height: 22px; }
+  label.check > input[type="checkbox"]:checked::after,
+  input[type="checkbox"].switch:checked::after { transform: translateX(18px); }
+  .more > summary { min-height: 44px; padding: 12px 4px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+
+/* The theme control. It names the DESTINATION rather than the current state,
+   the same way the 3D view's look button does, because a control labelled with
+   where you already are reads as a status line and gets ignored. */
+.themebtn { flex: none; }

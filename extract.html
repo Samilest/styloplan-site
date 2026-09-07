@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Upload · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  main { padding-block: var(--s-2) var(--s-6); }
+  #drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-panel); padding: 48px 32px;
+          text-align: center; background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s; }
+  #drop:hover, #drop.over { border-color: var(--accent); background: #FBFAF7; }
+  #drop p { margin: 8px 0; color: var(--ink-2); font-size: 13px; }
+  #drop .big { font-size: var(--t-17); color: var(--ink); font-weight: 600; }
+  /* THE FLOOR'S CURRENT PLAN. Compact on purpose: the page's job when a plan
+     already exists is to say so and get out of the way, not to offer a
+     half-screen invitation to overwrite it. */
+  .have-row { display: flex; gap: var(--s-4); align-items: center; flex-wrap: wrap; }
+  /* `.panel img.have-thumb` (0,2,1), not `.have-thumb` (0,1,0): the rule below
+     styles `.panel img` at (0,1,1) with width:100%, which outranks a single
+     class and blew the thumbnail up to the full panel — the same specificity
+     trap `.roles .hex` in studio.html carries a note about. */
+  .panel img.have-thumb { width: 96px; height: 96px; object-fit: contain; flex: none;
+                border: 1px solid var(--line); border-radius: var(--r-ctl);
+                background: var(--paper); }
+  .have-text { flex: 1; min-width: 180px; }
+  .have-text h2 { margin: 0 0 4px; font-size: var(--t-17); }
+  .have-text p { margin: 0; }
+  .have-acts { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  #gate { margin: 16px 0; }
+  #stages { list-style: none; padding: 0; margin: 16px 0; display: none; }
+  #stages li { display: flex; gap: 12px; align-items: baseline; padding: 4px 0; font-size: 14px; }
+  #stages .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex: none; align-self: center; }
+  #stages li.run .dot { background: var(--warn); animation: pulse 1s infinite; }
+  #stages li.done .dot { background: var(--ok); }
+  #stages li.error .dot { background: var(--err); }
+  #stages .detail { color: var(--ink-2); font-size: 12px; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  #results { display: none; }
+  .sideby { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 16px 0; }
+  .panel img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 6px; }
+  td.null { color: var(--ink-3); font-style: italic; }
+  .checkrow { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 12px; }
+  .checkrow b { font: 600 17px var(--mono); color: var(--ink); }
+  details { margin-top: 12px; font-size: 12px; }
+  details summary { cursor: pointer; color: var(--ink-2); }
+  pre { background: var(--paper); padding: 12px; border-radius: var(--r-ctl); overflow-x: auto; font: 11.5px var(--mono); }
+  /* PDF page chooser. A drawing set mixes floor plans with sections and
+     elevations, so the pages are shown, not listed by number. */
+  .pdf-pages { display: grid; gap: 12px; margin: 12px 0;
+               grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .pdf-page { display: flex; flex-direction: column; gap: 8px; align-items: center;
+              padding: 8px; cursor: pointer; background: var(--surface);
+              border: 1px solid var(--line-strong); border-radius: var(--r-ctl); }
+  .pdf-page:hover { border-color: var(--accent); background: #FBFAF7; }
+  .pdf-page canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+  .pdf-page span { font-size: 12px; color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1>Upload a floor plan</h1>
+  <span id="modeBadge" class="chip">checking…</span>
+  <div class="actions">
+    <button id="sampleBtn" class="btn btn--secondary">Run bundled sample</button>
+  </div>
+</div>
+<main>
+  <!-- THE PLAN THIS FLOOR ALREADY HAS.
+       Filled on load when the floor has been uploaded before; the drop zone
+       hides behind it until the user asks to replace. See `showExistingPlan`. -->
+  <section id="havePlan" class="panel" hidden>
+    <div class="have-row">
+      <img id="haveThumb" alt="" class="have-thumb">
+      <div class="have-text">
+        <h2 id="haveTitle">This floor already has a plan</h2>
+        <p id="haveWhat" class="subtle"></p>
+      </div>
+      <div class="have-acts">
+        <a id="haveNext" class="btn btn--primary">Continue to Review →</a>
+        <button id="haveReplace" class="btn btn--secondary">Replace plan</button>
+      </div>
+    </div>
+  </section>
+  <div id="drop">
+    <p class="big">Drop a floor plan here, or click to choose</p>
+    <!-- PDF is named first: it is what comes out of CAD, so it is what a
+         builder actually has in hand. The resolution rule applies to images
+         only — a PDF page is rasterised here at 1700px, so it always clears
+         the gate and telling the user about a limit they cannot hit would be
+         noise. -->
+    <p>PDF, PNG, JPG or WebP · images need a short side ≥ 800px</p>
+    <input type="file" id="fileInput" accept="application/pdf,image/png,image/jpeg,image/webp" hidden>
+  </div>
+  <div id="gate"></div>
+
+  <ul id="stages">
+    <li data-stage="read"><span class="dot"></span><span>Reading plan…</span><span class="detail"></span></li>
+    <li data-stage="extract"><span class="dot"></span><span>Extracting rooms, labels and dimensions…</span><span class="detail"></span></li>
+    <li data-stage="wireframe"><span class="dot"></span><span>Drawing wireframe…</span><span class="detail"></span></li>
+    <li data-stage="crosscheck"><span class="dot"></span><span>Cross-checking dimensions…</span><span class="detail"></span></li>
+  </ul>
+
+  <section id="results">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <div class="checkrow" id="checkrow" style="margin-bottom:0"></div>
+      <button id="toReview" class="btn btn--primary">Continue to Review →</button>
+    </div>
+    <div class="sideby">
+      <div class="panel"><h3>Original plan</h3><img id="srcImg" alt="original plan"></div>
+      <div class="panel"><h3>AI wireframe</h3><img id="wfImg" alt="wireframe"></div>
+    </div>
+    <div class="panel">
+      <h3>Labels read from your plan</h3>
+      <table id="labelTable"><thead><tr><th>#</th><th>Space</th><th>Dimensions</th></tr></thead><tbody></tbody></table>
+      <details><summary>Raw extraction JSON</summary><pre id="rawJson"></pre></details>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { renderChrome } from './src/chrome.js';
+import { runQualityGate } from './src/quality-gate.js';
+import { isPdf, openPdf, renderPage, renderThumb, canvasToFile, isPdfTimeout } from './src/pdf-input.js';
+import { runL1, fetchHealth } from './src/l1-client.js';
+import { ApiError } from './src/api.js';
+import { openSignIn } from './src/auth-ui.js';
+import { floorHref } from './src/floor-context.js';
+
+const $ = (id) => document.getElementById(id);
+// Which floor this upload belongs to, from the URL. Uploading with no floor is
+// still allowed (it becomes a draft), but the page now says which it is —
+// before, the association was invisible ambient state and a plan could land on
+// whichever floor happened to be visited last.
+const { ctx: floorCtx } = await renderChrome();
+let live = false;
+
+// Awaited, not fire-and-forget. A plan handed over from the Projects page is
+// processed the moment this page loads, and with the check still in flight
+// `live` was false, so a working server reported "the AI is not available".
+// Nothing else here runs before the user acts, so waiting costs nothing.
+const health = fetchHealth().then((h) => {
+  live = h.live;
+  const b = $('modeBadge');
+  // A working service needs no badge. This only ever appears to say something
+  // is wrong, which is the one thing here a user could act on.
+  if (h.live) b.remove();
+  else b.textContent = 'Demo mode: no AI key on the server';
+});
+
+/**
+ * IF THIS FLOOR ALREADY HAS A PLAN, SAY SO BEFORE OFFERING TO REPLACE IT.
+ *
+ * Upload stays in the pipeline at every stage — a builder who sent the wrong
+ * page of a PDF needs a way back, and a stepper whose completed steps cannot be
+ * revisited is worse. What was wrong is what the step SHOWED: an empty drop
+ * zone, identical to a floor that has never been touched. A user opening step
+ * 01 to check their plan saw nothing and could only conclude it was gone — and
+ * the one action on offer silently overwrote it.
+ *
+ * REPLACING IS NOT FREE AND THE PAGE NOW SAYS SO. A new upload rewrites the
+ * source, the wireframe and the extraction, but the floor keeps `verified` —
+ * the record of what the customer signed off. So a floor confirmed against one
+ * drawing can end up carrying that sign-off over a different one. Making the
+ * replacement deliberate is the part that belongs here; whether a sign-off
+ * should survive it at all is Saman's call, not a thing to decide in a UX pass.
+ */
+async function showExistingPlan() {
+  if (!floorCtx) return false;
+  let url = null;
+  try {
+    const { getArtifactUrl } = await import('./src/artifacts.js');
+    url = await getArtifactUrl(floorCtx.scope, 'source');
+  } catch { return false; }
+  if (!url) return false;
+
+  const confirmed = Boolean(floorCtx.floor.verified);
+  $('haveThumb').src = url;
+  $('haveWhat').textContent = confirmed
+    ? 'You have already confirmed this floor. Replacing the plan does not undo that, '
+      + 'so the sign-off would describe a drawing that is no longer here — re-check it in Review afterwards.'
+    : 'Replacing it starts the reading again.';
+  $('haveNext').textContent = confirmed ? 'Open Studio →' : 'Continue to Review →';
+  $('haveNext').href = floorHref(confirmed ? 'studio.html' : 'review.html',
+    floorCtx.project.id, floorCtx.floor.id);
+  $('havePlan').hidden = false;
+  // The drop zone is not removed — it is put behind the one button that says
+  // what pressing it leads to.
+  $('drop').hidden = true;
+  $('haveReplace').onclick = () => {
+    $('havePlan').hidden = true;
+    $('drop').hidden = false;
+    $('drop').scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  return true;
+}
+await showExistingPlan();
+
+// The sample exists to demonstrate the pipeline with no key and no credits. On
+// a real floor it would write a demo plan into the customer's project, which is
+// the failure this whole restructure removes — so it is withheld there. The one
+// exception is a project the user explicitly created AS the sample and which
+// carries the Sample badge: that is where a demo plan is the point, and without
+// this the "Try a sample" button led to two floors with nothing to put in them.
+// It is not the primary button either way: uploading is.
+const inSampleProject = floorCtx?.project?.isSample === true;
+if (floorCtx && !inSampleProject) $('sampleBtn').remove();
+else $('sampleBtn').onclick = () => start(null, 'mock');
+$('drop').onclick = () => $('fileInput').click();
+$('fileInput').onchange = () => { if ($('fileInput').files[0]) onFile($('fileInput').files[0]); };
+
+// A plan chosen on the Projects page, handed over through the artifact store so
+// the file dialog could open on the click the user actually made. Consumed once
+// and deleted, so a refresh does not silently re-run a plan you already dealt
+// with — and so a rejected file is not waiting here the next time you arrive.
+if (floorCtx) {
+  const { getArtifact, deleteArtifact } = await import('./src/artifacts.js');
+  const handed = await getArtifact(floorCtx.scope, 'pending');
+  if (handed) {
+    await deleteArtifact(floorCtx.scope, 'pending');
+    // A plan handed over from Projects IS the replacement, already chosen. The
+    // "you already have one" panel would sit above the run it started.
+    $('havePlan').hidden = true;
+    $('drop').hidden = false;
+    await health;                 // see above: `live` must be known first
+    onFile(handed);
+  }
+}
+$('drop').ondragover = (e) => { e.preventDefault(); $('drop').classList.add('over'); };
+$('drop').ondragleave = () => $('drop').classList.remove('over');
+$('drop').ondrop = (e) => {
+  e.preventDefault(); $('drop').classList.remove('over');
+  if (e.dataTransfer.files[0]) onFile(e.dataTransfer.files[0]);
+};
+
+async function onFile(file) {
+  $('gate').innerHTML = '';
+  // PDF input. This was withheld for a while: it worked, then rendering became
+  // unreliable — a renderPage that took 78ms began timing out — and shipping a
+  // silent hang would have been worse than the plain "export a PNG" message.
+  //
+  // The cause was never reproduced (four shapes tried; see test/pdf-probe.html).
+  // What changed is that a stall now ENDS: pdf-input.js bounds every open and
+  // render, owns one worker instead of spawning one per document, and closes
+  // documents. On expiry the user gets exactly the message they got before PDFs
+  // were accepted at all, so the worst case is no worse than not having this.
+  if (isPdf(file)) {
+    const page = await choosePdfPage(file);
+    if (!page) return;
+    file = page;
+  }
+  const g = await runQualityGate(file);
+  for (const m of g.hard) addMsg('err', m);
+  for (const m of g.soft) addMsg('warn', m, file);
+  if (!g.ok) return;
+  if (g.soft.length) return; // wait for the explicit "Process anyway" click
+  proceed(file);
+}
+
+function proceed(file) {
+  if (!live) {
+    // The env-var name was for whoever runs the server, not for the person
+    // holding a floor plan.
+    addMsg('warn', 'Your plan passed the quality check, but the AI is not available on this server.');
+    return;
+  }
+  start(file, 'live');
+}
+
+/**
+ * Show every page of a PDF and let the user pick the one to process.
+ *
+ * Thumbnails, not filenames: a builder's drawing set has a site plan, sections
+ * and elevations mixed in with the floor plans, and "page 7" means nothing
+ * without seeing it.
+ *
+ * @returns {Promise<File|null>} the chosen page as a PNG, or null if cancelled
+ */
+async function choosePdfPage(file) {
+  const box = $('gate');
+  box.innerHTML = '';
+  const status = document.createElement('div');
+  status.className = 'msg';
+  status.textContent = 'Reading the PDF…';
+  box.append(status);
+
+  // Two different failures needing two different sentences. "Could not be
+  // opened" on a file that opened fine and then stalled would send someone
+  // looking for a password that does not exist.
+  const fail = (e) => {
+    status.className = 'msg err';
+    status.textContent = isPdfTimeout(e)
+      ? 'This PDF is slow to read. Export the plan page as a PNG and upload that instead.'
+      : 'That PDF could not be opened. If it is password-protected, remove the password first.';
+    return null;
+  };
+
+  let doc, pageCount, close;
+  try {
+    ({ doc, pageCount, close } = await openPdf(file));
+  } catch (e) {
+    return fail(e);
+  }
+
+  if (pageCount === 1) {
+    status.textContent = 'Reading page 1…';
+    try {
+      const only = await renderPage(doc, 1);
+      box.innerHTML = '';
+      return canvasToFile(only, file.name.replace(/\.pdf$/i, '.png'));
+    } catch (e) {
+      return fail(e);
+    } finally {
+      // The page is a PNG from here on; nothing downstream needs the document.
+      close();
+    }
+  }
+
+  status.textContent = `${pageCount} page${pageCount === 1 ? '' : 's'}. `
+    + 'Choose the floor plan to process.';
+  const grid = document.createElement('div');
+  grid.className = 'pdf-pages';
+  box.append(grid);
+
+  return new Promise((resolve) => {
+    let settled = false;
+    // Every path out of here closes the document exactly once — picking a page,
+    // cancelling, or a stall. Leaving it open kept the whole parsed PDF alive
+    // in the worker for the life of the tab.
+    const done = (value) => { if (!settled) { settled = true; close(); resolve(value); } };
+
+    const cancel = document.createElement('button');
+    cancel.className = 'btn btn--quiet';
+    cancel.textContent = 'Cancel';
+    cancel.onclick = () => { box.innerHTML = ''; done(null); };
+    box.append(cancel);
+
+    (async () => {
+      for (let n = 1; n <= pageCount; n++) {
+        if (settled) return;
+        let thumb;
+        try {
+          thumb = await renderThumb(doc, n);
+        } catch (e) {
+          // One unreadable page should not cost the user the other fifteen.
+          // Only give up if nothing at all could be shown.
+          if (grid.children.length) {
+            status.textContent = `${grid.children.length} of ${pageCount} page${pageCount === 1 ? '' : 's'} `
+              + 'could be shown. Choose the floor plan to process.';
+            return;
+          }
+          if (!settled) { settled = true; fail(e); close(); resolve(null); }
+          return;
+        }
+        const cell = document.createElement('button');
+        cell.className = 'pdf-page';
+        cell.append(thumb);
+        const cap = document.createElement('span');
+        cap.textContent = `Page ${n}`;
+        cell.append(cap);
+        cell.onclick = async () => {
+          if (settled) return;
+          settled = true;                    // claim the choice before awaiting
+          status.textContent = `Reading page ${n}…`;
+          grid.remove(); cancel.remove();
+          try {
+            const full = await renderPage(doc, n);
+            box.innerHTML = '';
+            resolve(await canvasToFile(full, file.name.replace(/\.pdf$/i, `-p${n}.png`)));
+          } catch (e) {
+            fail(e);
+            resolve(null);
+          } finally {
+            close();
+          }
+        };
+        grid.append(cell);
+      }
+    })();
+  });
+}
+
+function addMsg(cls, text, retryFile) {
+  const d = document.createElement('div');
+  d.className = `msg ${cls}`;
+  d.textContent = text;
+  if (retryFile) {
+    const b = document.createElement('button');
+    b.textContent = 'Process anyway';
+    b.style.marginLeft = '10px';
+    b.onclick = () => { $('gate').innerHTML = ''; proceed(retryFile); };
+    d.append(b);
+  }
+  $('gate').append(d);
+  return d;                 // callers may attach an action to it
+}
+
+async function start(file, mode) {
+  $('results').style.display = 'none';
+  $('stages').style.display = 'block';
+  for (const li of document.querySelectorAll('#stages li')) {
+    li.className = ''; li.querySelector('.detail').textContent = '';
+  }
+  // Progress reporting must never be able to fail the run: a stage with no row
+  // once threw here and discarded two completed (paid) AI renders.
+  const onStage = (stage, state, detail) => {
+    const li = document.querySelector(`#stages li[data-stage="${stage}"]`);
+    if (!li) return;
+    li.className = state;
+    if (detail) li.querySelector('.detail').textContent = detail;
+  };
+  try {
+    const r = await runL1(file, mode, onStage);
+    r.mock = mode === 'mock';
+    render(r);
+    // Before anything else the user might do with this page. A render that
+    // exists only in a variable is one navigation away from having to be bought
+    // again.
+    try {
+      const meta = await persistRun(r);
+      savedScope = meta.scope;
+    } catch (e) {
+      // Say so rather than letting them believe it is safe.
+      addMsg('warn', `This render could not be saved to your browser (${e.message}).`
+        + ' Press Continue to Review before leaving this page, or it will have to be rendered again.');
+    }
+  } catch (e) {
+    // Signed out or out of credits: the upload is fine and nothing was
+    // processed, so this is a gate rather than a failure. Naming it
+    // "Processing failed" would send someone looking for a problem with their
+    // plan that does not exist.
+    if (e instanceof ApiError && e.actionable) {
+      const msg = addMsg('warn', e.code === 'not_signed_in'
+        ? 'Sign in to process this plan. Your file is still here.'
+        : e.message);
+      if (e.code === 'not_signed_in' && msg) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn--secondary btn--sm';
+        btn.style.marginLeft = '8px';
+        btn.textContent = 'Sign in';
+        btn.onclick = () => openSignIn();
+        msg.append(btn);
+      }
+    } else {
+      addMsg('err', `Processing failed: ${e.message}`);
+    }
+  }
+}
+
+let lastResult = null;
+let savedScope = null;
+/**
+ * PUT THE PAID RENDER SOMEWHERE SAFE, IMMEDIATELY.
+ *
+ * This used to run only when "Continue to Review" was pressed, and until then
+ * the wireframe existed nowhere but this page's memory. Anyone who closed the
+ * tab, hit back, or followed a link in between lost a render they had paid for
+ * and had to buy it again. The comment below already stated the goal — resume
+ * from a fresh tab without paying twice — and pressing a button was never a
+ * fair condition to attach to it.
+ *
+ * It is not hypothetical. On 2026-08-22 it happened three times in one session
+ * and cost six calls, every one of them to someone navigating away from a
+ * finished render to look at something else.
+ *
+ * Storing is now what FINISHING THE RUN means. The button only navigates.
+ */
+async function persistRun(result) {
+  // Images go to the artifact store; sessionStorage carries only the small
+  // JSON. Base64 data URLs used to be ~5MB here, right at the browser's
+  // sessionStorage ceiling, and failed silently past it.
+  const { putArtifact, DRAFT } = await import('./src/artifacts.js');
+  // Write straight into the floor's own scope when we know it, so the plan is
+  // attached where the user started rather than to an anonymous draft that a
+  // later step has to guess an owner for.
+  const scope = floorCtx ? floorCtx.scope : DRAFT;
+  await putArtifact(scope, 'source', result.sourceUrl);
+  await putArtifact(scope, 'wireframe', result.wireframeUrl);
+  const meta = {
+    scope,
+    extraction: result.extraction,
+    readBack: result.readBack ?? null,
+    mock: result.mock,
+  };
+  await putArtifact(scope, 'extraction', new Blob([JSON.stringify(meta)], { type: 'application/json' }));
+  sessionStorage.setItem('l1result', JSON.stringify(meta));
+  return meta;
+}
+
+$('toReview').onclick = async () => {
+  if (!lastResult) return;
+  const btn = $('toReview');
+  btn.disabled = true;
+  try {
+    // Already stored the moment the run finished; this re-runs only if that
+    // failed, and is cheap when it did not.
+    if (!savedScope) await persistRun(lastResult);
+    location.href = floorCtx
+      ? floorHref('review.html', floorCtx.project.id, floorCtx.floor.id)
+      : 'review.html';
+  } catch (e) {
+    btn.disabled = false;
+    addMsg('err', `Could not open Review for this plan: ${e.message}`);
+  }
+};
+
+async function measureSilhouette(sourceUrl, wireframeUrl) {
+  const cell = $('aspectCell');
+  try {
+    const { register } = await import('./src/review/registration.js');
+    const load = (u) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = u; });
+    const [src, wf] = await Promise.all([load(sourceUrl), load(wireframeUrl)]);
+    // MEASURED AGAINST WHAT THE MODEL WAS GIVEN, not against the file.
+    //
+    // The wireframe is drawn from the framed image — trimmed to the drawing and
+    // padded to a permitted shape — so registering it against the untrimmed
+    // upload compares two different framings. The silhouettes still agree; the
+    // fit does not, and the fit is what the verdict reads.
+    //
+    // MEASURED 2026-08-22 on Plan A, same wireframe both ways:
+    //     untrimmed upload vs wireframe   5.75% apart, rejected
+    //     framed source    vs wireframe   1.17% apart, confirmed
+    // The drawing's own aspect was 1.377 against the source's 1.399 — 1.6%. The
+    // 5.75% was an artefact of the comparison, not a fault in the drawing.
+    const { frameForModel } = await import('./src/aspect.js');
+    const framed = await load(frameForModel(src).canvas.toDataURL('image/png'));
+    const reg = register(framed, wf);
+    const within = reg.aspectDev <= reg.aspectTolerance;
+    // "silhouette: 0.657 vs 0.635" put two bare aspect ratios in front of
+    // someone holding a floor plan. They are the right numbers to keep for
+    // diagnosis, so they move to the tooltip; the line itself says what the
+    // check concluded.
+    cell.innerHTML = within
+      ? `outline: <b>matched</b> (±${(reg.aspectDev * 100).toFixed(2)}%)`
+      : `outline: <b>not confirmed</b>, ${(reg.aspectDev * 100).toFixed(2)}% apart`;
+    cell.title = `source ${reg.sourceAspect.toFixed(3)} vs wireframe ${reg.wireframeAspect.toFixed(3)}`
+      + ` · tolerance ${(reg.aspectTolerance * 100).toFixed(0)}%`;
+    // Amber, not red: on a construction sheet this reads high even when the
+    // drawing is right, so it is something to look at, not a failure.
+    cell.style.color = within ? '' : 'var(--warn)';
+  } catch {
+    cell.innerHTML = 'outline: <b>not measured</b>';
+  }
+}
+
+function render({ sourceUrl, wireframeUrl, extraction, readBack, mock }) {
+  lastResult = { sourceUrl, wireframeUrl, extraction, readBack, mock };
+  $('srcImg').src = sourceUrl;
+  $('wfImg').src = wireframeUrl;
+  const stairs = extraction.staircases || (extraction.stairs?.present ? [extraction.stairs] : []);
+  $('checkrow').innerHTML = [
+    `<span><b>${extraction.spaceCount}</b> spaces</span>`,
+    `<span><b>${extraction.doorCount}</b> doors</span>`,
+    `<span><b>${extraction.windowCount}</b> windows</span>`,
+    `<span>staircases: <b>${stairs.length}</b></span>`,
+    `<span id="aspectCell">silhouette: <b>measuring…</b></span>`,
+  ].join('');
+  // Measured against the wireframe — the extraction's own planAspectRatio is a
+  // model estimate and has been off by up to 7% on these plans.
+  measureSilhouette(sourceUrl, wireframeUrl);
+  const tb = $('labelTable').querySelector('tbody');
+  tb.innerHTML = '';
+  extraction.spaces.forEach((s, i) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${i + 1}</td>
+      <td class="${s.name ? '' : 'null'}">${s.name || 'unlabeled space'}</td>
+      <td class="${s.dim ? '' : 'null'}">${s.dim || 'none'}</td>`;
+    tb.append(tr);
+  });
+  $('rawJson').textContent = JSON.stringify(extraction, null, 2);
+  $('results').style.display = 'block';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Projects · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600&family=DM+Sans:wght@400;600&family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  /* THE SHELL THE DESIGN SYSTEM SPECIFIES. This page was locally capped at
+     1020px, from before it was a grid — narrow enough that a 1400px screen got
+     two columns of 478px where the design calls for three of 413px. The system
+     states the shell once, at 1320px with --s-5 padding, and this is the page
+     whose layout depends on it. */
+  main { padding-block: var(--s-2) var(--s-6); }
+  .panel { margin-bottom: 16px; }
+  .panel h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.005em; }
+  .phead { display: flex; align-items: center; gap: 12px 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  /* wide floor table scrolls inside its own box; the page never scrolls sideways */
+  .tscroll { overflow-x: auto; margin: 0 -4px; }
+  /* Fixed columns. Each project used to render its own auto-sized table, so the
+     same column landed at a different x in every card and the eye could not
+     scan down the page. */
+  /* THE ACTION COLUMN IS SIZED BY ITS BUTTONS, not by a percentage.
+     A fixed 38% held five actions only while they were small; once every
+     button in the app moved to the design system's 36px with real padding, the
+     row needed 397px inside a 357px cell and the overflow ran left across the
+     sign-off date — "Aug 17, 2026" rendered as "Aug 17, 2" with a button on
+     top of it. `width: 1%` plus nowrap is the table's own shrink-to-fit: the
+     cell takes exactly what the buttons need and the date column absorbs the
+     rest, so adding a sixth action can never overlap anything again. */
+  /* The 560px floor was sized for a row carrying five buttons. With one action
+     and a menu the row fits its column, so the minimum is what was FORCING the
+     horizontal scroll rather than preventing it. */
+  .tscroll table { width: 100%; }
+  .floors col.c-floor  { width: 27%; }
+  .floors col.c-status { width: 16%; }
+  .floors td.acts, .floors th.acts { width: 1%; white-space: nowrap; }
+  /* The last row's rule and the manage row's rule landed 14px apart, reading as
+     a double line. A table's final row needs no trailing rule — whatever comes
+     next draws the boundary. */
+  .floors tbody tr:last-child td { border-bottom: 0; }
+  .floors td.acts, .floors th.acts { text-align: right; }
+  /* nowrap: three actions wrapping to a second line made row heights jump */
+  .floors td.acts .actions { justify-content: flex-end; flex-wrap: nowrap; align-items: center; }
+  .busy { font-size: 12.5px; color: var(--warn); min-height: 0; }
+  .busy:not(:empty) { margin-top: 12px; }
+
+  /* Fold. The whole title is the hit target, not a separate chevron button —
+     a 12px arrow is a poor thing to ask someone to hit. */
+  /* The whole title is the hit target, and at padding:0 it measured 19px tall —
+     the smallest control on the page, for the action people use most. */
+  .fold { background: none; border: 0; padding: 0.4em 0.15em; margin-left: -0.15em;
+          display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .fold:hover { background: none; }
+  .fold .chev { color: var(--ink-3); font-size: 11px; transition: transform .15s ease; }
+  /* PROJECTS ARE TILES UNTIL YOU OPEN ONE.
+     Three projects as full-width panels filled the screen with two tables the
+     reader was not looking at. Folded, a project is a card you recognise by its
+     plan; opened, it is exactly the panel it always was, spanning the row so
+     the floor table still has its width. Nothing is lost by folding — the
+     summary line was already there. */
+  /* ONE TOKEN OWNS THE DISTANCE TO THE HEADER.
+     The gap measured 8px: two .page-head rows in a row, each contributing 4px
+     of trailing padding, one of them an otherwise-empty wrapper for the backup
+     note. The design system's scale reserves 24 for separating SECTIONS and 16
+     for separating panels — 8 is intra-component spacing, and using it here
+     made the tiles read as part of the toolbar above them.
+     The head rows stop contributing trailing space and the grid states the
+     distance itself, so it is one number in one place rather than a sum of
+     paddings that has to be re-derived every time a row is added. */
+  .page-head { padding-bottom: 0; }
+  #list { margin-top: var(--s-5); }
+
+  #list, #archivedList { display: grid; gap: var(--s-4);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-items: start; }
+  /* EXPANSION IS IN PLACE AND VERTICAL. It used to set `grid-column: 1 / -1`,
+     so opening a tile turned it into a 972px rectangle, pushed its neighbours
+     around and stopped being the object the user had clicked. The tile now
+     grows downward inside its own column: neighbours never move, and the
+     thumbnail keeps its band whether the project is open or shut.
+     0fr -> 1fr is the one way to animate a row to its content height without
+     knowing that height in advance. */
+  /* --d-overlay, not --d-std: this row travels several hundred pixels, and 180ms
+     over that distance reads as a jump rather than a move. The visibility delay
+     below has to use the same value or the contents blank out before the row has
+     finished closing. */
+  .panel .fold-body { display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows var(--d-overlay) var(--ease); }
+  .panel:not(.collapsed) .fold-body { grid-template-rows: 1fr; }
+  /* Hidden to the KEYBOARD too, not only to the eye. A row collapsed to 0fr is
+     invisible and still focusable, so tabbing through a page of tiles walked
+     into floor links and project menus nobody could see. visibility carries the
+     transition, so it flips only once the row has finished closing. */
+  .panel .fold-body > * { overflow: hidden; min-height: 0;
+    visibility: visible; transition: visibility 0s; }
+  .panel.collapsed .fold-body > * { visibility: hidden;
+    transition: visibility 0s var(--d-overlay); }
+  @media (prefers-reduced-motion: reduce) {
+    .panel .fold-body, .nextup, .chev { transition: none; }
+  }
+
+  /* EVERY BAND HAS A HEIGHT THE DATA CANNOT CHANGE. That is what makes tiles in
+     a row equal without align-items doing the work, and why equal height costs
+     no empty space: the header is one line whatever the project is called, and
+     the status band is one line whatever it contains. */
+  .phead { height: 48px; display: flex; align-items: center; gap: var(--s-2);
+    flex-wrap: nowrap; margin: 0; }
+  .phead h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .pcount { font-family: var(--mono); font-size: var(--t-12); color: var(--ink-2);
+    white-space: nowrap; }
+  .fold .pstatus { height: 44px; display: flex; align-items: center; gap: var(--s-2);
+    overflow: hidden; }
+  .pstatus .sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: var(--t-13); color: var(--ink-2); }
+  .pips { display: flex; gap: 4px; flex: none; }
+  .pip { width: 8px; height: 8px; border-radius: 999px; background: var(--line-strong); }
+  .pip.on { background: var(--ok); }
+
+  /* The tag says WHICH artifact the picture is, so the thumbnail doubles as a
+     progress indicator instead of being a picture whose meaning you have to
+     already know. */
+  .thumb { position: relative; }
+  .thumb .tag { position: absolute; left: var(--s-2); bottom: var(--s-2);
+    font-family: var(--mono); font-size: var(--t-11); padding: 2px 8px;
+    border-radius: var(--r-chip); background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--line); }
+
+  /* The overflow menu. Everything whose WIDTH DEPENDS ON DATA lives in here —
+     "Download all (2 of 2)" is what wrapped the header and made a row ragged,
+     and no amount of equal-height CSS fixes a header that can grow. */
+  /* The head is one button, so it has to look like one surface and not like a
+     control: no border, no fill at rest, the whole band and picture lighting up
+     together on hover so the target declares its own extent. */
+  .fold { display: block; width: 100%; text-align: left; background: none;
+    border: 0; padding: 0; color: inherit; cursor: pointer; }
+  .fold .phead { display: flex; align-items: center; gap: var(--s-2);
+    height: 48px; padding: 0 var(--s-3); }
+  .foldcue { display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s-2); padding: var(--s-2) var(--s-3); }
+  .foldtext { font-size: var(--t-13); color: var(--ink-2); }
+  .fold:hover .foldtext { color: var(--accent); }
+
+  /* EVERY SHUT CARD HAS THE SAME BANDS, WHICH IS THE ONLY WAY THEY STAY EQUAL.
+     The grid is align-items:start on purpose — an open tile must not stretch its
+     neighbours — so nothing equalises these heights for us. They matched only
+     because every card happened to carry the same rows, and dressing the
+     multi-floor disclosure as the action broke that: one card type ended with
+     cue+button, the other with a pill and no button.
+     Head 48, thumbnail 4:3, status 44, cue, action. Both types, always. */
+  .chevbox { width: 32px; height: 32px; display: grid; place-items: center;
+    flex: none; border-radius: var(--r-ctl); color: var(--ink-2);
+    transition: background var(--d-micro) var(--ease); }
+  .chev { transition: transform var(--d-std) var(--ease); }
+  /* THE CHEVRON WAS INVERTED. The base glyph points right; open rotated it to
+     point DOWN and collapsed rotated it to point UP — the opposite of every
+     disclosure anyone has used. Shut points down: press for more. Open points
+     up: press to put it away. */
+  .panel:not(.collapsed) .chev { transform: rotate(-90deg); }
+  .pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font: 500 var(--t-17)/1.3 var(--display); }
+  .fold:hover .chevbox { background: var(--neutral-soft); color: var(--ink); }
+  .fold:hover .pname { color: var(--accent); }
+  .fold:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  /* Floor rows: an anchor each, no table, nothing positioned — so nothing can
+     be clipped by a scroll container and it works unchanged at 320px. */
+  .floorlist { list-style: none; margin: 0; padding: 0; }
+  /* THE ROW IS STILL ONE ANCHOR. Remove sits BESIDE it, never inside it: a
+     button nested in a link is a control the keyboard and the screen reader
+     both have to guess at, and the note below is explicit that nothing in the
+     row is a nested interactive element. */
+  .floorrow { display: flex; align-items: center; }
+  .floorrow .floorlink { flex: 1; min-width: 0; }
+  /* The gap belongs to the LINK's own padding, not to the row: the row's hover
+     fill stops at the link's edge, and a gap outside it would leave a dead
+     stripe between the pill and Remove that highlights on one side only. */
+  .floorrow .floorlink { padding-right: var(--s-2); }
+  /* Quiet, but never hidden-until-hover: a control that appears only on hover
+     cannot be found by touch at all, and this one is destructive enough that
+     hunting for it is the wrong kind of surprise. */
+  .fl-del { flex: none; display: inline-flex; align-items: center; justify-content: center;
+    /* 32px square, matching the pill's 32px min-height, so the two controls sit
+       on one optical line instead of one looking dropped beside the other. */
+    width: 32px; height: 32px; padding: 0; margin-right: calc(var(--s-1) * -1);
+    background: none; border: 1px solid transparent; border-radius: var(--r-ctl);
+    color: var(--ink-3); cursor: pointer;
+    transition: color var(--d-micro) var(--ease), border-color var(--d-micro) var(--ease); }
+  .fl-del:hover, .fl-del:focus-visible { color: var(--err); border-color: var(--line-strong); }
+  @media (prefers-reduced-motion: reduce) { .fl-del { transition: none; } }
+  /* The 44px rule this app already keeps for coarse pointers. The negative
+     margin goes with it: a 44px target should not push the row 12px wider. */
+  @media (pointer: coarse) {
+    .fl-del { width: 44px; height: 44px; margin-right: calc(var(--s-2) * -1); }
+  }
+  .floorlink { display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-2) var(--s-3); border-radius: var(--r-ctl);
+    text-decoration: none; color: inherit; }
+  .floorlink:hover { background: var(--neutral-soft); }
+  .fl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fl-name { font-size: var(--t-15); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Ellipsis, exactly like .fl-name above it. Without this the meta was the one
+     thing in the row allowed to wrap, so "ready · Aug 31, 2026" broke across two
+     lines the moment the Remove control took its width — and a two-line row in a
+     list of one-line rows reads as a layout fault. */
+  .fl-meta { font-size: var(--t-13); color: var(--ink-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* THE WAY INTO THE PRODUCT SHOULD LOOK LIKE A CONTROL.
+     This was accent-coloured text at 13px trailing the row — the visual weight
+     of a "read more" link, carrying the action that leads to the part of the app
+     everything else exists to reach.
+     It is a bordered pill now, and the WHOLE ROW is still the target: hovering
+     anywhere on the row fills the pill, which is what teaches that the two are
+     one thing rather than a live button beside dead text. Nothing here is a
+     nested interactive element — the row is a single anchor and this is styling
+     inside it. */
+  .fl-next { display: inline-flex; align-items: center; gap: var(--s-1); flex: none;
+    min-height: 32px; padding: 0 var(--s-3);
+    font-size: var(--t-13); font-weight: 600; color: var(--accent);
+    white-space: nowrap;
+    background: var(--surface);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+    border-radius: var(--r-ctl);
+    transition: background var(--d-micro) var(--ease), color var(--d-micro) var(--ease),
+                border-color var(--d-micro) var(--ease); }
+  .floorlink:hover .fl-next, .floorlink:focus-visible .fl-next {
+    background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .fl-next .go { transition: transform var(--d-micro) var(--ease); }
+  .floorlink:hover .fl-next .go { transform: translateX(2px); }
+  @media (prefers-reduced-motion: reduce) { .fl-next, .fl-next .go { transition: none; } }
+  /* TIGHT: THE WORDS KEEP THE LINE, THE ACTION TAKES ITS OWN.
+     What gave way when the row ran out of room was the TEXT — "Main F…", then
+     "needs render · Au…" — which is the part a person is actually reading. The
+     pill wraps beneath it instead: still one row, still one anchor.
+
+     MEASURED, NOT GUESSED, AND QUERIED ON THE CARD RATHER THAN THE WINDOW. The
+     row needs about 364px of list width here (dot 8, text 160, pill 115,
+     Remove 32, gaps and padding); a viewport breakpoint cannot see that, because
+     what constrains the row is the CARD — which is narrower than the window by
+     the page's padding, and narrower still when the grid runs more than one
+     column. Saman's card clipped at a window width where mine did not, which is
+     exactly the failure a viewport query produces. 460px leaves headroom over
+     the 364 for a wider font, and keeps a full-width card on one line. */
+  .floorlist { container-type: inline-size; }
+  @container (max-width: 470px) {
+    .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+    .fl-next { flex: 1 0 100%; justify-content: center; }
+    /* Remove pairs with the NAME, not with the middle of a now two-line block.
+       Centred, it floated between the name and the wrapped pill and read as
+       belonging to neither. */
+    .floorrow { align-items: flex-start; }
+    .fl-del { margin-top: var(--s-1); }
+  }
+  /* Container queries are the right tool and are widely supported; this is the
+     floor for anything that lacks them, using the window as a rough stand-in. */
+  @supports not (container-type: inline-size) {
+    @media (max-width: 560px) {
+      .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+      .fl-next { flex: 1 0 100%; justify-content: center; }
+      .floorrow { align-items: flex-start; }
+      .fl-del { margin-top: var(--s-1); }
+    }
+  }
+  .dot--idle { background: var(--line-strong); }
+
+  /* THE NEXT-STEP BUTTON LEAVES ON THE SAME CLOCK AS THE FOLD OPENS.
+     It was `display: none` when open, which cannot be animated: the button
+     vanished the instant the click landed and the card grew from a height it had
+     never been at, so a coordinated motion started with a 60px jump. It now
+     collapses on the same duration and curve, so the two read as one movement. */
+  .nextup { padding: 0 var(--s-3) var(--s-3); overflow: hidden;
+    max-height: 96px; opacity: 1;
+    transition: max-height var(--d-overlay) var(--ease),
+                opacity var(--d-std) var(--ease),
+                padding var(--d-overlay) var(--ease); }
+  .nextup .nextbtn { width: 100%; }
+  /* THIS ONE LABEL IS ALLOWED TO WRAP.
+     ui.css keeps button labels on one line, and gives its reason: in a cramped
+     ROW a wrapped label stands taller than its siblings and the same control
+     reads as two different sizes. This button is not in a row — it is full
+     width and alone on the card — so none of that applies, while the rule's
+     cost lands squarely on it: an archived project's label carries the
+     project's NAME, and "Restore TEST — Geena (fixture) from archive" ran out
+     of both ends of the button at once, clipped left and right by the centring.
+     Two lines here cost nothing and keep the name, which is the whole reason
+     the label names the project. */
+  .nextup .nextbtn { white-space: normal; line-height: 1.3; padding-block: var(--s-2); }
+  /* HIDDEN TO THE KEYBOARD TOO. `display: none` took this out of the tab order
+     for free; max-height and opacity do not — a button at opacity 0 is still
+     focusable, so replacing one with the other would have put an invisible
+     control back in the tab path of every open card. Same fix as the fold body:
+     visibility flips only once the row has finished closing. */
+  .panel:not(.collapsed) .nextup { max-height: 0; opacity: 0; padding-bottom: 0;
+    visibility: hidden; transition: max-height var(--d-overlay) var(--ease),
+                                    opacity var(--d-std) var(--ease),
+                                    padding var(--d-overlay) var(--ease),
+                                    visibility 0s var(--d-overlay); }
+  /* ...except on an archived card, where the action is not a pipeline step the
+     floor list can stand in for. Opening the card must not take away the only
+     way back. */
+  .archive .panel:not(.collapsed) .nextup { max-height: 96px; opacity: 1;
+    padding-bottom: var(--s-3); visibility: visible; transition-delay: 0s; }
+
+  /* Project scope: below a hairline, only when the tile is open. */
+  .pfoot { margin-top: var(--s-2); padding: var(--s-2) var(--s-3) 0;
+    border-top: 1px solid var(--line-strong); }
+  .projMenuBtn { width: 100%; justify-content: space-between; }
+
+  /* Native popover: renders in the top layer, so a scrolling ancestor cannot
+     clip it — which is exactly what turned the old row menu into a 9px sliver.
+     Light-dismiss, Esc and focus return come with it. */
+  .projmenu { margin: auto; border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface); color: var(--ink); box-shadow: var(--e-2);
+    padding: var(--s-1); min-width: 240px; }
+  .projmenu::backdrop { background: rgba(20,18,15,.4); }
+
+  /* THE MENU HANGS OFF THE BUTTON THAT OPENS IT.
+     A popover with no anchor is centred in the viewport by default, so pressing
+     "···" at the foot of a card threw a panel into the middle of the screen
+     with no line back to what it belonged to. Anchor positioning ties it to the
+     trigger; `position-try` lets it flip above or across when the card is near
+     an edge rather than running off it.
+     The centred sheet stays as the fallback, and on a 320px column it is the
+     better rendering anyway — which is why the backdrop above is not scoped to
+     the fallback. */
+  @supports (anchor-name: --a) {
+    /* The anchor name is set per project in the markup — a single shared name
+       would bind every card's menu to whichever button the browser resolved
+       last, which on a three-column page is the wrong card. */
+    .projmenu {
+      position-area: block-end span-inline-start;
+      margin: var(--s-1) 0 0;
+      position-try-fallbacks: block-start span-inline-start,
+                              block-end span-inline-end,
+                              block-start span-inline-end;
+    }
+    .projmenu::backdrop { background: transparent; }
+  }
+  .pm-head { display: flex; justify-content: space-between; gap: var(--s-3);
+    padding: var(--s-2) var(--s-3); font: 500 var(--t-15)/1.3 var(--display);
+    border-bottom: 1px solid var(--line); margin-bottom: var(--s-1); }
+  .projmenu button { display: flex; width: 100%; justify-content: flex-start;
+    flex-direction: column; align-items: flex-start; gap: 2px;
+    min-height: 40px; padding: var(--s-2) var(--s-3); border: 0; background: transparent;
+    color: var(--ink); border-radius: var(--r-chip); text-align: left; }
+  .projmenu button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .projmenu button:disabled { color: var(--ink-3); }
+  /* One item in this menu produces a document rather than a state change, and
+     what is in that document is the thing users could not tell. A second line
+     is cheaper than a label long enough to stretch the menu. */
+  /* A step below the label it sits under, not the same size in a paler colour —
+     menu items here are 13px, so the caption is 12. */
+  .pm-sub { font-size: var(--t-12); color: var(--ink-3); font-weight: 400; }
+  button:disabled .pm-sub { color: var(--ink-3); }
+
+  /* A FLOOR IS A BLOCK, NOT A ROW. Name, then its actions under it.
+     Laid out as one flex row, the floor name and three buttons could not fit —
+     "Copy to another project…" alone is wider than the space left — so the
+     dialog grew a horizontal scrollbar and the names wrapped to two lines
+     while the buttons stayed on one. A row whose width depends on a label is
+     the same defect the tile header had. */
+  .ps-row { padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .ps-row:last-child { border-bottom: 0; }
+  .ps-floor { display: block; font-weight: 600; margin-bottom: var(--s-1); }
+  .ps-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  /* These are BUTTONS. Squeezed to var(--s-2) of horizontal padding and given a
+     quiet fill, three of them in a row read as a line of links — which is what
+     the screenshot showed. A secondary fill and the variant's own padding is
+     what makes them look pressable. */
+  .ps-acts .btn { padding: 0 var(--s-3); }
+  /* The floor list scrolls, so the footer never leaves the dialog on a project
+     with many floors — the alternative is a dialog taller than the viewport
+     with Delete and Close off the bottom. */
+  .ps-floors { max-height: min(46vh, 340px); overflow-y: auto; }
+
+  .menu { position: relative; flex: none; }
+  .menu > summary { list-style: none; cursor: pointer; width: 32px; height: 32px;
+    display: grid; place-items: center; border-radius: var(--r-ctl); color: var(--ink-2); }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu > summary:hover { background: var(--neutral-soft); color: var(--ink); }
+  .menu[open] > summary { background: var(--neutral-soft); color: var(--ink); }
+  .menu .sheet { position: absolute; right: 0; top: 36px; z-index: 5; min-width: 190px;
+    display: flex; flex-direction: column; padding: var(--s-1);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-ctl); box-shadow: var(--e-2); }
+  .menu .sheet button { justify-content: flex-start; width: 100%; border: 0;
+    background: transparent; min-height: 36px; padding: 0 var(--s-3);
+    border-radius: var(--r-chip); color: var(--ink); text-align: left; }
+  .menu .sheet button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .menu .sheet button:disabled { color: var(--ink-3); }
+
+  /* The thumbnail is the point of the tile: a builder with six models should
+     know which card is which before reading a word. It shows the newest thing
+     that floor has — a styled render if they have paid for one, else the
+     wireframe, else the plan they uploaded — so the picture also says how far
+     along the project is. */
+  .thumb { display: block; width: 100%; aspect-ratio: 4 / 3; margin-bottom: var(--s-3);
+    border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface-2) center/contain no-repeat; }
+  /* THE THUMBNAIL STAYS, OPEN OR SHUT. Hiding it on expand made the tile SHRINK
+     when you opened it — 473px to 346px — and took away the one thing that said
+     which project you were looking at, exactly when you started working in it. */
+  /* A PICTURE OF NOTHING IS NOT WORTH A PICTURE'S SPACE.
+     The 4:3 box is right for a plan and wrong for the words "no plan yet": on a
+     laptop it reserved about 520px to say them, which pushed the card's one
+     action off the bottom of the screen. A new user's first sight of the app
+     was a large empty rectangle with the thing to do below the fold.
+     The rule the filled thumbnail carries — that it stays open or shut, because
+     it says which project you are in — does not apply to the empty one, which
+     says nothing about which project it is. So it collapses to a line, and the
+     moment there IS a plan the 4:3 box above returns with it. */
+  .thumb--empty { display: grid; place-items: center; font-size: var(--t-13);
+    color: var(--ink-3); aspect-ratio: auto; min-height: 44px; }
+  .panel.collapsed .fold .chev { transform: rotate(90deg); }
+  .fold-summary { display: none; }
+  .panel.collapsed .fold-summary { display: inline; }
+  .panel.collapsed .tscroll,
+  .panel.collapsed .manage,
+  .panel.collapsed .busy { display: none; }
+  .panel.collapsed .phead { margin-bottom: 0; }
+  @media (prefers-reduced-motion: reduce) { .fold .chev { transition: none; } }
+
+  /* Reuse destination list. Options are pressable rows, not a typed number:
+     the control now maps directly onto the thing it selects. */
+  .reuse-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .reuse-opt { display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+               padding: 12px 12px; background: var(--surface);
+               border: 1px solid var(--line-strong); border-radius: var(--r-ctl); cursor: pointer; }
+  .reuse-opt:hover { border-color: var(--accent); background: #FBFAF7; }
+  .reuse-opt[aria-pressed="true"] { border-color: var(--accent);
+                                    box-shadow: 0 0 0 3px var(--accent-soft); }
+  .reuse-opt b { font-weight: 600; }
+  .reuse-opt .meta { margin-left: auto; font-size: 12px; color: var(--ink-2); }
+  .reuse-empty { font-size: 13px; color: var(--ink-2); padding: 4px 0; }
+  /* The project this reuse just created, so the result is visible where it
+     landed rather than only in a message beside the source. */
+  .just-added { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); }
+
+  /* Manage row: rare actions, kept away from the ones the user came for. */
+  .manage { display: flex; gap: 12px; margin-top: 16px; padding-top: 12px;
+            border-top: 1px solid var(--line); }
+  .manage button.danger { color: var(--err); }
+  .manage button.danger:hover { color: var(--err); text-decoration-color: currentColor; }
+
+  .hist-list { display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto; }
+  .hist-v { border-left: 2px solid var(--line-strong); padding-left: 12px; }
+  .hist-v h4 { margin: 0 0 2px; font-size: 13px; font-weight: 600; }
+  .hist-v .when { font-size: 12px; color: var(--ink-2); }
+  .hist-v ul { margin: 8px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.6; }
+  .hist-v .same { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  /* The archive is a SECTION under the grid, sharing the page's own gutters, so
+     an archived tile lines up with a live one instead of sitting 16px wider in
+     a box of its own. It used to be appended INTO the grid, where it became a
+     single cell beside a live project with the archived tiles nested inside at
+     yet another width — the layout Saman screenshotted. */
+  /* Outside <main>, so it takes the shared column explicitly or it lands on
+     a different left edge from the grid it belongs under. */
+  .archive { margin-top: var(--s-5); }
+  .archive > summary { cursor: pointer; font-size: 12px; color: var(--ink-2);
+                       padding: 8px 2px; list-style: none; }
+  .archive > summary::-webkit-details-marker { display: none; }
+  .archive > summary::before { content: '▸ '; color: var(--ink-3); }
+  .archive[open] > summary::before { content: '▾ '; }
+  .archive > summary:hover { color: var(--ink); }
+  .archive .panel { opacity: .78; }
+  .archive .panel:hover { opacity: 1; }
+
+  /* Narrow screens: stop being a table. Sideways scrolling put the ACTION —
+     the one thing the row exists for — off the right edge, so a floor needing
+     a plan looked like it had nothing to do. */
+  @media (max-width: 700px) {
+    .tscroll { overflow-x: visible; margin: 0; }
+    .tscroll table.floors { min-width: 0; table-layout: auto; }
+    .floors thead, .floors colgroup { display: none; }
+    .floors, .floors tbody, .floors tr, .floors td { display: block; width: auto; }
+    .floors tr {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+      padding: 12px 2px; border-bottom: 1px solid var(--line);
+    }
+    .floors tr:last-child { border-bottom: 0; }
+    .floors td { border: 0; padding: 0; }
+    .floors td.acts { flex-basis: 100%; text-align: left; }
+    .floors td.acts .actions { justify-content: flex-start; flex-wrap: wrap; }
+    /* the row's own action (first child) stretches; the quiet ones do not */
+    .floors td.acts .actions > button:first-child { flex: 1 1 auto; }
+  }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1>Projects</h1>
+  <span class="sub">One project is one home model. Its floors share a brand kit.</span>
+  <div class="actions">
+    <!-- Everything here lives in this one browser. A backup is the only copy
+         that survives clearing site data, so the control is on the page where
+         the work is, not buried in a settings screen. -->
+    <button id="backup" class="btn btn--secondary">Back up</button>
+    <button id="restore" class="btn btn--secondary">Restore</button>
+    <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+    <!-- "Upload plan" used to open the upload PAGE, where you then had to click
+         again to reach the file picker. The picker cannot simply be opened when
+         that page loads: browsers only allow a file dialog during a real user
+         gesture, and a page load is not one (verified — the call is silently
+         ignored). So the file is taken HERE, on the click itself, and handed to
+         the upload page through the artifact store. -->
+    <input type="file" id="planFile" accept="application/pdf,image/png,image/jpeg,image/webp" hidden>
+    <button id="newProject" class="btn btn--primary">New project</button>
+  </div>
+</div>
+<div class="page-head" style="padding-top:0">
+  <span class="subtle" id="backupNote"></span>
+</div>
+<main id="list"></main>
+
+<!-- Reuse destination picker. This replaced a prompt() that printed a numbered
+     list of projects and asked the user to type a number into a text box —
+     which made them parse a list inside a field, and could not be styled,
+     focused or dismissed like the rest of the product. -->
+<dialog id="reuseDlg">
+  <h3 id="reuseTitle" style="margin:0 0 8px">Reuse this plan</h3>
+  <p class="subtle" id="reuseLead" style="margin:0 0 16px"></p>
+  <div id="reuseList" class="reuse-list"></div>
+  <label class="fld" for="reuseNew" id="reuseNewLabel" style="margin-top:16px"></label>
+  <input type="text" id="reuseNew" placeholder="Project name">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="reuseCancel" class="btn btn--quiet">Cancel</button>
+    <button id="reuseGo" class="btn btn--primary">Copy floor</button>
+  </div>
+</dialog>
+
+<!-- One name, asked in the product's own voice. These were the last two
+     prompt() calls in the app, and one of them sat behind "New project" — the
+     first button a new customer presses. A browser prompt cannot be styled, is
+     captioned with the page URL, and can be suppressed by the user or the
+     browser, in which case that first click would simply have done nothing. -->
+<dialog id="nameDlg">
+  <h3 id="nameTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="nameLead" style="margin:0 0 16px"></p>
+  <label class="fld" for="nameField" id="nameLabel"></label>
+  <input type="text" id="nameField" autocomplete="off">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="nameCancel" class="btn btn--quiet">Cancel</button>
+    <button id="nameGo" class="btn btn--primary"></button>
+  </div>
+</dialog>
+
+
+<!-- What changed between sign-offs. The DRAWING cannot be diffed: there is no
+     wall geometry, only a raster. The RECORD can, and the record is what the
+     verification report is about. -->
+<dialog id="histDlg">
+  <h3 id="histTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="histLead" style="margin:0 0 16px"></p>
+  <div id="histList" class="hist-list"></div>
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="histClose" class="btn btn--quiet">Close</button>
+  </div>
+</dialog>
+
+<script type="module">
+import { askConfirm } from './src/ask.js';
+import { signOffName, onAuthChange, authState } from './src/auth.js';
+import { openSignIn } from './src/auth-ui.js';
+import { renderChrome } from './src/chrome.js';
+await renderChrome();
+import * as store from './src/store.js';
+import { composeAll } from './src/compositor.js';
+import { getArtifact, getArtifactUrl, scopeFor, styledKind, resolveStyled, STYLED_KINDS, deleteScope, copyScope, deleteArtifact, putArtifact } from './src/artifacts.js';
+import { lookOfImage } from './src/model3d/theme3d.js';
+import { floorHref, floorStage } from './src/floor-context.js';
+import { exportBackup, inspectBackup, restoreBackup } from './src/backup.js';
+import { diffVersions } from './src/versions.js';
+import { canvasesToPdfBlob } from './src/pdf.js';
+import { renderVerificationReport } from './src/report.js';
+import { makeStyledMock } from './src/mock-style.js';
+import { makeMockLogo } from './src/mock-plan.js';
+import { derived } from './src/palettes.js';
+import { DEFAULT_DISCLAIMER } from './src/footer.js';
+
+const $ = (id) => document.getElementById(id);
+store.ensureSeed();
+
+// One vocabulary for how far a floor has got, shared by the chip and the
+// primary action so they can never disagree.
+// Named for what the customer gets, not for what we did. "styled" was our own
+// word; what a builder wants to know is whether the floor's image exists yet,
+// so a reviewed-but-unrendered floor and a finished one must not read alike —
+// they used to share the same green chip.
+const STAGE_LABEL = { empty: 'needs plan', uploaded: 'in review', confirmed: 'needs render', styled: 'ready' };
+const STAGE_CHIP  = { empty: 'new', uploaded: 'busy', confirmed: 'accent', styled: 'confirmed' };
+
+// "you · 7/25/2026" read as a username and an ambiguous date. The reviewer's
+// name matters on the verification report, which is the document that makes the
+// claim; here the useful fact is simply WHEN it was signed off.
+function signOff(v) {
+  if (!v?.confirmedAt) return 'Not yet';
+  return new Date(v.confirmedAt).toLocaleDateString(undefined,
+    { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+/** Escape text going into innerHTML. Project names are user-supplied. */
+const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function render() {
+  const kits = store.getKits();
+  const list = $('list');
+  list.innerHTML = '';
+  // The archive section is a SIBLING of the grid, so clearing the grid does not
+  // clear it — and render() runs on every archive, restore, rename and delete.
+  // Without this, each pass left another "Archived (1)" behind: seven of them
+  // stacked down the page after seven renders.
+  document.querySelectorAll('details.archive').forEach((el) => el.remove());
+  const all = store.getProjects();
+  const live = all.filter((p) => !p.archived);
+  const archived = all.filter((p) => p.archived);
+
+  // Nothing here yet. The app used to hide this moment by seeding a fake
+  // project, so a first-time user's opening screen was two floors of someone
+  // else's home model with nothing saying so. An empty list is the honest
+  // state; what it owes the user is a way out of it, not a decoration.
+  if (!live.length && !archived.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty-state';
+    empty.innerHTML = `
+      <h2>Start your first project</h2>
+      <p class="subtle">A project is one home model. Upload a floor plan, confirm the rooms
+        and dimensions, and get branded images in three formats.</p>
+      <div class="row" style="justify-content:center; margin-top:16px">
+        <button id="emptyNew" class="btn btn--primary">New project</button>
+        <button id="emptySample" class="btn btn--secondary">Try a sample</button>
+      </div>
+      <p class="subtle" style="margin-top:12px">The sample is a demo plan, clearly labelled
+        and deletable any time.</p>`;
+    list.append(empty);
+    $('emptyNew').onclick = () => $('newProject').onclick();
+    $('emptySample').onclick = () => { store.createSampleProject(); render(); };
+    // With the empty state carrying the two real choices, the header's copy of
+    // "New project" is the same dark button twice on one screen, and "Back up"
+    // offers to save nothing. Restore stays: arriving at an empty app holding a
+    // backup file is exactly when it is needed.
+    $('newProject').hidden = true;
+    $('backup').hidden = true;
+    return;
+  }
+  $('newProject').hidden = false;
+  $('backup').hidden = false;
+
+  for (const p of live) await renderProject(p, kits, list);
+
+  // Archived projects sit below the working list, behind one disclosure, so a
+  // finished model stops competing for attention without being thrown away.
+  if (archived.length) {
+    // OUTSIDE THE GRID, NOT INSIDE IT. This <details> used to be appended to
+    // #list, which is the tile grid — so the whole archive became one grid cell
+    // sitting beside a live project, with the archived tiles nested inside it
+    // at a different width. It is its own section below the grid, with its own
+    // grid inside for the tiles it holds.
+    const wrap = document.createElement('details');
+    wrap.className = 'archive';
+    wrap.innerHTML = `<summary>Archived (${archived.length})</summary>`;
+    const inner = document.createElement('div');
+    inner.id = 'archivedList';
+    wrap.append(inner);
+    list.after(wrap);
+    for (const p of archived) await renderProject(p, kits, inner);
+  }
+}
+
+/**
+ * The picture on a project tile: the newest artifact its first floor has.
+ *
+ * Order matters and is not arbitrary. A styled render is what the customer
+ * paid for and is the only one that looks like the product; the wireframe says
+ * the plan converted; the source says only that something was uploaded. So the
+ * thumbnail doubles as a progress indicator without a second control.
+ *
+ * Deliberately best-effort: a missing artifact, a floor that has not been
+ * uploaded, or a store that will not open all leave the placeholder in place.
+ * A project list must never fail to render because a picture is unavailable.
+ */
+async function paintThumb(el, project) {
+  if (!el) return;
+  const floors = project.floors || [];
+  if (!floors.length) return;
+  // THE TAG SAYS WHICH ARTIFACT THIS IS, and it is not decoration.
+  //
+  // A tile whose picture is the WIREFRAME looks exactly like a tile whose
+  // picture is a finished render — so a project that has never been styled
+  // reads as ready, and then the PDF comes out carrying a placeholder and the
+  // warning looks like a bug. It is not a bug; the tile simply never said what
+  // it was showing. That is precisely what happened after a Copy to project:
+  // the copy deliberately leaves the old project's render behind, the thumbnail
+  // fell through to the wireframe, and the card looked complete.
+  const LABEL = {
+    'styled-light': 'styled render · light',
+    'styled-dark': 'styled render · dark',
+    // A floor rendered before the two looks became separate kinds. It is a
+    // styled render and the tile must say so.
+    styled: 'styled render',
+    wireframe: 'wireframe · not styled yet',
+    source: 'your upload · not traced yet',
+  };
+  // THE UNTAGGED KIND IS IN THIS LIST, and its absence is what made a finished
+  // floor look unfinished. The two per-theme kinds were tried, then the search
+  // fell straight through to the wireframe, so a card whose floor had been
+  // rendered and paid for was labelled "wireframe · not styled yet" and showed
+  // the tracing. Third place the same blind spot has turned up: the 3D view
+  // denied the render it was standing on, the embed gate denied it too.
+  // EVERY FLOOR, NOT JUST THE FIRST.
+  //
+  // This read `floors[0]` alone, so The Sky — whose Main Floor is empty and
+  // whose Top Floor carries a finished dark render — showed "no plan yet" on a
+  // card that had one. A project is the unit on the card, and the best thing
+  // the project holds is what should be on it.
+  //
+  // Kinds outer, floors inner, so a styled render on the SECOND floor still
+  // beats a wireframe on the first: the tile keeps meaning "the furthest this
+  // project has got", which is what the tag was added to say.
+  for (const kind of [styledKind('light'), styledKind('dark'), 'styled', 'wireframe', 'source']) {
+    for (const floor of floors) {
+    // THE SCOPE THE FLOOR ITSELF RECORDS, falling back to the derived one --
+    // the same expression Studio uses to decide where to WRITE a render, and
+    // the same one line 1371 below already uses to read. This asked only for
+    // the derived scope, so on any floor whose record names a different one the
+    // thumbnail was looking somewhere Studio never writes: Saman rendered Top
+    // Floor in light and the card kept showing the old dark render.
+    const scope = floor.verified?.artifactScope || scopeFor(project.id, floor.id);
+    try {
+      const url = await getArtifactUrl(scope, kind);
+      if (!url) continue;
+      el.style.backgroundImage = `url("${url}")`;
+      el.classList.remove('thumb--empty');
+      el.textContent = '';
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      // NAME THE FLOOR WHEN IT IS NOT THE OBVIOUS ONE. A card showing a render
+      // that the floor you then open does not have is the exact confusion this
+      // avoids — and with the picture now free to come from any floor, saying
+      // which one is the difference between a helpful tile and a misleading
+      // one. Silent for a single-floor project, where there is nothing to say.
+      const named = floors.length > 1 && floor !== floors[0];
+      tag.textContent = (LABEL[kind] || kind) + (named ? ` · ${floor.name}` : '');
+      el.append(tag);
+      // The alternative text has to say WHICH plan, not "thumbnail" — it is the
+      // only thing distinguishing one card from another to a screen reader —
+      // and it carries the same qualification the tag does.
+      el.setAttribute('role', 'img');
+      el.setAttribute('aria-label', `${project.name}, ${floor.name}, ${LABEL[kind] || kind}`);
+      return;
+    } catch { /* try the next floor, then the next kind */ }
+    }
+  }
+}
+
+// The pill's trailing arrow. Not "· Floor name" as it used to be: the floor is
+// named in bold at the other end of the same row, so repeating it filled the
+// control with the one word the reader already had. The collapsed card's button
+// still names its floor, and must — there it is the only control on the tile and
+// nothing else says which floor it acts on.
+const ARROW = '<svg class="go" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"'
+  + ' fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"'
+  + ' stroke-linejoin="round"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5"/></svg>';
+
+/**
+ * What is left to do across a project, as the label of the button that opens
+ * its floors. Reads the least advanced stage present, because that is the one
+ * holding the project up — a project with two styled floors and one empty one
+ * needs a plan, not a render.
+ */
+function outstandingLabel(p, stageCount) {
+  const behind = ['empty', 'uploaded', 'confirmed'].find((s) => stageCount[s]);
+  // "All 2 floors ready" is clumsy English and the count is already on the line
+  // above; "all" is the whole point of the sentence.
+  if (!behind) return 'All floors ready';
+  const c = stageCount[behind];
+  const floors = `${c} floor${c > 1 ? 's' : ''}`;
+  if (behind === 'empty') return `${floors} need${c > 1 ? '' : 's'} a plan`;
+  if (behind === 'uploaded') return `${floors} in review`;
+  return `${floors} ready to style`;
+}
+
+const foldLabel = (p, shut) => (shut
+  ? `Show ${p.floors.length} floor${p.floors.length > 1 ? 's' : ''}`
+  : 'Hide floors');
+
+async function renderProject(p, kits, host) {
+  {
+    const kit = kits.find((k) => k.id === p.brandKitId) || kits[0];
+    // TILES ARE THE DEFAULT VIEW, so a project is collapsed unless its owner
+    // has explicitly opened it.
+    //
+    // The tile — thumbnail, name, summary — was built as the COLLAPSED state,
+    // and nothing collapsed anything, so the grid never appeared: every project
+    // rendered expanded, spanned the row, and the list looked exactly as it had
+    // before. A feature that is only reachable by closing each card one at a
+    // time is a feature nobody sees.
+    //
+    // `!== false` rather than a truthy test, so a project the user has opened
+    // stays open across a reload while one they have never touched starts as a
+    // tile.
+    const collapsed = p.collapsed !== false;
+    const panel = document.createElement('section');
+    // A MULTI-FLOOR CARD CARRIES NO FLOOR-SCOPED ACTION WHILE IT IS SHUT.
+    //
+    // "Open Studio · Main Floor" on a three-floor project is a floor-scoped
+    // action sitting on the project surface — the exact thing the rest of this
+    // card was built to avoid — and it reads as the only way in, so the other
+    // two floors do not exist until someone opens the card. Stacking three
+    // buttons instead only moves the problem: it makes the tile a list, and the
+    // tile exists so a list does not have to be read.
+    //
+    // So the shut card's one action is the disclosure, and the floor actions
+    // live in exactly one place: the floor rows. A single-floor project keeps
+    // the direct button, because there "open the card" and "act on the floor"
+    // are the same thing and naming a floor cannot mislead.
+    const many = p.floors.length > 1;
+    panel.className = 'panel' + (collapsed ? ' collapsed' : '') + (many ? ' panel--many' : '');
+    // Lets an action that creates a project point at the card it produced.
+    panel.dataset.project = p.id;
+    // One summary line replaces the whole table when folded, so a long list can
+    // be scanned without scrolling past floors the user is not working on.
+    const done = p.floors.filter((f) => f.verified).length;
+    // "N of M confirmed", ALWAYS, rather than the count with a confirmed clause
+    // appended when there is one. With nothing confirmed the old form collapsed
+    // to just "2 floors", which the header two rows above already says, so a
+    // fresh card spent its status line repeating itself. This says the one
+    // thing the header does not, in every state, and it matches the pips beside
+    // it exactly.
+    const summary = `${done} of ${p.floors.length} confirmed`;
+    // One pip per floor, filled once that floor is signed off. It says "two of
+    // three are done" in a glance and in a fixed width — a sentence saying the
+    // same thing grows with the number of floors, which is what the header
+    // rule forbids.
+    const pips = p.floors.map((f) => `<span class="pip${f.verified ? ' on' : ''}"></span>`).join('');
+    // THE WHOLE HEAD IS THE DISCLOSURE, not a 9px glyph.
+    //
+    // The chevron was a text character and rendered at 9x15px. The clickable
+    // area was actually the name beside it, which nothing on screen said, so
+    // the tiny glyph is what people aimed at. Now the header band AND the
+    // thumbnail are one button: the target is the full column width by ~358px,
+    // and the chevron is an SVG in a 32px box that cannot shrink to its font.
+    //
+    // The title is inside it deliberately. A project has no screen of its own,
+    // so a title link would have nowhere to go — one target, one outcome, one
+    // aria-expanded, and nothing else in the header is interactive, so there is
+    // no button inside a button.
+    const chevron = '<svg class="chev" viewBox="0 0 16 16" width="16" height="16"'
+      + ' aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75"'
+      + ' stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>';
+    panel.innerHTML = `
+      <button class="fold" aria-expanded="${!collapsed}">
+        <span class="phead">
+          <span class="pname">${p.name}</span>
+          <span class="pcount">${p.floors.length} floor${p.floors.length > 1 ? 's' : ''}</span>
+        </span>
+        <span class="thumb thumb--empty" data-thumb>no plan yet</span>
+        <!-- The status band is inside the disclosure button, and it can be:
+             pips, a summary and a chip are all text. Putting it here is what
+             lets the cue below it be the LAST thing in the button. -->
+        <span class="pstatus">
+          <span class="pips" title="${done} of ${p.floors.length} confirmed">${pips}</span>
+          <span class="sum">${summary}</span>
+          <span class="chip" title="Brand kit applied to every floor in this project">${kit?.name || 'no kit'}</span>
+          ${p.isSample ? '<span class="chip warn" title="A demo plan, not your own work.">Sample</span>' : ''}
+        </span>
+        <!-- THE DISCLOSURE SAYS WHAT IT DOES, IN WORDS, AT THE FOOT.
+             A bare chevron at the top of the card told the user nothing about
+             what pressing it would produce — it is an icon for a state, not for
+             an outcome, and it sat where nothing else was interactive.
+             It now reads "Show 2 floors" and sits at the bottom of the card,
+             where actions live. The chevron stays beside the words as the state
+             indicator it always was.
+             It cannot go BELOW the next-action button: that button is a real
+             <button>, the disclosure is a real <button>, and one cannot be
+             nested in the other. So the card ends with its primary action and
+             the disclosure sits directly above it. -->
+        <span class="foldcue">
+          <span class="foldtext"></span>
+          <span class="chevbox">${chevron}</span>
+        </span>
+      </button>
+      <div class="nextup"></div>
+      <div class="fold-body"><div>
+        <ul class="floorlist"></ul>
+        <div class="busy"></div>
+        <!-- PROJECT SCOPE LIVES HERE AND ONLY HERE, below a hairline, and only
+             when the tile is open. A collapsed tile carries no
+             project-management control at all — which is what stops "Delete
+             project" and "Continue review" reading as the same kind of thing. -->
+        <div class="pfoot">
+          <button class="projMenuBtn btn btn--quiet" popovertarget="pm-${p.id}"
+                  style="anchor-name: --pm-${p.id}">
+            ${p.name} <span aria-hidden="true">···</span>
+          </button>
+        </div>
+      </div></div>
+      <div class="projmenu" popover id="pm-${p.id}" style="position-anchor: --pm-${p.id}">
+        <div class="pm-head">${p.name}<span class="pcount">${p.floors.length} floor${p.floors.length > 1 ? 's' : ''}</span></div>
+        <button class="addFloor">+ Floor</button>
+        <button class="dlAll">Project PDF</button>
+        <button class="archiveBtn"></button>
+        <button class="settingsBtn">Project settings…</button>
+      </div>`;
+    paintThumb(panel.querySelector('[data-thumb]'), p);
+    // The label states the OUTCOME, not the state: what you get if you press it.
+    // One function, because the click handler has to say the same thing.
+    panel.querySelector('.foldtext').textContent = foldLabel(p, collapsed);
+    // FLOOR ROWS ARE LINKS, NOT A TABLE WITH A MENU.
+    //
+    // Two things went with the table: the FLOOR / STATUS / SIGN-OFF / NEXT STEP
+    // header, which cost as much vertical space as the data on the one-floor
+    // projects that are the common case; and the per-row popover, which
+    // rendered 190x9px because an absolutely positioned panel cannot escape the
+    // scroll container the table needed.
+    //
+    // Each row is one anchor to that floor, and its next step is named WITH THE
+    // FLOOR — "Continue review · Main Floor", never "Continue review" — so a
+    // floor-scoped control can never be mistaken for a project-scoped one.
+    const flist = panel.querySelector('.floorlist');
+    const nextOf = (stage) => (stage === 'empty' ? ['Upload plan', 'extract.html']
+      : stage === 'uploaded' ? ['Continue review', 'review.html']
+      : ['Open Studio', 'studio.html']);
+    let leastAdvanced = null;
+    const stageCount = {};
+    for (const f of p.floors) {
+      const v = f.verified;
+      // Stage comes from what this floor actually HAS, not from the status
+      // field, which cannot describe "uploaded but not yet confirmed".
+      const stage = await floorStage(p.id, f.id);
+      const [label, page] = nextOf(stage);
+      const order = { empty: 0, uploaded: 1, confirmed: 2, styled: 3 };
+      if (!leastAdvanced || order[stage] < order[leastAdvanced.stage]) {
+        leastAdvanced = { stage, label, page, floor: f };
+      }
+      stageCount[stage] = (stageCount[stage] || 0) + 1;
+      const li = document.createElement('li');
+      li.className = 'floorrow';
+      const a = document.createElement('a');
+      a.className = 'floorlink';
+      a.href = floorHref(page, p.id, f.id);
+      a.innerHTML = `
+        <span class="dot dot--${stage === 'empty' ? 'idle' : v ? 'ok' : 'warn'}"></span>
+        <span class="fl-main">
+          <span class="fl-name">${f.name}</span>
+          <span class="fl-meta">${STAGE_LABEL[stage]}${v ? ` · ${signOff(v)}` : ''}</span>
+        </span>
+        <span class="fl-next">${label}${ARROW}</span>`;
+      // An empty floor has no plan to open; the row still leads somewhere, but
+      // the file picker is the honest destination.
+      if (stage === 'empty') {
+        a.href = '#';
+        a.onclick = (e) => { e.preventDefault(); pickPlanFor(p.id, f.id); };
+      }
+      li.append(a);
+      // A FLOOR CAN BE REMOVED WITHOUT ITS PROJECT.
+      //
+      // Until now the only way to lose a confirmed floor was to delete the whole
+      // project, which meant a floor whose plan and renders had been destroyed
+      // was a permanent row that could neither be finished nor removed. That is
+      // exactly the state The Sky's Main Floor was left in.
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'fl-del';
+      del.title = `Remove ${f.name}`;
+      del.setAttribute('aria-label', `Remove ${f.name} from ${p.name}`);
+      del.innerHTML = '<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"'
+        + ' fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round">'
+        + '<path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.6 8h4.8l.6-8"/></svg>';
+      del.onclick = () => removeFloorFrom(p, f);
+      li.append(del);
+      flist.append(li);
+    }
+
+    // WHAT IS OUTSTANDING, ON THE SHUT CARD.
+    //
+    // Taking the direct action button off a multi-floor card removes the one
+    // thing that said there was work to do, so the summary has to carry it or
+    // the tile becomes decorative. "2 confirmed" counts what is finished; the
+    // useful half is what is NOT, and which stage it is stuck at — that is the
+    // reason to open the card, and it belongs beside the pips that already
+    // count the finished ones.
+    //
+    // Written after the loop because the stage of a floor is what it HAS, read
+    // from the artifact store, and that cannot be known when the markup is
+    // built.
+    // The summary counts PROGRESS and the button below states what is
+    // OUTSTANDING — two halves of the same fact, and neither is the other. The
+    // summary said the outstanding half for one commit, which left the button
+    // repeating it word for word.
+
+    panel.querySelector('.addFloor').onclick = async () => {
+      // The numbered default stands here, unlike the project name: floors
+      // really are often just numbered, and "Floor 3" is already unambiguous
+      // within its project.
+      const name = await askName({
+        title: `Add a floor to "${p.name}"`,
+        lead: 'Each floor gets its own plan, review and images.',
+        label: 'Floor name',
+        value: `Floor ${p.floors.length + 1}`,
+        confirm: 'Add floor',
+      });
+      if (name) { store.addFloor(p.id, name); render(); }
+    };
+    // Offering the pack on a project with nothing confirmed just produced an
+    // error on click. Say what is missing instead, on the button itself.
+    const ready = p.floors.filter((f) => f.verified).length;
+    const dl = panel.querySelector('.dlAll');
+    dl.disabled = ready === 0;
+    // Dark only when it can actually be pressed — the card's one primary.
+    dl.classList.toggle('btn--primary', ready > 0);
+    // THE LABEL NAMES BOTH DOCUMENTS, BECAUSE THERE ARE TWO.
+    //
+    // "Project PDF" named the file type and not the contents, so a builder who
+    // opened it expecting the plan found a verification report in it. The first
+    // attempt at a fix called it a "presentation pack", which is worse: a
+    // presentation is what you show a buyer, and the report is a record of who
+    // checked what. Naming the file for one of its two halves is how the
+    // problem started.
+    //
+    // The report does belong in here — its own footer is addressed to a
+    // recipient, not to the builder ("reviewed and confirmed by the named
+    // reviewer", "not a construction document"), so it was written to travel
+    // with the drawing. What it is not is a presentation.
+    // `many` is already in scope from the panel class above — the same fact.
+    dl.innerHTML = `<span>Plan${many ? 's' : ''} + verification report${many ? 's' : ''}`
+      + ' (PDF)</span><span class="pm-sub"></span>';
+    dl.querySelector('.pm-sub').textContent = ready === 0
+      ? 'Needs a confirmed floor'
+      : `${ready} of ${p.floors.length} floor${many ? 's' : ''} · two pages each`;
+    dl.title = ready === 0
+      ? 'No floor is confirmed yet. Finish a review first.'
+      // A tooltip is read while the cursor is already moving. The second line of
+      // the button says how many floors; this says what a floor's two pages are.
+      : 'One PDF. Each floor gets its styled plan, then its verification report.';
+    dl.onclick = () => downloadAll(p, kit, panel);
+
+    // OPENING A CARD IS A CLASS CHANGE, NOT A RE-RENDER.
+    //
+    // This called render(), which rebuilds every tile in the list from scratch:
+    // new nodes, thumbnails re-read from IndexedDB, the archive section rebuilt.
+    // A brand new node is created already in its final state, so the 0fr -> 1fr
+    // transition below it had nothing to transition FROM and never ran. What the
+    // user saw was the whole page blink and the card appear open — the animation
+    // was written, built and shipped, and then thrown away on every click.
+    //
+    // Toggling the class on the element that is already on screen is all this
+    // ever needed. Everything else the re-render was providing — the chevron,
+    // the next-step line, the floor list — is CSS that follows the class.
+    const fold = panel.querySelector('.fold');
+    const foldText = panel.querySelector('.foldtext');
+    fold.onclick = () => {
+      // Where we are going, not where we are.
+      const shut = !panel.classList.contains('collapsed');
+      panel.classList.toggle('collapsed', shut);
+      fold.setAttribute('aria-expanded', String(!shut));
+      foldText.textContent = foldLabel(p, shut);
+      store.setProjectCollapsed(p.id, shut);
+    };
+
+    // Manage row: quiet, at the foot of the card, visible only when expanded.
+    // ARCHIVE AND DELETE MOVED INTO THE HEADER MENU, with everything else whose
+    // label depends on data. They were a row at the foot of the card — fine on
+    // a full-width panel, but on a 478px tile they were another band that could
+    // grow, and one of them is irreversible and had no business being one click
+    // from the surface.
+    const arch = panel.querySelector('.archiveBtn');
+    // Archive stays in the menu because it is REVERSIBLE, and its label says so
+    // rather than leaving the user to find out.
+    arch.innerHTML = p.archived
+      ? 'Restore from archive'
+      : '<span>Archive</span><span class="pm-sub">You can undo this</span>';
+    arch.title = p.archived
+      ? 'Move back into the working list'
+      : 'Keep the project and its files, out of the working list';
+    arch.onclick = () => { store.archiveProject(p.id, !p.archived); render(); };
+
+    // DESTRUCTIVE IS FOUR DELIBERATE STEPS AWAY: open the tile, open the project
+    // menu, Project settings, then a confirmation naming the project. It used to
+    // sit next to "+ Floor", one click from the surface, which is how a rare
+    // irreversible action ends up beside a routine one.
+    panel.querySelector('.settingsBtn').onclick = () => {
+      panel.querySelector('.projmenu')?.hidePopover?.();
+      projectSettings(p, kit);
+    };
+
+    // "OPEN ALL FLOORS" IS REMOVED, NOT MOVED. It was a link to open a thing,
+    // inside the menu of the thing it opens. Opening the tile shows the floors;
+    // the row is the way into one.
+
+    // The collapsed tile's one action, named with the floor it acts on and
+    // derived from the LEAST advanced floor — the project's next step is
+    // whatever is furthest behind, not whatever happens to be first.
+    const nextup = panel.querySelector('.nextup');
+    if (p.archived) {
+      // AN ARCHIVED TILE'S ONE ACTION IS COMING BACK. Restore lived in the
+      // footer menu, which lives inside the fold — so on a collapsed archived
+      // card there was no way to reach it at all without first opening a card
+      // the user had deliberately put away.
+      //
+      // And the action it was showing instead made no sense: "Upload plan ·
+      // Main Floor", offering to start work on a project someone had just
+      // filed. An archived project has exactly one thing you might want from
+      // it, so that is what the surface says. It names the project, which is
+      // what keeps a project-scoped control legible on a card whose other
+      // controls are floor-scoped.
+      const b = document.createElement('button');
+      b.className = 'btn btn--secondary nextbtn';
+      b.textContent = `Restore ${p.name} from archive`;
+      b.onclick = () => { store.archiveProject(p.id, false); render(); };
+      nextup.append(b);
+    } else if (leastAdvanced) {
+      const b = document.createElement('button');
+      // PRIMARY, because on a shut tile this is the only thing to press — the
+      // floor list that would otherwise carry it is behind the fold. It cannot
+      // compete with the card's other primary: the pack button lives in the
+      // menu, and this one is gone the moment the card opens.
+      b.className = 'btn btn--primary nextbtn';
+      if (many) {
+        // A MULTI-FLOOR CARD STILL CARRIES NO FLOOR-SCOPED ACTION. Naming one
+        // floor here made the other two invisible until the card was opened,
+        // and stacking three buttons turns the tile into the list it exists to
+        // replace. So this says what is OUTSTANDING across the project and
+        // opens the floors, where each one carries its own action.
+        //
+        // It has to exist even so: the two card types must end with the same
+        // bands or a row of tiles is ragged, which is what happened when only
+        // one type had a button.
+        // THE LABEL STATES THE OUTCOME, which is this file's own rule for the
+        // disclosure directly above it — and this button was breaking it.
+        //
+        // "2 floors need a plan" is a filled, full-width, brand-coloured button:
+        // every signal both Apple and Google attach to one says "the main action
+        // is here". It opens a list. A user who presses it expecting to upload
+        // gets a fold, and nothing tells them that is what happened.
+        //
+        // The count is the useful half and it stays. What is added is the verb,
+        // so the button says what pressing it produces — the same voice as
+        // "Show 2 floors" beneath it, which is the control it actually is.
+        // "show floors", not "show them": the count in the first half is the
+        // OUTSTANDING floors and the fold opens ALL of them, so a pronoun here
+        // points at the wrong set — and reads as broken English the moment that
+        // count is one ("1 floor needs a plan — show them").
+        b.textContent = `${outstandingLabel(p, stageCount)} — show floors`;
+        b.onclick = () => panel.querySelector('.fold').click();
+      } else {
+        b.textContent = `${leastAdvanced.label} · ${leastAdvanced.floor.name}`;
+        b.onclick = () => {
+          if (leastAdvanced.stage === 'empty') pickPlanFor(p.id, leastAdvanced.floor.id);
+          else location.href = floorHref(leastAdvanced.page, p.id, leastAdvanced.floor.id);
+        };
+      }
+      nextup.append(b);
+    }
+
+    host.append(panel);
+  }
+}
+
+// Deleting takes the stored plan images with it. Leaving them behind would keep
+// a customer's uploads in the browser with nothing pointing at them, which the
+// handoff's retention promise (9b) rules out and nothing later could clean up.
+/**
+ * Project settings — the room the rare actions moved into.
+ *
+ * Two things live here, and they are here for different reasons.
+ *
+ * DELETE, because distance is the point. It used to sit in a row beside
+ * "+ Floor", one click from the surface, and an irreversible action next to a
+ * routine one is a mis-click waiting to happen. It is now four deliberate
+ * steps: open the tile, open the project menu, come in here, then confirm a
+ * dialog that names the project and counts what goes with it.
+ *
+ * AND THE FLOOR-SCOPED ACTIONS THAT LOST THEIR ROW — Report, History, Reuse.
+ * The design puts these on the floor's own screen, which is right and is not
+ * something this change can build: there is no single floor screen yet, only
+ * Upload, Review, Studio and 3D. Deleting them was never an option — the brief
+ * that produced this design said explicitly that moving them is fine and
+ * dropping them is not — so they wait here, each one NAMING ITS FLOOR, until
+ * that screen exists. The naming is what keeps the scope rule intact: nothing
+ * in this dialog can be mistaken for acting on the whole project except the one
+ * thing that does.
+ */
+function projectSettings(p, kit) {
+  const dlg = document.createElement('dialog');
+  dlg.className = 'auth-dialog';
+  dlg.innerHTML = `
+    <form method="dialog" class="auth-form">
+      <h2>${p.name}</h2>
+      <p class="subtle">${p.floors.length} floor${p.floors.length > 1 ? 's' : ''}</p>
+      <div class="ps-floors"></div>
+      <div class="auth-actions">
+        <span class="act-aside"></span>
+        <button class="btn btn--secondary" value="close">Close</button>
+      </div>
+    </form>`;
+  const floors = dlg.querySelector('.ps-floors');
+  for (const f of p.floors) {
+    if (!f.verified) continue;
+    const row = document.createElement('div');
+    row.className = 'ps-row';
+    // esc(), like every other name on this page. A floor name is typed by the
+    // customer and stored, so an unescaped one is not a display bug — it is
+    // markup that runs every time the dialog opens. Line 1506 escapes the
+    // project name three hundred lines below; this was the one that was missed.
+    row.innerHTML = `<span class="ps-floor">${esc(f.name)}</span><span class="ps-acts"></span>`;
+    const acts = row.querySelector('.ps-acts');
+    const act = (label, run) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      // SECONDARY, NOT QUIET. Three quiet buttons in a row have no fill and no
+      // border, so they read as a line of links under a heading rather than as
+      // three things you can press — which is what the screenshot showed.
+      b.className = 'btn btn--secondary btn--sm';
+      b.textContent = label;
+      b.onclick = () => { dlg.close(); run(); };
+      acts.append(b);
+    };
+    const panel = document.querySelector(`[data-project="${p.id}"]`);
+    // The REAL kit, not null. Passing null threw inside loadKitFont on
+    // `kit.font` before the report ever started rendering, which is why the
+    // button did nothing at all — no error the user could see, just silence.
+    act('Report', () => downloadFloorPdf(p, f, kit, panel, true));
+    act('History', () => showHistory(p, f));
+    // "Reuse" NAMED NOTHING. It is a verb with no object: reuse it where, as
+    // what? The action copies a confirmed floor into another project, so the
+    // label says that. The handoff's "verify once, reuse forever" is the
+    // eventual feature — a verified model held in the account — and this is its
+    // stub; borrowing that phrase as a button label put the vision in front of
+    // the customer instead of the thing the button does.
+    // The floor is named on the line above, so the button does not repeat it.
+    act('Copy to project…', () => reuseFloorFlow(p, f, panel));
+    floors.append(row);
+  }
+  if (!floors.children.length) {
+    floors.innerHTML = '<p class="subtle">Reports, history and reuse appear here '
+      + 'once a floor has been confirmed.</p>';
+  }
+  // DELETE SITS IN THE FOOTER, OPPOSITE CLOSE — not in a band of its own above
+  // it. Its own band gave it a heading-weight hairline and put a bordered
+  // destructive button directly above a borderless quiet one, so the two exits
+  // from the dialog sat at different left edges and neither looked like the
+  // footer. Far side of the same row keeps it four steps deep and one glance
+  // from the way out.
+  const del = document.createElement('button');
+  del.type = 'button';
+  del.className = 'btn btn--destructive btn--sm';
+  del.textContent = 'Delete project';
+  del.onclick = () => { dlg.close(); deleteProject(p); };
+  dlg.querySelector('.act-aside').replaceWith(del);
+  del.classList.add('act-aside');
+  dlg.addEventListener('close', () => dlg.remove());
+  document.body.append(dlg);
+  dlg.showModal();
+}
+
+async function deleteProject(p) {
+  const floors = p.floors.length;
+  const ok = await askConfirm({
+    title: `Delete “${p.name}”?`,
+    body: [
+      `This removes ${floors} floor${floors > 1 ? 's' : ''}, every uploaded plan and every render.`,
+      'It cannot be undone. To keep the files but clear the list, use Archive instead.',
+    ],
+    confirm: 'Delete project',
+    danger: true,
+  });
+  if (!ok) return;
+  const scopes = store.deleteProject(p.id);
+  for (const scope of scopes) await deleteScope(scope);
+  render();
+}
+
+/**
+ * Remove one floor from a project, images and all.
+ *
+ * Deliberately as heavy as deleting a project, scaled down: it names the floor,
+ * says what goes, and says what cannot be got back. A CONFIRMED floor carries a
+ * sign-off — a named person's statement about a drawing — so the confirmation
+ * says so rather than treating it as one more row.
+ *
+ * `deleteScope` and not `forgetScope`: this IS a deletion, so the account's copy
+ * goes too. That is the distinction sign-out got wrong and destroyed work with.
+ */
+async function removeFloorFrom(p, f) {
+  const confirmed = Boolean(f.verified);
+  const ok = await askConfirm({
+    title: `Remove “${f.name}”?`,
+    body: [
+      confirmed
+        // `signOff` is the DATE, not the person -- the name is `confirmedBy`.
+        // Worth naming both: a sign-off is a named person's statement about a
+        // drawing on a date, and that is what is being thrown away.
+        ? `This floor is confirmed. Removing it deletes its plan, its renders, and `
+          + `the sign-off${f.verified.confirmedBy ? ` by ${f.verified.confirmedBy}` : ''}`
+          + ` on ${signOff(f.verified)}.`
+        : 'This deletes its uploaded plan and any renders it has.',
+      'It is removed from your account too, on every device. It cannot be undone.',
+    ],
+    confirm: 'Remove floor',
+    danger: true,
+  });
+  if (!ok) return;
+  const scope = store.removeFloor(p.id, f.id, { force: true });
+  if (scope) await deleteScope(scope);
+  render();
+}
+
+// "Download all": every CONFIRMED floor × three formats + its verification
+// report, bundled into one PDF pack (each page at print size).
+let unstyledFloors = [];
+let offThemeFloors = [];
+async function downloadAll(p, kit, panel) {
+  const confirmed = p.floors.filter((f) => f.verified);
+  const busy = panel.querySelector('.busy');
+  if (!confirmed.length) { busy.textContent = 'No confirmed floors yet. Run Review first.'; return; }
+  unstyledFloors = [];
+  offThemeFloors = [];
+  busy.textContent = 'Composing floors…';
+  const pages = [];
+  for (const f of confirmed) {
+    pages.push(...await composeFloor(f, kit, p));
+    busy.textContent = `Composed ${f.name}…`;
+  }
+  busy.textContent = 'Building PDF pack…';
+  const blob = await canvasesToPdfBlob(pages);
+  // The filename is the other half of the label. "cc-pack.pdf" in a downloads
+  // folder says nothing about what is inside it either, and a builder forwarding
+  // this to a buyer should be able to see from the name that a sign-off record
+  // is attached to the drawing.
+  save(blob, `${p.name.replaceAll(' ', '-')}-plans-and-reports.pdf`);
+  busy.textContent = `Done. ${pages.length} pages, ${confirmed.length} floor${confirmed.length > 1 ? 's' : ''}, each with its report.` +
+    (unstyledFloors.length ? `  ⚠ Placeholder plan used for ${unstyledFloors.join(', ')}. Open each in Studio to style it first.` : '') +
+    (offThemeFloors.length ? `  ⚠ Your kit is set to ${kit?.palette?.theme === 'dark' ? 'dark' : 'light'}, but only the other look is rendered for ${offThemeFloors.join(', ')}.` : '');
+}
+
+async function downloadFloorPdf(p, f, kit, panel, reportOnly) {
+  const busy = panel.querySelector('.busy');
+  busy.textContent = 'Rendering report…';
+  await loadKitFont(kit);
+  const page = renderVerificationReport({ kit, projectName: p.name, floorName: f.name, verified: f.verified });
+  const blob = await canvasesToPdfBlob([page]);
+  save(blob, `${p.name.replaceAll(' ', '-')}-${f.name.replaceAll(' ', '-')}-verification.pdf`);
+  busy.textContent = 'Report downloaded.';
+}
+
+async function composeFloor(f, kit, p) {
+  await loadKitFont(kit);
+  const v = f.verified;
+  // The floor's own verified styled render is the deliverable. Only fall back
+  // to the placeholder when this floor has never been styled — and say so,
+  // rather than shipping a mock plan that looks real.
+  //
+  // IT ASKED FOR A KIND THAT IS NEVER WRITTEN. Styled renders are stored as
+  // `styled-light` and `styled-dark` — Studio writes them through
+  // styledKind(theme) — and nothing has ever written a plain `styled`. So this
+  // lookup returned null every time and the pack fell through to the mock: the
+  // main deliverable, the PDF a builder downloads and sends to a client, has
+  // been shipping a placeholder plan rather than theirs.
+  //
+  // The warning line hid it. "Placeholder plan used for X. Open each in Studio
+  // to style it first." reads as a fact about the customer's progress, so a
+  // pack full of mock plans looked like a floor nobody had styled yet.
+  //
+  // Both themes are tried because a floor may have been rendered in either, and
+  // the plain kind stays last as the fallback for anything written before the
+  // per-theme kinds existed — the same order studio.html already uses.
+  // One resolver for every page — see resolveStyled. The pack asks for the kit's
+  // own theme, because that palette composes every other pixel around the plan.
+  const scope = v.artifactScope || scopeFor(p.id, f.id);
+  const wanted = kit?.palette?.theme === 'dark' ? 'dark' : 'light';
+  const hit = await resolveStyled(scope, wanted);
+  const styledUrl = hit?.url || null;
+  // Say so when the pack could not use the look the kit asks for. Shipping the
+  // other one silently is how a builder finds out from a client.
+  if (hit && hit.theme && !hit.exact) offThemeFloors.push(`${f.name} (${hit.theme})`);
+  const styled = styledUrl ? await loadImg(styledUrl) : makeStyledMock(kit.palette);
+  if (!styledUrl) unstyledFloors.push(f.name);
+  // A RENDER WITH NO LABEL STILL HAS A LOOK, and this warning could not see it.
+  // The test above needs `hit.theme`, which is null for a floor rendered before
+  // the looks became separate kinds — so a dark plan went onto light page
+  // furniture with nothing said, on the one file a builder sends to a client.
+  // The image is already loaded here, so it costs a 24px draw to read it.
+  if (hit && !hit.theme && styledUrl) {
+    const look = lookOfImage(styled);
+    if (look && look !== wanted) offThemeFloors.push(`${f.name} (${look})`);
+  }
+  const d = derived(kit.palette);
+
+  // The ink that sits ON the drawing is not decided here. A plan carries both
+  // dark floors and light ones — The Sky's top floor has a pale hatched deck
+  // over a charcoal interior — so no single value can serve the whole page, and
+  // the first attempt at this flipped the whole floor's ink and would have put
+  // COVERED DECK white on white. `drawLabels` measures each label's own patch.
+  const logo = kit.logoDataUrl ? await loadImg(kit.logoDataUrl) : makeMockLogo(d.footerInk);
+  const brand = {
+    companyName: kit.companyName, tagline: kit.tagline, font: kit.font,
+    canvasBg: kit.palette.background, labelInk: d.labelInk, footerInk: d.footerInk,
+    disclaimerOn: kit.disclaimerOn !== false,
+    disclaimerText: kit.disclaimerText || DEFAULT_DISCLAIMER,
+    logo,
+  };
+  // ONE FORMAT PER FLOOR, THE ONE THAT FITS THIS PLAN BEST.
+  //
+  // The pack used to carry all three — square, landscape and portrait — so a
+  // two-floor project came out as eight pages, six of them the same drawing at
+  // three aspect ratios. Handoff L4 requires all three formats to SHIP, and
+  // they do: Studio exports whichever the customer picks, in JPG, PNG or PDF,
+  // plus the MLS-safe set. Choosing a canvas is a decision made while looking
+  // at the plan, which is Studio's job, not a folder of alternatives.
+  //
+  // What only the pack can do is the whole project in one file — every
+  // confirmed floor with its own verification report — and that is what it
+  // keeps. Two floors now make four pages instead of eight.
+  const all = composeAll({
+    planImage: styled,
+    labels: v.labels.filter((l) => l.name),
+    brand,
+    specs: v.specs,
+    meta: { title: `${f.name} · ${p.name}` },
+  });
+  // composeAll orders best-fit first, so the first entry is the strongest
+  // canvas for this plan's proportions.
+  const best = Object.values(all)[0];
+  // The report takes the plan page's size, so the two pages of a floor are one
+  // piece of paper rather than two.
+  const report = renderVerificationReport({
+    kit, projectName: p.name, floorName: f.name, verified: v,
+    page: { width: best.width, height: best.height },
+  });
+  return [best, report];
+}
+
+async function loadKitFont(kit) {
+  // A project with no brand kit is a real state — the header already renders
+  // "no kit" — so this has to survive one rather than throw on kit.font and
+  // take the whole download with it.
+  const family = kit?.font;
+  if (!family) return;
+  await Promise.all([400, 600, 700].map((w) => document.fonts.load(`${w} 20px "${family}"`)));
+}
+const loadImg = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+function save(blob, name) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/**
+ * Ask for a single name. Resolves to the trimmed name, or null if the user
+ * backed out — Cancel, Esc, or dismissing the dialog all land in the same
+ * place, so no caller has to know which one happened.
+ *
+ * Deliberately not a prompt(): see the dialog's markup for why.
+ */
+function askName({ title, lead, label, value = '', placeholder = '', confirm = 'Create' }) {
+  const dlg = $('nameDlg');
+  const field = $('nameField');
+  $('nameTitle').textContent = title;
+  $('nameLead').textContent = lead || '';
+  $('nameLead').hidden = !lead;
+  $('nameLabel').textContent = label;
+  $('nameGo').textContent = confirm;
+  field.value = value;
+  field.placeholder = placeholder;
+
+  return new Promise((resolve) => {
+    let result = null;
+    $('nameCancel').onclick = () => dlg.close();
+    $('nameGo').onclick = () => {
+      const v = field.value.trim();
+      // A nameless project is a row the user cannot tell from any other. Keep
+      // them in the field rather than creating one and making them fix it.
+      if (!v) { field.focus(); return; }
+      result = v;
+      dlg.close();
+    };
+    // Enter submits, as it did in the dialog this replaces. Losing that would
+    // make the common case slower than what it replaced.
+    //
+    // Escape is handled explicitly rather than left to <dialog>: the native
+    // cancel does not fire in every embedding (measured — the key reaches the
+    // page, no `cancel` event, dialog stays open), and a modal with no keyboard
+    // way out is a trap. Calling close() twice is a no-op, so this is safe
+    // where the native behaviour does work.
+    dlg.onkeydown = (e) => {
+      if (e.key === 'Enter' && e.target === field) { e.preventDefault(); $('nameGo').click(); }
+      if (e.key === 'Escape') { e.preventDefault(); dlg.close(); }
+    };
+    // One exit point: `close` fires for the button, for Esc and for close()
+    // called anywhere else, so the promise can never be left hanging.
+    dlg.addEventListener('close', () => resolve(result), { once: true });
+    dlg.showModal();
+    field.focus();
+    field.select();
+  });
+}
+
+/**
+ * "Upload plan": open the file picker immediately, then go to the upload page
+ * with the file already in hand.
+ *
+ * The picker has to be opened from this click. A file dialog needs a real user
+ * gesture, and arriving on a new page is not one — calling click() there is
+ * ignored without even an error, so "navigate, then auto-open" cannot work.
+ * The file travels in the artifact store, which already carries every other
+ * per-floor blob, rather than through the URL.
+ *
+ * Cancelling the picker leaves you here, which is right: there is nothing to
+ * do on an upload page you did not mean to open.
+ */
+let pendingFloor = null;
+function pickPlanFor(projectId, floorId) {
+  pendingFloor = { projectId, floorId };
+  $('planFile').value = '';      // so re-picking the same file still fires
+  $('planFile').click();
+}
+$('planFile').onchange = async () => {
+  const file = $('planFile').files[0];
+  if (!file || !pendingFloor) return;
+  const { projectId, floorId } = pendingFloor;
+  pendingFloor = null;
+  await putArtifact(scopeFor(projectId, floorId), 'pending', file);
+  location.href = floorHref('extract.html', projectId, floorId);
+};
+
+/**
+ * Every sign-off on this floor, newest first, each with what changed from the
+ * one before it.
+ *
+ * Only the RECORD is compared: room names, dimensions, the space count and the
+ * listing figures. The drawing itself cannot be diffed — there is no geometry,
+ * only a raster — but those fields are what a builder means when they ask what
+ * changed, and they are what the verification report attests to.
+ */
+function showHistory(project, floor) {
+  const dlg = $('histDlg');
+  const list = $('histList');
+  const vs = floor.versions || [];
+  $('histTitle').textContent = `${floor.name} · ${project.name}`;
+  $('histLead').textContent = `${vs.length} sign-off${vs.length === 1 ? '' : 's'}. Each entry shows what changed from the one before it.`;
+  list.innerHTML = '';
+
+  for (let i = vs.length - 1; i >= 0; i--) {
+    const v = vs[i];
+    const changes = i > 0 ? diffVersions(vs[i - 1], v) : [];
+    const el = document.createElement('div');
+    el.className = 'hist-v';
+    const when = v.at ? new Date(v.at).toLocaleString(undefined,
+      { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'date unknown';
+    el.innerHTML = `<h4>Version ${i + 1}${i === vs.length - 1 ? ' · current' : ''}</h4>`
+      + `<div class="when">${esc(v.by || 'the account holder')} · ${esc(when)}</div>`;
+    if (i === 0) {
+      el.innerHTML += '<div class="same">First sign-off.</div>';
+    } else if (!changes.length) {
+      el.innerHTML += '<div class="same">Re-confirmed with no change to the record.</div>';
+    } else {
+      el.innerHTML += `<ul>${changes.map((c) => `<li>${esc(c.text)}</li>`).join('')}</ul>`;
+    }
+    list.append(el);
+  }
+
+  $('histClose').onclick = () => dlg.close();
+  // Never rely on the native Escape: it does not fire in every embedding.
+  dlg.onkeydown = (e) => { if (e.key === 'Escape') { e.preventDefault(); dlg.close(); } };
+  dlg.showModal();
+  $('histClose').focus();
+}
+
+$('newProject').onclick = async () => {
+  // A PROJECT BELONGS TO AN ACCOUNT, so it should not be possible to start one
+  // without saying whose it is. Building real work signed out means it lives in
+  // this browser alone: no sync, no other device, and nothing to bring it back
+  // when the browser is cleared. Saman asked why the app allowed it, and the
+  // honest answer was that nothing stopped it.
+  //
+  // "Try a sample" on the empty state is deliberately NOT gated. It is the
+  // door for someone deciding whether to start at all, and it is labelled as a
+  // demo — so the trial path survives while real work gets an owner. Both
+  // buttons named "New project" come through here, so this is the only gate
+  // needed.
+  if (!authState().user) {
+    openSignIn('in', 'Sign in to start a project, so it is saved to your account.', 'info');
+    return;
+  }
+  const name = await askName({
+    title: 'New project',
+    lead: 'One project is one home model. Its floors share a brand kit.',
+    label: 'Project name',
+    // No prefilled "New Model": a default that is already valid gets accepted
+    // as-is, and a list of models all called New Model is the result. A
+    // placeholder shows the shape of an answer without supplying one.
+    placeholder: 'e.g. The Aspen',
+    confirm: 'Create project',
+  });
+  if (name) { store.createProject(name, store.getActiveKit()?.id); render(); }
+};
+
+/**
+ * Reuse a verified floor in another project — "verify once, reuse forever".
+ *
+ * The destination is a PROJECT because the brand kit lives there, and producing
+ * the same home for a different brand is the whole point. The styled render is
+ * deliberately not carried over: the new project has its own kit and palette, so
+ * showing the old image would be showing another brand's work.
+ */
+/**
+ * Ask where a verified plan should be reused, then copy it there.
+ *
+ * The destination is chosen from a list of real projects, not typed as a number
+ * into a text box. A control should map onto the thing it changes; if it needs
+ * an instruction to operate, the mapping is wrong.
+ */
+function reuseFloorFlow(srcProject, srcFloor, panel) {
+  const dlg = $('reuseDlg');
+  const list = $('reuseList');
+  const nameField = $('reuseNew');
+  const others = store.getProjects().filter((x) => x.id !== srcProject.id && !x.archived);
+
+  $('reuseTitle').textContent = `Copy "${srcFloor.name}" to another project`;
+  // SAY WHAT IT IS FOR, not only what travels with it. The old line described
+  // the mechanism to someone who had already decided; it never said why anyone
+  // would press this. The case is the same house model on another lot — the
+  // handoff calls it "verify once, reuse forever" — and what the customer
+  // actually saves is the upload, the review, and the credit.
+  $('reuseLead').textContent =
+    'Put this confirmed floor into another project: the same model on a '
+    + 'different lot. Its plan, labels and figures come with it. Nothing to '
+    + 'upload, nothing to review again.';
+  list.innerHTML = '';
+  nameField.value = '';
+  let chosen = null;
+
+  const select = (project, btn) => {
+    chosen = project;
+    nameField.value = '';
+    for (const b of list.querySelectorAll('.reuse-opt')) b.setAttribute('aria-pressed', 'false');
+    if (btn) btn.setAttribute('aria-pressed', 'true');
+  };
+
+  // ONE SENTENCE, NOT TWO SAYING THE SAME THING. With no other projects the
+  // dialog said "No other projects yet. Name a new one below." and then
+  // labelled the field "Or start a new project" — and "or" pointed at a first
+  // option that was not on screen. When naming a project is the only path, it
+  // is not an alternative to anything.
+  $('reuseNewLabel').textContent = others.length
+    ? 'Or start a new project'
+    : 'Name the new project';
+  if (!others.length) {
+    const empty = document.createElement('p');
+    empty.className = 'reuse-empty';
+    empty.textContent = 'This is your only project so far.';
+    list.append(empty);
+  }
+  for (const p of others) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'reuse-opt';
+    btn.setAttribute('aria-pressed', 'false');
+    const n = p.floors.length;
+    btn.innerHTML = `<b>${esc(p.name)}</b><span class="meta">${n} floor${n === 1 ? '' : 's'}</span>`;
+    btn.onclick = () => select(p, btn);
+    list.append(btn);
+  }
+
+  // Typing a new name is itself a choice — it clears any selected project, so
+  // the two inputs can never both look active.
+  nameField.oninput = () => {
+    if (!nameField.value.trim()) return;
+    chosen = null;
+    for (const b of list.querySelectorAll('.reuse-opt')) b.setAttribute('aria-pressed', 'false');
+  };
+
+  $('reuseCancel').onclick = () => dlg.close();
+  // Same reason as the name dialog: never rely on the native Escape.
+  dlg.onkeydown = (e) => { if (e.key === 'Escape') { e.preventDefault(); dlg.close(); } };
+  $('reuseGo').onclick = async () => {
+    const newName = nameField.value.trim();
+    if (!chosen && !newName) { nameField.focus(); return; }
+    dlg.close();
+    await doReuse(srcProject, srcFloor, panel, chosen, newName);
+  };
+
+  dlg.showModal();
+  (list.querySelector('.reuse-opt') || nameField).focus();
+}
+
+async function doReuse(srcProject, srcFloor, panel, existing, newName) {
+  const busy = panel.querySelector('.busy') || panel;
+  busy.textContent = 'Copying the verified plan…';
+
+  let dest = existing;
+  if (!dest) {
+    dest = store.createProject(newName, srcProject.brandKitId);
+    // A new project is born with one empty floor. The user asked for a home to
+    // be REUSED here, not for a blank one to fill in, so the placeholder goes
+    // BEFORE the real floor arrives — removing it afterwards let the reused
+    // floor collide with it and land as "Main Floor (2)" in a project that
+    // then contained no "Main Floor" at all.
+    const placeholderId = dest?.floors?.[0]?.id;
+    if (placeholderId) store.removeFloor(dest.id, placeholderId);
+  }
+  if (!dest) { busy.textContent = 'Could not create that project.'; return; }
+
+  // THE PERSON, NOT THE COMPANY. The verification report's headline is
+  // "Reviewed and confirmed by X", which is a claim about WHO checked the
+  // numbers -- red line 7 is about making process claims honestly, and a
+  // company name is not a person. review.html was changed to signOffName()
+  // when auth landed; this path was missed, so reusing a floor re-stamped
+  // the sign-off with the active brand kit's company name and quietly
+  // replaced the reviewer's name on the document.
+  //
+  // The old value stays as the last fallback rather than being dropped: a
+  // signed-out session still has to produce something, and the floor's own
+  // existing confirmedBy is truer than nothing.
+  const who = (await signOffName())
+    || srcFloor.verified?.confirmedBy
+    || store.getActiveKit()?.companyName;
+  const res = store.reuseFloor(srcProject.id, srcFloor.id, dest.id, who);
+  if (!res) { busy.textContent = 'Could not reuse that floor.'; return; }
+
+  // THE RENDER TRAVELS WHEN THE BRAND KIT DOES.
+  //
+  // This dropped the styled render unconditionally, on the reasoning that it
+  // "was made with the OLD project's palette and kit". That reasoning does not
+  // hold for the case people actually use: a copy into a NEW project inherits
+  // srcProject.brandKitId, so the destination's kit is the same kit, and the
+  // render is exactly as valid as it was a second earlier.
+  //
+  // The visible cost was the whole point of the feature. Copy a floor you had
+  // confirmed AND styled, and the new project's pack came out carrying a
+  // placeholder — "verify once, reuse forever" delivering neither. It read as a
+  // missing render because it was one: we had just deleted it.
+  //
+  // So the test is the kit, not the act. Same kit, the render comes along and
+  // the new project is ready to download. Different kit, it goes — that palette
+  // really would be wrong, and Studio re-renders it for the price of one credit
+  // rather than shipping the wrong colours silently.
+  const copied = await copyScope(res.sourceScope, res.scope);
+  const sameKit = dest.brandKitId === srcProject.brandKitId;
+  if (!sameKit) {
+    for (const kind of STYLED_KINDS) await deleteArtifact(res.scope, kind);
+  }
+
+  // Show the result where it landed. A message beside the SOURCE card said the
+  // work had happened somewhere else on the page and left the user to find it.
+  await render();
+  const card = document.querySelector(`[data-project="${dest.id}"]`);
+  if (card) {
+    card.classList.add('just-added');
+    card.scrollIntoView({ block: 'center',
+      behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const note = card.querySelector('.busy');
+    if (note) note.textContent =
+      `"${srcFloor.name}" reused. ${copied} image${copied === 1 ? '' : 's'} copied, ready to style.`;
+  }
+}
+
+// ---- backup and restore
+const note = (msg) => { $('backupNote').textContent = msg; };
+
+$('backup').onclick = async () => {
+  $('backup').disabled = true;
+  try {
+    note('Packing…');
+    const blob = await exportBackup(note);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `styloplan-backup-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    const mb = (blob.size / 1048576).toFixed(1);
+    note(`Backup saved (${mb} MB). Keep it somewhere other than this computer.`);
+  } catch (e) {
+    note(`Backup failed: ${e.message}`);
+  } finally {
+    $('backup').disabled = false;
+  }
+};
+
+$('restore').onclick = () => { $('restoreFile').value = ''; $('restoreFile').click(); };
+
+$('restoreFile').onchange = async () => {
+  const file = $('restoreFile').files[0];
+  if (!file) return;
+  try {
+    // Read and validate first, and tell the user what will be overwritten
+    // BEFORE anything is written. A restore replaces projects by id, and that
+    // is not something to do on the strength of a filename.
+    const found = await inspectBackup(file);
+    const when = found.exportedAt ? new Date(found.exportedAt).toLocaleString() : 'an unknown date';
+    const lines = [
+      `This backup was made on ${when}.`,
+      '',
+      `Projects: ${found.projects}   Brand kits: ${found.kits}   Images: ${found.images}`,
+      '',
+      found.overwrites
+        ? `${found.overwrites} project${found.overwrites > 1 ? 's' : ''} already here will be REPLACED, and ${found.adds} added.`
+        : `${found.adds} project${found.adds === 1 ? '' : 's'} will be added. Nothing already here is replaced.`,
+      '',
+      'Restore now?',
+    ];
+    const go = await askConfirm({
+      title: 'Restore this backup?',
+      body: lines.filter(Boolean),
+      confirm: 'Restore',
+      danger: found.overwrites > 0,
+    });
+    if (!go) { note('Restore cancelled.'); return; }
+    const done = await restoreBackup(found, note);
+    note(`Restored ${done.projects} project${done.projects === 1 ? '' : 's'}, `
+      + `${done.kits} brand kit${done.kits === 1 ? '' : 's'} and `
+      + `${done.images} image${done.images === 1 ? '' : 's'}.`);
+    render();
+  } catch (e) {
+    note(`Restore failed: ${e.message}`);
+  }
+};
+
+render();
+
+// REDRAW WHEN THE ACCOUNT ARRIVES.
+//
+// Signing in pulls the projects down, and this page had no way to hear about
+// it: the list stayed exactly as empty as it was a moment before, and the only
+// way to see your own work was to click the SP mark and load the page again.
+// Saman found it that way.
+//
+// It fires TWICE on a sign-in and both are wanted — once when the records land
+// and once when the images have been fetched, which is what turns "no plan yet"
+// back into a thumbnail.
+//
+// GUARDED ON THE IDENTITY, not on every publish. `onAuthChange` also fires for
+// the credit count, and redrawing the whole list each time a credit is spent
+// would throw away scroll position and any open row for nothing.
+//
+// Seeded from the state we already have, because `onAuthChange` calls back
+// immediately once auth is known: starting these at null would count that
+// first callback as a change and render the list a second time on every load.
+//
+// THE SIGNATURE INCLUDES THE SYNC, and leaving it out is why the first attempt
+// at this did not work. Signing in publishes three times: the user arrives, then
+// the records land, then the images do. Guarding on the identity alone caught
+// only the FIRST — which happens BEFORE syncCloud has pulled anything, so the
+// list redrew while it was still empty and never drew again. Saman still had to
+// click the SP mark.
+//
+// Credits are deliberately not in it: they change while someone renders, and
+// rebuilding every tile then would throw away scroll position for nothing.
+//
+// AND IT REDRAWS ONCE, NOT THREE TIMES. Rendering on the identity as well meant
+// a redraw the instant the user arrived -- before syncCloud had pulled anything
+// -- then another when the records landed and a third when the images did.
+// Three full rebuilds of every tile in a row is the flicker Saman saw on
+// opening the page. The identity alone changes nothing this list can show, so
+// it is not a reason to rebuild: the records landing is.
+//
+// Signing OUT is not handled here either, and does not need to be: it navigates
+// away or reloads (see leaveAfterSignOut).
+//
+// AND THE REAL TEST IS WHETHER THE DATA MOVED, not whether an event fired.
+// Guarding on the sync alone still rebuilt the whole list twice on every visit
+// — once when the records landed and once when the images did — even on a
+// machine where the sync changed nothing at all, which is the usual case and
+// exactly when a rebuild is most visible as a flash. So the list is redrawn
+// only when what it DRAWS is different.
+const dataSig = () => store.getProjects()
+  .map((p) => `${p.id}:${p.updatedAt || ''}:${p.archived ? 1 : 0}:`
+    + (p.floors || []).map((f) => f.id).join(','))
+  .join('|');
+const sig = (s) => `${s.sync?.ok ?? ''}|${s.sync?.restored ?? ''}`;
+let lastSig = sig(authState());
+let lastData = dataSig();
+// render() is async and rebuilds every tile; two overlapping runs interleave
+// their appends. One at a time, and one more queued at most.
+let drawing = null;
+let queued = false;
+const redraw = () => {
+  if (drawing) { queued = true; return; }
+  drawing = Promise.resolve(render()).finally(() => {
+    drawing = null;
+    if (queued) { queued = false; redraw(); }
+  });
+};
+onAuthChange((s) => {
+  const next = sig(s);
+  if (next === lastSig) return;
+  lastSig = next;
+  const data = dataSig();
+  // Images arriving change no record, and they are the other half of what the
+  // tiles show — so a restore redraws even when the data signature is equal.
+  const restored = Number(s.sync?.restored || 0) > 0;
+  if (data === lastData && !restored) return;
+  lastData = data;
+  redraw();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,3113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Review · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  /* a work surface: a plan canvas beside a control column. */
+  body { --page-max: 1600px; }
+  main { display: grid; grid-template-columns: 1fr 1fr 340px; gap: 24px; padding: 8px 24px 32px;
+         align-items: start; }
+  canvas.view { width: 100%; display: block; touch-action: none; }
+  /* THE VIEWPORT. Both panels show a drawing that arrived inside a frame with
+     an empty band around it, and contain-fitting the frame fits the band too:
+     measured on the corpus, the same building appeared at 0.66-1.00x between
+     the two panels because the source is the customer's own tight crop and the
+     wireframe is an AI frame. Reviewers are asked to compare them side by side.
+
+     This crops to the drawing purely in CSS, and that is the point. The canvas
+     backing store, every label coordinate, the registration transform, hit
+     testing and dragging are all untouched — pointer mapping in this file goes
+     through getBoundingClientRect() ratios, which follow a CSS transform. The
+     alternative, remapping label coordinates, would put a scaling factor inside
+     the geometry red line 2 rests on.
+
+     It also needs no controls, which is why it was chosen over a zoom widget:
+     nothing to place on a phone, nothing to learn, nothing to keep in state. */
+  .viewport { position: relative; overflow: hidden; width: 100%;
+              border: 1px solid var(--line); border-radius: 6px; }
+  /* The border now belongs to the viewport; the canvas's own would be cropped
+     away on three sides along with the band. */
+  .viewport > canvas.view { border: 0; border-radius: 0; transform-origin: 0 0; }
+  /* Wraps, and the slider may shrink. Unwrapped this row measured 384px of
+     min-content and, being the widest thing in the first column, it set the
+     floor for the whole three-column grid — the page overflowed a 375px phone
+     by 66px and the "Space markers" toggle fell off the right edge. `flex: 1`
+     alone does not allow shrinking below a range input's intrinsic width;
+     `min-width: 0` is what actually lets it. */
+  .xray-row { display: flex; gap: 12px; align-items: center; margin-top: 12px;
+              font-size: 12.5px; color: var(--ink-2); flex-wrap: wrap; }
+  /* Inherits the switch from ui.css; only the wrapping rule is local. */
+  .pinToggle { white-space: nowrap; margin: 0; }
+  /* The card is the panel's own surface; what marks it out is the room around
+     it, not another border inside a bordered panel. */
+  /* Four gaps and nothing else, so the card has a rhythm rather than a set of
+     one-off margins: 6 inside a pair, 12 under a heading, 16 between blocks. */
+  #stepHead { margin: -2px 0 12px; }
+  #stepDots { display: flex; gap: 8px; margin-bottom: 12px; }
+  #stepDots button {
+    flex: 1; height: 26px; min-width: 0; padding: 0; font-size: 11px;
+    border-radius: var(--r-ctl); border: 1px solid var(--line);
+    background: transparent; color: var(--ink-3); cursor: pointer;
+  }
+  #stepDots button.done { border-color: var(--ok); color: var(--ok); }
+  #stepDots button.here { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  #stepDots button.blocked { border-color: var(--err); color: var(--err); }
+  #stepDots button:disabled { cursor: default; }
+  /* The rail is the design system's .stepper__rail, kept here only because the
+     dots above it are ours and the three pieces have to line up.
+
+     THE FILL IS --accent, NOT --ok. It was green, and green now has one job in
+     this product: it means A PERSON CONFIRMED SOMETHING. A progress rail says
+     how far through the list you are, which is not the same claim — a reviewer
+     three steps in has confirmed three things, not succeeded at anything. */
+  #stepBar { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+  #stepBar i { display: block; height: 100%; background: var(--accent); border-radius: 2px;
+               transition: width .28s cubic-bezier(.32,.72,0,1); }
+  #stepCount { margin-top: 8px; font-variant-numeric: tabular-nums; }
+  #stepNav { margin-top: 16px; }
+  #stepNav:not(.on) { display: none; }
+  .donemark { font-size: 15px; font-weight: 700; color: var(--ok); margin-bottom: 4px; }
+  #checklist { list-style: none; margin: 0; padding: 0; }
+  #checklist li, #geomList li { padding: 0; border-bottom: 0; }
+  #geomList { list-style: none; margin: 0; padding: 0; }
+  /* One rule for "these are separate things", used everywhere inside a card
+     instead of each block inventing its own margin. */
+  .cardsep { height: 1px; background: var(--line); margin: 16px 0; }
+  .cardhead { font-size: 11px; font-weight: 700; letter-spacing: .06em;
+              text-transform: uppercase; color: var(--ink-3); margin-bottom: 12px; }
+  #stepNav { display: flex; gap: 8px; align-items: center; }
+  /* Marker column + content column. The label and up to three buttons used to
+     share one horizontal line in a 340px panel, so the text was crushed to
+     about 100px and wrapped to five lines while the buttons and the status
+     marker floated against its vertical centre. Grouping: the marker belongs
+     with the label it describes; the actions belong to the item but must not
+     compete with it for width. */
+  #checklist .row { display: grid; grid-template-columns: 20px 1fr; column-gap: 8px; align-items: start; }
+  #checklist .state {
+    grid-column: 1; grid-row: 1;
+    font-size: 13px; line-height: 1.5;   /* shares the label's first-line baseline */
+    text-align: center; color: var(--ink-3);
+  }
+  /* Dense information UI, so leading stays tight (§ leading tracks size). */
+  #checklist .label { grid-column: 2; grid-row: 1; font-size: 13px; line-height: 1.5; }
+  #checklist li .actions { grid-column: 2; grid-row: 2; display: flex; gap: 8px; flex-wrap: wrap; }
+  #checklist li .actions:not(:empty), #geomList li .actions:not(:empty) { margin-top: 12px; }
+  #stepCount { margin-top: 8px; font-variant-numeric: tabular-nums; }
+  /* Status, completion, warning, error — four kinds of feedback, four colours. */
+  #checklist li.confirmed .state { color: var(--ok); }
+  #checklist .state.warn { color: var(--warn); }
+  #checklist .state.err  { color: var(--err); }
+  .tool { margin-top: 12px; padding: 16px; background: var(--paper); border-radius: var(--r-ctl); display: none; }
+  .tool.open { display: block; }
+  .tool h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--accent); }
+  .tool label { display: block; font-size: 11.5px; margin: 12px 0 4px; color: var(--ink-2); }
+  /* Fluid width, intrinsic resolution fixed in JS. No fixed px anywhere, so it
+     works in the 340px side panel, in the collapsed single column on a phone,
+     and on a high-DPI screen where CSS pixels are not device pixels. */
+  .crop {
+    display: block; width: 100%; height: auto; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+  }
+  /* Two columns at every width, phones included. Stacking them would put the
+     two views of one room 200px apart and rebuild, in miniature, the problem
+     they exist to solve. */
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pair > div { min-width: 0; }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0 8px; }
+  .spec-grid label { font-size: 11.5px; color: var(--ink-2); display: block; margin-bottom: 4px; }
+  .spec-grid input { font-family: var(--mono); }
+  /* Progress through the checklist, not a warning. This was --warn, so a user
+     who had done nothing wrong was met by amber text saying "0 of 4 confirmed"
+     the moment the page opened. Colour that means "attention" must be spent on
+     things that actually need it, or it stops meaning anything. */
+  .gate { font-size: 12px; color: var(--ink-2); }
+  .gate.done { color: var(--ok); }
+  /* The bounce note. Informational, not an error: the user did nothing wrong,
+     they asked for a page that is not ready yet. So it carries the accent
+     hairline the app uses for guidance rather than the error colour. */
+  .bounced { display: flex; align-items: flex-start; gap: var(--s-2);
+             margin-bottom: var(--s-3); padding: var(--s-3);
+             border: 1px solid var(--line); border-left: 3px solid var(--accent);
+             border-radius: var(--r-ctl); background: var(--surface);
+             font-size: var(--t-13); color: var(--ink-2); }
+  .bounced p { margin: 0; flex: 1; }
+  .bounced b { color: var(--ink); font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  /* Rare tools, folded. Same disclosure vocabulary as archived projects. */
+  /* `.more` itself lives in ui.css, shared with Studio. Only this page's own
+     spacing inside the fold stays here. */
+  .more h4 { margin-top: 16px; }
+  .eq-group { font-size: 10.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+              color: var(--ink-3); margin: 12px 0 4px; }
+  .eq-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .eq-list button { padding: 4px 8px; font-size: 11.5px; font-family: var(--mono); }
+  .eq-list button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  /* Floating chrome, the same material as the app header: translucent, content
+     scrolling beneath it, so it reads as a layer above the page rather than a
+     strip carved out of it. */
+  /* The re-trace's own indicator. Indeterminate on purpose: nothing here knows
+     how long the model will take, and a bar that claims a percentage it cannot
+     know is what makes a long wait feel broken rather than slow. */
+  #traceProgress { display: inline-flex; align-items: center; gap: 8px; }
+  #traceProgress[hidden] { display: none; }
+  #traceProgress .track { width: 90px; height: 4px; border-radius: 4px;
+                          background: var(--line); overflow: hidden; display: block; }
+  #traceProgress .fill { display: block; height: 100%; width: 38%; border-radius: 4px;
+                         background: var(--accent); animation: traceSweep 1.5s ease-in-out infinite; }
+  @keyframes traceSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(363%); } }
+  @media (prefers-reduced-motion: reduce) {
+    #traceProgress .fill { animation: none; width: 100%; opacity: .45; }
+  }
+  /* THE ACTION ROW. Same page column as the head above it and the main below,
+     so the three share one left edge. Local to this page rather than in ui.css:
+     it is one row on one screen, and a shared class would be a pattern nobody
+     else has asked for yet. */
+  /* THE TWO DRAWINGS START ON THE SAME LINE.
+     Their headings are not the same height — the wireframe's carries the "What
+     are these labels for" control and the reference map's is one line of text —
+     so the two canvases began 13px apart, which is exactly enough to make a
+     side-by-side scan feel wrong without showing you why. The headings are
+     given one height instead of the canvases being nudged, because the
+     difference is in the headings. Under a coarse pointer the control grows to
+     the 44px finger minimum and takes the heading with it. */
+  main > section.panel > h3 { display: flex; align-items: center; flex-wrap: wrap;
+                              gap: var(--s-1); min-height: 32px; }
+  @media (pointer: coarse) { main > section.panel > h3 { min-height: 44px; } }
+  /* The two zones under the drawing. Modest boxes, not panels: they
+     are groupings inside a panel, and a second border here would read as a card
+     within a card. */
+  .toolzone { margin: var(--s-3) 0 var(--s-2); display: grid; gap: var(--s-2); }
+  .historyzone { display: grid; gap: 0; }
+  .toolzone .btnrow, .historyzone .btnrow { margin-top: 0; }
+  .actionbar { padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+               padding-block: 0 var(--s-3); }
+  .actionbar .actions { display: flex; align-items: center; gap: var(--s-3);
+                        flex-wrap: wrap; }
+  /* The gate takes the slack, so the button lands on the right edge of the
+     column — the same edge Continue to Studio uses at the foot of the page. */
+  .actionbar .gate { flex: 1 1 12ch; min-width: 0; }
+  /* THE SAME MATERIAL AS THE HEADER, from the same token. The comment above
+     already claimed this and the value was written out by hand — a literal
+     white at 82% and a warm shadow, both light-theme numbers. In dark mode the
+     bar came out pale against everything around it, which is the one place on
+     the page a builder cannot miss. `--chrome` is defined per theme for exactly
+     this, and the header carries a border and no shadow at all. */
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+          background: var(--chrome);
+          -webkit-backdrop-filter: blur(14px) saturate(1.5);
+          backdrop-filter: blur(14px) saturate(1.5);
+          border-top: 1px solid var(--line); }
+  /* AND IT KEEPS THE PAGE'S OWN MARGINS. The dock is fixed to the viewport, so
+     without this its contents run to the edge of the glass and the button sat
+     flush against the right of the screen. Same expression .actionbar uses, so
+     the button lands on the same column edge whether it is docked or in flow. */
+  .dock-in { padding-block: var(--s-3);
+             padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+             display: flex; align-items: center; gap: 16px; }
+  .dock .actions { margin-left: auto; display: flex; align-items: center;
+                   gap: 12px; flex-wrap: wrap; }
+  /* It arrives from the edge it lives on and leaves the same way (spatial
+     consistency), and the transform is what animates so it stays on the
+     compositor. */
+  .dock { transform: translateY(0); transition: transform .22s cubic-bezier(.32,.72,0,1); }
+  .dock[data-leaving] { transform: translateY(100%); }
+  /* Room for the dock, so it never covers the last thing on the page. */
+  body.docked main { padding-bottom: 84px; }
+  @media (prefers-reduced-transparency: reduce) {
+    .dock { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dock { transition: none; }
+  }
+  /* This page had NO breakpoint at all, alone among the four. Its 1fr 1fr 340px
+     grid stayed three columns at every width, so the 340px sidebar plus two
+     panels simply overflowed a phone. Two steps, because the middle width is
+     real: a tablet can hold the two drawings side by side but not the
+     checklist beside them. */
+  @media (max-width: 1080px) {
+    main { grid-template-columns: 1fr 1fr; padding: 8px 16px 32px; }
+    main > aside.panel { grid-column: 1 / -1; }
+  }
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; }
+    /* THE STEP LEADS WHEREVER THE COLUMNS STACK.
+       In three columns the checklist is a column of its own, in view the whole
+       time — it is the page's spine and it behaves like one. Stacked into one
+       column it fell to the bottom: measured at 375px, the step card started at
+       1966px of a 2231px page, so a reviewer met two drawings and a pile of
+       tools and had to scroll past all of it to find out what they were being
+       asked to do.
+       Order, not a DOM move: the source order is what a screen reader and the
+       keyboard follow, and it is right in both layouts — the aside genuinely
+       comes after the work it is about. This changes where the eye lands, on
+       the one layout where the eye cannot see everything at once.
+       No second Confirm button pinned to the bottom, though the design drew
+       one. Each step's Confirm is already inside its card, and with the card
+       first that button is on the first screen. A pinned copy would be two
+       controls for one act — the trap the action dock already avoids by moving
+       the real button instead of cloning it. */
+    /* Grid items floor at min-content by default, which is how one wide row
+       inside a panel drags the whole page past the viewport. */
+    main > * { min-width: 0; }
+    .dock-in { padding: 12px 16px; }
+    .dock .gate { display: none; }   /* the button is what has to survive */
+  }
+  /* 900, NOT 720, because 900 is where ui.css forces every page's main to one
+     column — and the moment the columns stack is the moment this matters. At
+     720 a portrait tablet stacked with the step card back at the bottom.
+     ui.css already answers this question for Studio, where the aside is
+     CONTROLS and the section is the PREVIEW, so the preview leads. Here the
+     aside is the QUESTION and the sections are the drawings it asks about, so
+     the answer is the other way round. Same rule, different content. */
+  @media (max-width: 900px) {
+    main > aside.panel { order: -1; }
+  }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1>Review &amp; verify</h1>
+  <span id="status" class="sub"></span>
+</div>
+<!-- THE PRIMARY ACTION GETS ITS OWN ROW.
+     It used to sit inside a sentence: title, plan summary, "0 of 5 confirmed,
+     still to check…", the button, and a save note, all in one band. The one
+     thing the page is FOR was the fourth item in a line of running text.
+     Now the first row says where you are and the second says what is left and
+     what to press, with the button at the end of the line.
+     No progress rail here, though the design asked for one. There is already a
+     rail in the step card, and two places reporting one fact is how they come
+     to disagree. -->
+<div class="actionbar" id="actionRow">
+  <div class="actions" id="reviewActions">
+    <span id="gateNote" class="gate"></span>
+    <button id="confirmBtn" class="btn btn--primary" disabled>Confirm &amp; style</button>
+  </div>
+</div>
+<!-- The way out of this page follows the work down it.
+     Measured: with the last checklist item — Confirm specs — on screen, the
+     only Confirm & style button was 1,721px above the viewport. The user
+     finishes the task and the page says nothing about what happens next, which
+     is the one question every screen has to be able to answer.
+     The dock holds the REAL controls, moved into it and back out again, rather
+     than a second copy: two buttons would be two disabled states to keep in
+     step, and they would eventually disagree. -->
+<div class="dock" id="actionDock" hidden><div class="dock-in"></div></div>
+<main>
+  <!-- WHY YOU ARE HERE, when you did not ask to be.
+       Filled only when Studio bounced the user to this page. Empty and out of
+       the layout otherwise, so a normal arrival sees nothing new. -->
+  <div id="bouncedNote" class="bounced" hidden role="status"></div>
+  <section class="panel">
+    <!-- SIDE BY SIDE BEAT ON TOP OF EACH OTHER.
+         This used to fade the wireframe over the plan, and the fade depended on
+         registering two pictures that are not of the same thing: a construction
+         sheet's ink box is its whole page, border and dimension chains and
+         all, while the wireframe's is the building. The overlay was drawn
+         stretched, and the shaded difference patches were computed in that
+         same warped space.
+         The wireframe already has a panel of its own in the middle column, at
+         its own true proportions. So this one keeps only what it alone can
+         show: the customer's own plan, with a numbered pin in every space we
+         found. Comparing is then something the eye does across two panels
+         rather than something an alignment has to earn. -->
+    <h3>Reference map: your plan, every space pinned</h3>
+    <div class="viewport" id="xrayView"><canvas id="xray" class="view"></canvas></div>
+    <div class="xray-row" id="xrayControls" style="display:none">
+      <!-- Counting aid, on your own plan. Four-point check #1 is the space
+           count, and merging a small room is the #1 historical failure — but
+           the markers only ever existed on the wireframe, so confirming it
+           meant counting 14 markers in one panel and matching them against
+           your plan in another. With a pin in every detected space the job
+           becomes "is there a room with no pin?", which the eye does instantly. -->
+      <label class="check pinToggle"><input type="checkbox" id="showPins" checked> Space markers</label>
+    </div>
+    <div id="xrayMsg"></div>
+  </section>
+
+  <section class="panel">
+    <h3>
+      Wireframe: tap anything to fix it
+      <!-- WHY A LABEL SITS ON TOP OF A NAME THAT IS ALREADY THERE. The one
+           question this page cannot answer by looking at it: the drawing shows
+           the tracing's own room names, and the teal chips are OUR labels
+           sitting over them. It reads as a duplicate until you know the baked
+           name never reaches the finished image. One line will not carry that,
+           so the line stays short and the icon holds the rest. -->
+      <!-- A LABELLED CONTROL, NOT A LONE GLYPH. A bare circled "i" is a
+           convention people who already know the product recognise; a first-time
+           builder reads past it. Apple's rule is that a control says what it
+           does, and that the label is the target rather than an icon beside one
+           — so the whole thing is the button, it carries the word, and the
+           chevron says it opens. It also stops being a 20px target. -->
+      <button type="button" class="btn btn--info" id="labelInfoBtn"
+              aria-expanded="false" aria-controls="labelInfo">
+        <span aria-hidden="true">?</span>
+        <span class="btn--info-label">What are these labels for</span>
+        <span class="btn--info-chev" aria-hidden="true">›</span>
+      </button>
+    </h3>
+    <div class="infonote" id="labelInfo" hidden>
+      <p><b>The teal chips are your labels. The names underneath them are from the
+      tracing and will not appear on the final image.</b></p>
+      <p>Text is added to the render afterwards, from what you confirm here. So a
+      chip may sit over a name that already looks right, and moving a chip moves
+      the text on the render.</p>
+      <p>Type over a wrong name. Drag a chip that is in the wrong room. Studio uses
+      the same positions if you want to fine-tune them later.</p>
+    </div>
+    <div class="viewport" id="editView"><canvas id="edit" class="view"></canvas></div>
+
+    <!-- TWO ZONES, BOTH UNDER THE DRAWING, AND THE SECOND FACT IS WHY.
+         Seven rows had accumulated here because every tool appended one to the
+         end: tools, a setting, a brush, Undo, a warning, re-tracing. Grouping
+         them into what you are ABOUT to do and what you have ALREADY done fixed
+         the pile.
+         Putting the first group ABOVE the drawing did not. Saman: "the wireframe
+         is no longer level with the reference map." Two rows of buttons and an
+         instruction line pushed our drawing down by ~90px while the customer's
+         plan stayed where it was, so the two could no longer be scanned against
+         each other — which is the one thing this screen is for. Worse, the
+         settings strip changes height as tools arm and disarm, so the drawing
+         would have shifted every time a tool was picked.
+         Both zones live under the canvas. The two drawings start at the same
+         line, and they stay there. -->
+    <!-- FOLDED, BECAUSE MOST REVIEWS NEED NONE OF IT.
+         Correcting the drawing is the exception, not the step: most plans come
+         back needing a name fixed, not a wall closed. Six controls and two
+         instruction lines sat open under every drawing for the reviewer who
+         had nothing to correct.
+         The same fold Studio uses, so it is one control to learn.
+         It opens ITSELF whenever it has something to say — a tool is armed, a
+         correction exists, or the guard has fired — because a warning behind a
+         closed fold is a warning nobody reads. -->
+    <details class="more" id="fixTools">
+      <summary>Fix the drawing <span id="fixSummary"></span></summary>
+    <div class="toolzone">
+    <!-- ERASE. The tracing sometimes adds something your plan does not have — a
+         closet in a bedroom, a wall stub read off a dimension bracket. That is
+         how the tracing fails, and it is always an ADDITION, so removing is the
+         whole fix. It costs nothing: this runs before the render, so the styled
+         image is made once, from the corrected drawing. -->
+    <div class="btnrow" style="align-items:center; gap:8px">
+      <!-- SHORT LABELS, because the line below them says the rest. Four
+           sentence-length buttons wrapped to two rows and repeated, on every
+           button, an explanation that the instruction line gives once for
+           whichever tool is actually armed. -->
+      <button class="btn btn--secondary btn--sm" id="eraseMode">Erase</button>
+      <button class="btn btn--secondary btn--sm" id="wallMode">Close a wall</button>
+      <!-- THE OTHER DIRECTION OF THE SAME TOOL. Closing a wall already removes a
+           window the tracing invented; this puts one back where it missed one.
+           Drawn as the standard symbol rather than as a hole, so everything
+           downstream — the styling model, the opening detector, the 3D — reads
+           it exactly as it reads a window the tracing got right. -->
+      <button class="btn btn--secondary btn--sm" id="windowMode">Add a window</button>
+      <!-- A door needs one thing a window does not: which end it hinges on and
+           which way it opens. Those are facts about the house, not about the
+           drag, so they are asked rather than guessed — one button, four
+           states, and the drawing answers immediately. -->
+      <button class="btn btn--secondary btn--sm" id="doorMode">Add a door</button>
+    </div>
+    <!-- WHAT TO DO, THEN WHAT TO SET, THEN UNDO. The tool's instruction used to
+         sit below its settings and below Undo, so a reviewer picking a tool read
+         its controls before learning what the tool was for. One line, directly
+         under the tool that is on. -->
+    <div class="subtle" id="eraseNote" style="margin-top:8px"></div>
+    <!-- CHOOSE THE SWING BEFORE DRAWING, not only after. A door committed to a
+         default and then corrected is the tool deciding and the reviewer
+         overruling it; the direction a door opens is theirs to state.
+         FOUR ARROWS, like the staircase's, because they are the same kind of
+         question — which way does this thing face — and the answer should look
+         the same in both places. Each arrow points into the quarter the door
+         sweeps, which is what the symbol draws. There is no separate Turn
+         button: with all four visible there is nothing left for it to do. -->
+    <div id="swingRow" style="margin-top:8px" hidden>
+      <label for="swingPicks" style="margin:0 0 4px">Which way the door opens</label>
+      <div class="btnrow" id="swingPicks" style="margin-top:0"></div>
+    </div>
+    <!-- One fixed nib cannot serve both jobs: a closet is many times a wall's
+         thickness. The wall nib starts at the thickness measured off this
+         plan's own walls, so the common case needs no adjustment at all. -->
+    <div class="btnrow" id="brushRow" style="margin-top:8px; align-items:center; gap:8px" hidden>
+      <label for="brushSize" class="subtle" style="margin:0">Brush</label>
+      <input type="range" id="brushSize" min="2" max="60" step="1" style="flex:1; max-width:220px">
+      <span class="subtle" id="brushNote"></span>
+    </div>
+    </div><!-- /toolzone -->
+
+    <div class="historyzone">
+    <!-- Undo and Restore all belong to every tool, so they stay in a row of
+         their own, under the drawing — they act on what is already on it. They
+         spent one build inside the swing picker, where hiding the picker took
+         the reviewer's undo away with it. -->
+    <div class="btnrow" style="margin-top:8px; align-items:center; gap:8px">
+      <button class="btn btn--secondary btn--sm" id="eraseUndo" hidden>Undo</button>
+      <button class="btn btn--secondary btn--sm" id="eraseClear" hidden>Restore all</button>
+      <!-- Always shown once anything is erased. Silence read as "the tool is
+           not working" when in fact nothing had been removed. -->
+      <span class="subtle" id="eraseCount"></span>
+    </div>
+    <div class="msg warn" id="eraseGuard" style="margin-top:8px" hidden></div>
+
+    <!-- RE-TRACE. The eraser removes what should not be there; nothing removes
+         a wall the tracing DROPPED, and asking the customer to draw it would
+         make this an editor. Another attempt is a genuinely different drawing —
+         the tracing is not deterministic — and it is free, because a defect in
+         it is ours. Earlier attempts stay so choosing between them is possible;
+         choosing is confirming, redrawing is editing. -->
+    <div class="btnrow" style="margin-top:12px; align-items:center; gap:8px">
+      <button class="btn btn--secondary btn--sm" id="retraceBtn">Something is missing. Trace it again</button>
+      <!-- A 25-SECOND WAIT NEEDS TO LOOK LIKE WORK. The button said "Tracing…"
+           and then nothing moved for half a minute, which is indistinguishable
+           from a page that has hung — and the reviewer's next move is to press
+           it again or leave. Minimal on purpose: this is a free retry, not the
+           paid render, and it does not need Studio's whole progress card. -->
+      <span id="traceProgress" hidden>
+        <span class="track"><span class="fill"></span></span>
+        <span id="traceElapsed" class="subtle"></span>
+      </span>
+      <span class="subtle" id="retraceNote"></span>
+    </div>
+    <div class="btnrow" id="attemptRow" style="margin-top:8px; gap:8px" hidden></div>
+    <!-- Says what the brand kit's house style rewrote, and offers the way back.
+         A silent rename would be the product editing the builder's own content
+         without showing its working. -->
+    <div class="subtle" id="styleNote" style="margin-top:8px" hidden></div>
+    </div><!-- /historyzone -->
+    </details>
+
+    <div class="tool" id="labelTool">
+      <h4 id="labelToolHead">Label</h4>
+      <label id="labelNameLabel">Room name</label><input type="text" id="labelName">
+      <button class="btn btn--secondary btn--sm" id="labelShorten" hidden></button>
+      <div id="labelDimRow">
+        <!-- The same spot on the CUSTOMER'S OWN plan. Checking a dimension used
+             to mean finding the room in the other panel, at another scale, in
+             type a few pixels tall — so in practice the box got ticked without
+             anyone looking. Here the comparison is side by side. -->
+        <!-- BOTH VIEWS OF ONE SPACE, SIDE BY SIDE. The crop of the customer's
+             plan was already here and already right; what was missing was the
+             other half of the comparison. Reading a dimension off their sheet
+             and then hunting for the same room in the wireframe panel — at
+             another scale, several hundred pixels away — is the step that does
+             not survive a phone, and is the step the whole page exists for.
+             The unit of comparison is ONE SPACE, not one drawing. Two whole
+             plans cannot both be legible in a 375px column; two crops of the
+             same room can. -->
+        <div class="pair">
+          <div><label>On your plan</label><canvas id="srcCrop" class="crop"></canvas></div>
+          <div><label>On our drawing</label><canvas id="wfCrop" class="crop"></canvas></div>
+        </div>
+        <div class="subtle" id="srcCropNote" style="margin:4px 0 2px"></div>
+        <label>Dimensions, exactly as written on your plan</label>
+        <input type="text" id="labelDim" placeholder='e.g. 13&#39;-0" x 11&#39;-6"'>
+      </div>
+      <div class="btnrow">
+        <!-- The extraction sometimes promotes an appliance callout to a room.
+             Without this the only remedy was delete-and-re-place, which loses
+             the position the wireframe measured and only works for codes that
+             happen to be in the picker. -->
+        <button class="btn btn--secondary btn--sm" id="labelToEquip"></button>
+        <button class="btn btn--secondary btn--sm" id="labelDelete">Delete label</button>
+        <button class="btn btn--secondary btn--sm" id="labelClose">Done</button>
+      </div>
+    </div>
+
+    <div class="tool" id="stairTool">
+      <h4>Staircase</h4>
+      <!-- Two different facts, so two controls: which way the flight RUNS on the
+           plan, and whether it climbs or descends. They were one before, which
+           is why every marker pointed down the screen. -->
+      <!-- Asked FIRST, because it decides whether anything below it matters. -->
+      <label>Direction arrow on the image</label>
+      <div class="btnrow" id="stairPrinted" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-printed="0">Off</button>
+        <button class="btn btn--secondary btn--sm" data-printed="1">Print it</button>
+      </div>
+      <div class="subtle" id="stairPrintedWhy" style="margin-top:6px"></div>
+
+      <div id="stairShapeRow">
+      <label>Shape</label>
+      <div class="btnrow" id="stairKind" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-kind="straight">Straight</button>
+        <button class="btn btn--secondary btn--sm" data-kind="spiral">Spiral</button>
+      </div>
+      <div id="stairRunRow">
+        <label>Which way the stair runs</label>
+        <div class="btnrow" id="stairHeading" style="margin-top:0">
+          <button class="btn btn--secondary btn--sm" data-heading="up" title="Runs up the plan">↑</button>
+          <button class="btn btn--secondary btn--sm" data-heading="right" title="Runs right">→</button>
+          <button class="btn btn--secondary btn--sm" data-heading="down" title="Runs down the plan">↓</button>
+          <button class="btn btn--secondary btn--sm" data-heading="left" title="Runs left">←</button>
+        </div>
+      </div>
+      <label id="stairLenLabel">Marker length</label>
+      <div class="btnrow" id="stairLen" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-len="short">Short</button>
+        <button class="btn btn--secondary btn--sm" data-len="medium">Medium</button>
+        <button class="btn btn--secondary btn--sm" data-len="long">Long</button>
+      </div>
+      <div class="btnrow">
+        <button class="btn btn--secondary btn--sm" id="stairDir">Flip UP / DN</button>
+        <button class="btn btn--secondary btn--sm" id="stairClose">Done</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">Drag the marker to reposition it.</div>
+      </div>
+      <div class="btnrow">
+        <button class="btn btn--secondary btn--sm" id="stairDelete">Delete</button>
+      </div>
+    </div>
+
+    <div class="tool open" id="addTools">
+      <h4>Add</h4>
+      <div class="btnrow">
+        <button class="btn btn--secondary btn--sm" id="addLabelBtn">+ Room label</button>
+        <button class="btn btn--secondary btn--sm" id="addStairBtn">+ Staircase</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">Built-in fixtures come from each room&rsquo;s label. Rename a room to change it.</div>
+
+      <!-- Folded away by default. A grid of REF. / D/W / RANGE / M/W / HOOD was
+           sitting at the same visual weight as the work this page exists for —
+           checking rooms and dimensions. Most reviews never touch it. It stays
+           one click away, named, rather than being the first thing the eye
+           lands on.
+
+           The wireframe export used to be in here too, and that was the wrong
+           place twice over: it was a DOWNLOAD filed under an editing tool, and
+           it was the only one of the product's outputs not reachable from the
+           one panel called Export. It now lives in Studio beside the others. -->
+      <details class="more">
+        <summary>Equipment codes (WH, A/C, F/S…)</summary>
+        <div id="equipPicker"></div>
+        <div class="subtle" style="margin-top:8px">A code marks a fitting rather than a space — a water heater, a furnace, a stacked washer. It is annotation, so it never counts as a room.</div>
+      </details>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <!-- ONE THING AT A TIME.
+         This was five checks and a specs form, all open at once, and the column
+         read as a wall of work before any of it had been started. The steps
+         were always sequential in practice; the page just did not say so.
+         Now it shows the step you are on, says how many are left, and keeps the
+         ones you have finished reachable behind their ticks. Nothing was
+         removed and no check became optional: the same five have to be
+         confirmed, and the geometry gate still blocks. -->
+    <div id="stepHead">
+      <div id="stepDots" role="tablist" aria-label="Verification steps"></div>
+      <div id="stepBar"><i></i></div>
+      <!-- Mono and tabular: "3 of 5" is a figure the reviewer checks against the
+           dots, and proportional digits make two counts of the same length look
+           different widths as the number climbs. -->
+      <div class="stepper__count" id="stepCount"></div>
+    </div>
+    <ul id="checklist"></ul>
+
+    <div id="specCard" hidden>
+      <div class="subtle">Auto-counted suggestions. Only figures you confirm are printed.</div>
+    <div class="spec-grid">
+      <div><label>Bedrooms</label><input type="number" id="specBeds" min="0"></div>
+      <!-- Halves are real here, not a glitch: a powder room is half a bathroom
+           in a listing, and specs are stored per FLOOR — a main floor with only
+           a powder room genuinely is 0.5. step="1" was tried and reverted; it
+           makes the browser reject 2.5 outright. The spinner does move in
+           halves, which is what looked wrong, so the field says what a half
+           means instead of hiding the capability. -->
+      <div>
+        <label for="specBaths" title="A powder room counts as half a bathroom">Bathrooms</label>
+        <input type="number" id="specBaths" min="0" step="0.5"
+               title="Half steps are allowed. A powder room is 0.5">
+      </div>
+      <!-- Deliberately not pre-filled: this is the builder's own official
+           figure, not something the app works out. See suggestSpecs(). -->
+      <div><label>Total sqft</label>
+        <input type="number" id="specSqft" min="0" placeholder="optional"></div>
+    </div>
+    <div class="subtle" id="sqftNote"></div>
+    <div class="btnrow"><button id="specConfirm" class="btn btn--secondary btn--sm">Confirm specs</button><span id="specState" class="subtle"></span></div>
+    </div>
+
+    <div id="doneCard" hidden>
+      <div class="donemark">All five confirmed</div>
+      <div class="subtle">Your plan is ready to style. Tick any step above to look at it again.</div>
+    </div>
+
+    <!-- The plan check is not part of the step's question, so it does not sit
+         in the step's list. It kept its own heading and rule for that reason:
+         two unrelated things stacked with no separator read as one paragraph
+         with odd spacing, which is exactly how it looked. -->
+    <div id="geomNote" hidden>
+      <div class="cardsep"></div>
+      <div class="cardhead">Plan check</div>
+      <ul id="geomList"></ul>
+    </div>
+
+    <div id="stepNav">
+      <button id="stepBack" class="btn btn--secondary btn--sm btn--quiet">Back</button>
+      <button id="stepNext" class="btn btn--secondary btn--sm btn--quiet">Next</button>
+    </div>
+    <!-- Whether an edit has actually been written anywhere. Added because
+         "my label moves are ignored" took three sessions to trace, and every
+         one of them was a storage question that the page gave no way to see.
+         A user should never have to ask whether their work was saved.
+         It sits beside the steps rather than in the title row, because the
+         confirmations are the thing being saved. -->
+    <div id="saveState" class="subtle" style="margin-top:12px"></div>
+  </aside>
+</main>
+
+<dialog id="doneDialog">
+  <h3 style="margin-top:0">Confirmed ✓</h3>
+  <p id="doneText"></p>
+  <p class="subtle">Your sign-off is recorded and appears on the verification report.</p>
+  <button id="toStudio" class="btn btn--primary">Continue to Studio →</button>
+  <button onclick="this.closest('dialog').close()" class="btn btn--secondary">Close</button>
+</dialog>
+
+<script type="module">
+import { askConfirm } from './src/ask.js';
+import { renderChrome } from './src/chrome.js';
+import { floorHref } from './src/floor-context.js';
+import { signOffName } from './src/auth.js';
+import * as S from './src/review/state.js';
+import * as store from './src/store.js';
+import { register } from './src/review/registration.js';
+import { frameForModel } from './src/aspect.js';
+import { snapLabelsToWireframe } from './src/review/anchors.js';
+import { stroke, applyDabs, erasedFraction, erasesFingerprint, rect, isEmptyRect, wallStyleAt, snapToWall, PAPER, WALL }
+  from './src/review/eraser.js';
+import { retrace, addAttempt, attemptsNote, MAX_ATTEMPTS } from './src/review/retrace.js';
+import { postAI } from './src/api.js';
+import {
+  inventoryFlags, inventoryNote, tileGrid, worthTiling, mergeInventories,
+  agreedSource, disputedNote,
+} from './src/review/inventory.js';
+import { medianWallThickness } from './src/model3d/openings.js';
+import { layoutLabels, isPrintable } from './src/compositor.js';
+import { EQUIPMENT_GROUPS, CUSTOM_EQUIPMENT, CUSTOM_PLACEHOLDER } from './src/review/equipment.js';
+import { suggestShortName } from './src/review/shorten.js';
+import { applyHouseStyle, collapseMerges } from './src/house-style.js';
+
+// Review no longer SETS label size or position — both are presentation
+// decisions and are made in Studio, on the rendered image. It still has to DRAW
+// labels at the size they will ship, so the chips show the real thing.
+// 900 is the compositor's LABEL_REF_WIDTH: sizes are expressed against a
+// reference plan width so they mean the same thing at 1K or 2K output.
+// Marker length as a fraction of the canvas height. 0.07 was the single fixed
+// value every staircase used, so it stays as "medium" and existing plans look
+// unchanged; the other two bracket it.
+const STAIR_LEN_FRAC = { short: 0.042, medium: 0.07, long: 0.105 };
+import { bakedTextBoxes, paintCover } from './src/style-client.js';
+import { crossCheckDimensions } from './src/review/crosscheck.js';
+import { suspectDims } from './src/review/dim-shape.js';
+import { dimsNotUnderName } from './src/review/dim-source.js';
+import { textBoxes } from './src/review/text-guard.js';
+import { suspectNames } from './src/review/note-shape.js';
+import { sourceFingerprint } from './src/versions.js';
+import { planContentBox } from './src/plan-trim.js';
+import { runL1 } from './src/l1-client.js';
+import { getArtifact, getArtifactUrl, putArtifact, moveScope, scopeFor, DRAFT } from './src/artifacts.js';
+
+const $ = (id) => document.getElementById(id);
+const loadImg = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+
+// ---- boot
+// The floor comes from the URL. Three cases, and keeping them apart matters:
+//   * a floor WITH stored images  → review the customer's plan
+//   * a floor WITHOUT them        → refuse and send them to Upload. This page
+//     used to answer that case with the bundled sample and write it into the
+//     floor's own scope, so a demo plan appeared as the customer's work and
+//     could be confirmed as it.
+//   * no floor at all             → the sample, clearly labelled. That is the
+//     only place a mock is legitimate.
+// A failure during boot used to leave this page simply blank, with nothing in
+// the console either — the sample plan did exactly that on every visit after
+// the first. Say something, and keep the detail in the console for a report.
+function reportBootFailure(detail) {
+  const s = document.getElementById('status');
+  if (s) s.textContent = 'This plan could not be opened. Try uploading it again.';
+  console.error('Review boot failed:', detail);
+}
+addEventListener('error', (e) => reportBootFailure(e.error || e.message));
+addEventListener('unhandledrejection', (e) => reportBootFailure(e.reason));
+let srcImg, wfImg, reg, verdict, isMock = false;
+const { ctx: floorCtx } = await renderChrome();
+
+// ---- WHY YOU ARE HERE, if Studio sent you.
+//
+// Consumed once and deleted, so a refresh does not re-explain a bounce that
+// already happened — the same rule extract.html uses for a handed-over plan.
+// Only shown when the note names THIS floor: a stale note from another floor
+// would be a message about somewhere the user is not.
+try {
+  const raw = sessionStorage.getItem('bounced');
+  if (raw) {
+    sessionStorage.removeItem('bounced');
+    const b = JSON.parse(raw);
+    const el = document.getElementById('bouncedNote');
+    if (el && b?.message && (!b.floor || b.floor === floorCtx?.floor?.id)) {
+      el.innerHTML = `<p><b>Studio is not open yet.</b> ${b.message}</p>`;
+      el.hidden = false;
+    }
+  }
+} catch { /* a private window without storage simply gets no note */ }
+
+const activeFloor = floorCtx ? { projectId: floorCtx.project.id, floorId: floorCtx.floor.id } : null;
+let artifactScope = floorCtx ? floorCtx.scope : DRAFT;
+const stored = sessionStorage.getItem('l1result');
+let l1;
+const [haveSrc, haveWf] = await Promise.all([
+  getArtifactUrl(artifactScope, 'source'),
+  getArtifactUrl(artifactScope, 'wireframe'),
+]);
+
+if (haveSrc && haveWf) {
+  l1 = stored ? JSON.parse(stored) : null;
+  if (!l1 || (l1.scope && l1.scope !== artifactScope)) {
+    // Arrived straight at a floor (new tab, a shared link) rather than from
+    // Upload: rebuild from what the floor itself holds — the stored extraction
+    // first, then a previous sign-off. Never re-run L1: that costs money for a
+    // reading we already have.
+    const blob = await getArtifact(artifactScope, 'extraction');
+    const saved = floorCtx?.floor?.verified;
+    if (blob) l1 = JSON.parse(await blob.text());
+    else if (saved?.extraction) l1 = { scope: artifactScope, extraction: saved.extraction, readBack: null, mock: false };
+    else if (activeFloor) {
+      location.replace(floorHref('extract.html', activeFloor.projectId, activeFloor.floorId));
+      throw new Error('redirecting to upload');
+    } else {
+      // No floor to send anyone back to: this is the bundled sample, whose
+      // first run leaves source+wireframe in the draft scope but no extraction.
+      // Every visit after the first then landed here and dereferenced a null
+      // floor, so the sample page came up blank the second time it was opened.
+      l1 = await runL1(null, 'mock', () => {});
+      isMock = true;
+    }
+  }
+  l1.sourceUrl = haveSrc;
+  l1.wireframeUrl = haveWf;
+} else if (floorCtx) {
+  location.replace(floorHref('extract.html', activeFloor.projectId, activeFloor.floorId));
+  throw new Error('redirecting to upload');
+} else {
+  l1 = await runL1(null, 'mock', () => {});
+  isMock = true;
+  await putArtifact(artifactScope, 'source', l1.sourceUrl);
+  await putArtifact(artifactScope, 'wireframe', l1.wireframeUrl);
+}
+srcImg = await loadImg(l1.sourceUrl);
+wfImg = await loadImg(l1.wireframeUrl);
+// The model's anchor coordinates drift badly on real plans, so read each
+// label's position back off the wireframe, which drew it in the room's clear
+// area. Falls back to the model's estimate for anything unmatched.
+const snapped = snapLabelsToWireframe(
+  l1.extraction.spaces.map((s) => ({ name: s.name, dim: s.dim, x: s.anchor.x, y: s.anchor.y })),
+  wfImg);
+l1.extraction.spaces = l1.extraction.spaces.map((s, i) => ({
+  ...s,
+  anchor: {
+    x: snapped.labels[i].x,
+    y: snapped.labels[i].y,
+    // Carry the measured width through. Dropping it here is what left every
+    // label at the default size, so MASTER BEDROOM ran over its own walls.
+    fitWidth: snapped.labels[i].fitWidth,
+    // And the box that width came from, which is what the editable chip is
+    // painted over to hide the wireframe's own baked-in wording.
+    fitBox: snapped.labels[i].fitBox,
+  },
+}));
+
+// Two independent readings of the same numbers — the extraction read the
+// original, the read-back read what the wireframe transcribed. Disagreements
+// are the only visible trace of a corrupted figure.
+const crossCheck = l1.readBack ? crossCheckDimensions(l1.extraction.spaces, l1.readBack) : null;
+
+S.createProject(l1);
+// A floor that was already confirmed carries its own labels, including Studio's
+// positions and any equipment the user added. Re-snapping over them would throw
+// that work away every time the reviewer stepped back a stage.
+const alreadyConfirmed = Boolean(floorCtx?.floor?.verified?.labels?.length);
+if (alreadyConfirmed) {
+  S.restoreLabels(floorCtx.floor.verified.labels);
+  // AND the staircases, the specs and the checklist. Restoring the labels
+  // alone left the reviewer re-picking the stair direction and re-typing the
+  // beds and baths they had already signed off, every time they stepped into
+  // Studio and back.
+  S.restoreConfirmed(floorCtx.floor.verified);
+}
+// Erases are part of the confirmed drawing, so they come back with it. Left out
+// of the first version, they vanished the moment the reviewer stepped into
+// Studio and back — the drawing silently reverted to the uncorrected one.
+if (floorCtx?.floor?.verified?.erases?.length) {
+  S.restoreErases(floorCtx.floor.verified.erases);
+}
+
+// ---- house style
+//
+// Applied ONCE, on a floor's first pass. A confirmed floor is skipped: those
+// names were signed off by a human and the style must not reach back and
+// rewrite a decision the user already made.
+function applyKitHouseStyle() {
+  if (alreadyConfirmed) return;
+  const style = store.houseStyleOf(store.getActiveKit());
+  const before = S.getProject().labels.map((l) => ({ ...l }));
+  const applied = applyHouseStyle(before, style);
+  const { labels, collapsed } = collapseMerges(applied.labels, style);
+  const total = applied.renamed + applied.hidden + collapsed;
+  if (!total) return;
+
+  S.restoreLabels(labels);
+  const bits = [];
+  if (applied.renamed) bits.push(`${applied.renamed} renamed`);
+  if (applied.hidden) bits.push(`${applied.hidden} unlabelled`);
+  if (collapsed) bits.push(`${collapsed} merged`);
+  const note = $('styleNote');
+  note.hidden = false;
+  note.innerHTML = `Your house style changed ${bits.join(', ')}. `;
+  const undo = document.createElement('button');
+  undo.className = 'btn btn--secondary btn--sm';
+  undo.textContent = 'Use the plan’s own wording';
+  undo.onclick = () => { S.restoreLabels(before); note.hidden = true; select(null); };
+  note.append(undo);
+}
+/**
+ * The line above the plan: what the reviewer is looking at right now.
+ *
+ * IT COUNTS THE PLAN, NOT THE TRACING THAT STARTED IT. It was written once at
+ * boot from `l1.extraction` and never again, so it froze at whatever the tracing
+ * first found while the checklist below it tracked the live plan. Delete a label
+ * the tracing invented and the page said "8 spaces" at the top and "2 spaces
+ * found" underneath, about the same drawing, at the same moment.
+ *
+ * "Your plan · 8 spaces" is present tense and a reader takes it as now, so now
+ * is what it has to report. It rides the same subscription the checklist does,
+ * which is what stops the two drifting again.
+ */
+function paintStatus(p = S.getProject()) {
+  const rooms = p.labels.filter(S.isRoom);
+  const named = rooms.filter((l) => l.name).length;
+  $('status').textContent =
+    // What the reviewer is looking at, not how we computed it. "6/6 label
+    // positions measured from the wireframe" described our own method.
+    `${isMock || l1.mock ? 'Bundled sample plan' : 'Your plan'} · `
+    + `${rooms.length} space${rooms.length === 1 ? '' : 's'} · ${named} named`;
+}
+paintStatus();
+
+/**
+ * Crop a panel to the drawing inside it, in CSS only.
+ *
+ * Measured ONCE per image, at boot. `planContentBox` is an ink scan over the
+ * whole bitmap, and `drawEdit` runs on every state change and every frame of a
+ * drag — measuring there would put a full-image scan inside the drag loop.
+ * Neither image is replaced while the page is open, so once is enough.
+ *
+ * `scale(1/b.w)` is uniform, and the viewport is given the content box's own
+ * aspect ratio, which makes the visible vertical fraction come out at exactly
+ * `b.h` without a second, distorting scale factor.
+ *
+ * A null box means the image is already tight, or the ink test found too little
+ * to trust. Either way the panel is left exactly as it was — this is a framing
+ * improvement, and it must never be the reason a reviewer cannot see something.
+ */
+function cropToContent(wrapId, canvasEl, img) {
+  const wrap = $(wrapId);
+  const b = planContentBox(img);
+  if (!b) {
+    wrap.style.aspectRatio = `${canvasEl.width} / ${canvasEl.height}`;
+    canvasEl.style.transform = 'none';
+    return;
+  }
+  wrap.style.aspectRatio = `${canvasEl.width * b.w} / ${canvasEl.height * b.h}`;
+  canvasEl.style.transform =
+    `scale(${1 / b.w}) translate(${-b.x * 100}%, ${-b.y * 100}%)`;
+}
+
+// ---- X-Ray with guardrails
+// TWO REGISTRATIONS, BECAUSE THERE ARE TWO QUESTIONS.
+//
+// `reg` positions things: its transform maps wireframe coordinates onto the
+// customer's own uploaded image, which is what the reference map draws and what
+// every pin is placed with. That has to stay in the uploaded image's frame.
+//
+// `verdict` answers "does this drawing match the plan". The wireframe was drawn
+// from the FRAMED image — trimmed to the drawing, padded to a permitted shape —
+// so judging it against the untrimmed upload compares two different framings.
+// MEASURED 2026-08-22 on Plan A, same wireframe both ways: 5.75% and rejected
+// against the upload, 1.17% and confirmed against the framed source, while the
+// drawing's own aspect was within 1.6% of the source all along.
+//
+// Two calls rather than one transform composed with another: the composition is
+// where this file has already produced one subtle, expensive bug, and half a
+// second on page load is cheaper than another week of that.
+reg = register(srcImg, wfImg);
+const framedSrcImg = await loadImg(frameForModel(srcImg).canvas.toDataURL('image/png'));
+verdict = register(framedSrcImg, wfImg);
+
+// WHERE EACH DIMENSION CAME FROM, asked of the customer's own sheet.
+//
+// Plan A prints no size under KITCHEN or BEDROOM 2, and both came back with one
+// anyway, lifted off the dimension chain across the top. Every guard passed it:
+// the cross-check saw two readings agree, because the wireframe had copied the
+// same promotion; dim-shape saw a well-formed pair, because "18' x 10"" is one.
+//
+// Measured on the SOURCE and once, at boot — the text runs cost a second to
+// find and nothing after that. Silent when there is no registration to map
+// through, because a guard that fires while blind is one people learn to
+// dismiss.
+let offPlanDims = [];
+try {
+  offPlanDims = dimsNotUnderName(S.getProject().labels, textBoxes(srcImg), reg?.transform);
+} catch { offPlanDims = []; }
+const xray = $('xray');
+function drawXray() {
+  const W = 900, s = W / srcImg.naturalWidth;
+  xray.width = W; xray.height = Math.round(srcImg.naturalHeight * s);
+  const ctx = xray.getContext('2d');
+  ctx.drawImage(srcImg, 0, 0, xray.width, xray.height);
+  // The plan, and the pins. The wireframe overlay and the shaded mismatch
+  // patches both lived here and both depended on the registration landing the
+  // two pictures on each other, which it cannot do reliably on an annotated
+  // sheet. The registration itself is still run and still gates — it is only
+  // its use as a PICTURE that is gone.
+  if ($('showPins')?.checked) drawSpacePins(ctx);
+}
+
+/**
+ * One numbered pin per detected space, drawn on the USER'S OWN PLAN.
+ *
+ * The numbers match the space list, so "no pin in this room" and "which number
+ * is missing" are answerable without counting anything.
+ *
+ * Two kinds, because they are not equally trustworthy and the difference
+ * matters:
+ *  - SOLID: a named room whose position was measured from the wireframe's own
+ *    pixels. Reliable, and this is the label that will be printed.
+ *  - HOLLOW: an unlabeled space. These are never snapped — `snapLabelsToWireframe`
+ *    only handles named labels, because an unlabeled room draws no text to
+ *    match against — so the position is the model's rough guess. It is good
+ *    enough to count with and is NOT worth tidying: unlabeled spaces are
+ *    review-only and never reach the output (see the `filter((l) => l.name)`
+ *    on the way to Studio).
+ */
+function drawSpacePins(ctx) {
+  // A GUESS IS NOT DRAWN AS A MEASUREMENT.
+  //
+  // Named rooms are snapped to the wireframe's own pixels, so their pin sits
+  // where the room actually is. Unlabeled spaces are never snapped — see
+  // snapLabelsToWireframe, which only handles named labels — so their position
+  // is the model's rough guess, and drawing it put two hollow pins in the
+  // middle of the living room on a real plan.
+  //
+  // That is worse than showing nothing, because it breaks the one question this
+  // map exists to answer. "Is there a room with no pin?" only works if a pin
+  // means the room is there; a pin that might be anywhere makes the reviewer
+  // check the pins instead of their plan.
+  //
+  // They are still COUNTED — four-point check #1 is the space count, and an
+  // unlabeled closet is a space — they are just counted in words instead of
+  // pinned in the wrong place.
+  const labels = S.getProject().labels.filter((l) => l.name);
+  const t = reg.transform;
+  labels.forEach((l, i) => {
+    // Label coordinates are normalized to the WIREFRAME; the transform maps
+    // them onto the source (srcNorm = d + wfNorm * s), which is the same
+    // mapping used to lay the wireframe over the plan above.
+    const nx = t ? t.dx + l.x * t.sx : l.x;
+    const ny = t ? t.dy + l.y * t.sy : l.y;
+    const x = nx * xray.width, y0 = ny * xray.height;
+    if (!isFinite(x) || !isFinite(y0)) return;
+    const r = 12;
+
+    // The pin sits ABOVE the room name, not on it.
+    //
+    // The anchor it is drawn from is the centre of the name, so a 24px disc
+    // landed squarely on the text: this panel showed "LIVIN(1)OOM" and
+    // "PRIMAR(3)EDROOM" over the user's own plan. The one job of the X-Ray is
+    // letting someone compare what we read against what their plan says, and
+    // the marker was covering the word being checked.
+    //
+    // `fitBox` is the ink the label actually occupies, so the pin clears the
+    // real block rather than a guess. It flips below when there is no room
+    // above — near the top edge, off-canvas would be worse than overlapping.
+    const GAP = 3;
+    const halfBlock = l.fitBox && t
+      ? (l.fitBox.h * t.sy * xray.height) / 2
+      : 0;
+    const lift = halfBlock ? halfBlock + r + GAP : 0;
+    const y = (y0 - lift < r) ? y0 + lift : y0 - lift;
+
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    // A halo, so a pin stays readable over dense linework.
+    ctx.fillStyle = 'rgba(255,255,255,0.85)';
+    ctx.fill();
+    ctx.fillStyle = '#1F6F5C';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#1F6F5C';
+    ctx.stroke();
+
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = '600 13px Inter, system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(String(i + 1), x, y + 0.5);
+  });
+  ctx.textAlign = 'start';
+  ctx.textBaseline = 'alphabetic';
+}
+S.setGeometry({ ok: verdict.ok, aspectDev: verdict.aspectDev ?? 0, deviation: verdict.deviation ?? 0 });
+// The map stays usable even when registration FAILED. It used to be hidden
+// exactly then — the one moment the reviewer most needs to look at their own
+// plan, the tool for looking was removed.
+$('xrayControls').style.display = 'flex';
+$('showPins').onchange = drawXray;
+if (verdict.ok) {
+  if (reg.mismatchCells.length) {
+    // No count: these are cells of a 48×48 grid, so "91 areas" overstates what
+    // is actually a few percent of the image, and the number changes nothing
+    // the user would do. The shading already says where to look.
+    // `ok`, not `warn`. This is the SUCCESS branch — registration found the
+    // transform and the plan lines up — and it was painted the same amber as
+    // the failure branch below, so the one state that should reassure a
+    // reviewer looked exactly like the one that should worry them. Colour that
+    // means "attention" has to be spent on things that need it.
+    // THE HEALTHY STATE IS A WHITE PANEL WITH A GREEN EDGE, not a green box.
+    // Only the states that need attention tint their fill; a reviewer whose
+    // plan is fine should see calm, not a second colour competing with the
+    // drawing beside it.
+    $('xrayMsg').innerHTML = '<div class="verdict verdict--confirmed">'
+      + '<span class="dot dot--ok"></span>'
+      + '<div><div class="verdict__title">Every space we found is pinned</div>'
+      + '<div class="verdict__detail">Compare it with the wireframe beside it.</div></div>'
+      + '</div>';
+  }
+} else {
+  // A construction sheet reads high here even when the drawing is right: its
+  // dimension chains reach the margins, so the measured silhouette is the
+  // SHEET rather than the building, and its hatched wall bands are re-inked as
+  // thin lines so less of the new linework lands on old ink. Measured on a CAD
+  // framing sheet whose dimensions came back 7/7 perfect: 3.31% outline and
+  // 37% linework, both past their limits. Saying "wrong" there would send
+  // someone to re-upload a plan that converted correctly — so the note is
+  // added only when the source actually is such a sheet.
+  // WHAT THIS SAYS ABOUT US, not only about the drawing.
+  //
+  // The old headline was the measurement itself: "Outline not confirmed: 14.7%
+  // apart, over the 2% limit". Read cold, that is our software announcing it
+  // failed, and it sends a reviewer to re-upload a plan that very often
+  // converted correctly.
+  //
+  // The number is honest and it stays, but it belongs in the detail. The
+  // headline now says what we are asking for, because that is the actual state:
+  // a check could not clear this on its own and a person needs to look.
+  //
+  // The reason it reads high is worth giving, because it is the same reason the
+  // wireframe is USEFUL. A tracing leaves out dimension chains, leaders, title
+  // blocks and notes, so it is deliberately cleaner than the sheet it came
+  // from, and less of it lands on the original ink. That is the product
+  // working, not failing, and a reviewer who knows it can judge in seconds.
+  const why = verdict.sourceIsAnnotated
+    ? 'Construction sheets read high here even when the drawing is right, because their dimension chains and notes reach past the building.'
+    : 'A wireframe leaves out dimension lines, notes and the title block, so it is cleaner than the sheet it came from and this reading rises on its own.';
+  const note = ` ${why} Compare the rooms and walls in the two drawings: if they match, carry on. Re-upload only if whole areas look wrong.`;
+  // Amber when a high reading is expected for this kind of drawing, red when
+  // it is not. A presentation plan failing this check really is a signal, and
+  // painting both the same colour would waste the one that matters.
+  // Amber tints its fill, red tints its fill; both carry the state on a 3px
+  // left edge so the four verdicts read as one family rather than four
+  // differently-coloured boxes.
+  const state = verdict.sourceIsAnnotated ? 'checking' : 'unconfirmed';
+  $('xrayMsg').innerHTML = `<div class="verdict verdict--${state}">`
+    + `<span class="dot dot--${verdict.sourceIsAnnotated ? 'warn' : 'err'}"></span>`
+    + '<div><div class="verdict__title">This one needs your eye</div>'
+    // The measured verdict, kept word for word. It is what the verification
+    // report prints, so the reviewer and the report cannot tell two stories.
+    + `<div class="verdict__detail">${verdict.reason}${note}</div></div>`
+    + '</div>';
+}
+drawXray();
+
+// ---- edit canvas: wireframe + JSON layer (labels, objects, stairs)
+const edit = $('edit');
+const ectx = edit.getContext('2d');
+let selection = null;         // {kind:'label'|'object'|'stair', id}
+let placeMode = null;         // 'label' | object type
+let hits = [];                // [{kind,id,rect}]
+const EW = 900;
+
+// FOUND ONCE PER DRAWING, NOT ONCE PER REPAINT. Reading the wireframe for text
+// is three passes over its pixels, and drawEdit runs on every pointermove of a
+// drag. Keyed on what can change the answer: which tracing is showing, and what
+// has been erased from it.
+// The export's own layout, asked once per repaint rather than per label: it
+// weighs every label against every other to pick one size and one shrink for
+// the plan, so it cannot be asked about a label on its own.
+function chipLayout(p) {
+  const planScale = edit.width / (wfImg?.naturalWidth || edit.width);
+  return layoutLabels(p.labels || [], {
+    scale: planScale,
+    planW: edit.width,
+    measure: (text, size, weight) => {
+      ectx.save();
+      ectx.font = `${weight} ${size}px Inter`;
+      const w = ectx.measureText(text).width;
+      ectx.restore();
+      return w;
+    },
+    textOf: (l) => l.name || '',
+  });
+}
+
+let coverKey = null, coverBoxes = [];
+function bakedCover(p) {
+  const key = `${attemptIx}|${erasesFingerprint(p.erases || [])}|${(p.labels || []).length}`;
+  if (key === coverKey) return coverBoxes;
+  const c = document.createElement('canvas');
+  c.width = wfImg.naturalWidth; c.height = wfImg.naturalHeight;
+  const cx = c.getContext('2d');
+  cx.drawImage(wfImg, 0, 0);
+  applyDabs(cx, c.width, c.height, p.erases || []);
+  coverBoxes = bakedTextBoxes(c, p.labels || []).letters;
+  coverKey = key;
+  return coverBoxes;
+}
+
+function drawEdit() {
+  const s = EW / wfImg.naturalWidth;
+  edit.width = EW; edit.height = Math.round(wfImg.naturalHeight * s);
+  ectx.drawImage(wfImg, 0, 0, edit.width, edit.height);
+  hits = [];
+  const p = S.getProject();
+
+  // Erased areas, painted in the paper colour before anything else is drawn, so
+  // the reviewer sees exactly what the render will be made from.
+  applyDabs(ectx, edit.width, edit.height, p.erases || []);
+
+  // The band being dragged, shown filled so the reviewer judges the RESULT
+  // rather than an outline they then have to imagine filled in.
+  if (band?.to) {
+    // Previewed as the mark it will BECOME, not as an empty selection box. A
+    // window drawn as a plain rectangle would look like a wall right up until
+    // the moment it was committed.
+    let r = rect(band.from, band.to, WALL);
+    if (erasing === WINDOW || erasing === DOOR) {
+      const { m, w, h } = wireframeInk();
+      // Snapped in the PREVIEW too, not only on release. Otherwise the band
+      // shows one thing under the cursor and commits another, and the reviewer
+      // spends the drag aiming at a band the tool was going to fix anyway.
+      r = { ...openingRect(r), style: erasing };
+      if (erasing === DOOR) r.swing = swing;
+      r.lw = Math.max(0.0008, ((medianWallThickness(m, w, h) || 2) * 0.5) / w);
+    }
+    applyDabs(ectx, edit.width, edit.height, [r]);
+    ectx.save();
+    ectx.strokeStyle = '#3b6ea5'; ectx.lineWidth = 1;
+    ectx.strokeRect(r.x0 * edit.width, r.y0 * edit.height,
+      (r.x1 - r.x0) * edit.width, (r.y1 - r.y0) * edit.height);
+    ectx.restore();
+  }
+
+  // labels (teal chips so they read as the editable layer, not baked raster text)
+  ectx.textAlign = 'center';
+  // EVERY MASK FIRST, THEN EVERY CHIP. Two passes, and it has to be two.
+  //
+  // The intent was always "masks before chips", but the painting sat inside the
+  // label loop: each turn pushed that label's mask, painted the queue, then
+  // drew that label's chip. Correct for one label and wrong for the next, whose
+  // mask then landed on top of the chip already drawn. Any label whose baked
+  // box overlapped an earlier chip erased it, and the reviewer saw a white
+  // patch swallowing a name they had just placed.
+  //
+  // A hair beyond the ink: antialiased glyph edges fade out over about a pixel,
+  // and stopping exactly on the box leaves a grey ghost of them.
+  //
+  // AND THE MASK IS THE SAME ONE THE RENDER USES. This used to paint a white
+  // rectangle over each label's `fitBox` — the box the MATCHER tied to that
+  // label — which had both faults src/style-client.js spent a day removing: a
+  // box rather than the letters, and a position guessed by matching rather than
+  // measured on the image, wrong for 7 of 11 labels on The Avi Top. A box in
+  // the wrong place is a white hole in the customer's drawing, and that is what
+  // Saman was looking at when he said the sink was erased again after the same
+  // fault had been fixed in the render.
+  //
+  // One function for all three views. If Review and the render can disagree
+  // about which ink is text, one of them is lying to the reviewer, and this
+  // page is the one they trust.
+  paintCover(edit, bakedCover(p));
+
+  // Once for the plan, not once per label: it weighs every label against every
+  // other to pick one size and one shrink, so it cannot be asked about one.
+  const sets = chipLayout(p);
+  for (const l of p.labels) {
+    const cx = l.x * edit.width, cy = l.y * edit.height;
+    const sel = selection?.kind === 'label' && selection.id === l.id;
+    // A house-style hidden space still shows here, faded: it is a real room
+    // that the printed image will not label, and the reviewer needs to see that
+    // it was counted rather than lost.
+    const name = l.hidden ? `· ${l.name || 'unlabeled'} · not printed`
+      : (l.name || '· unlabeled ·');
+    // THE SAME FUNCTION THE EXPORT USES DECIDES BOTH. The chip is supposed to
+    // show what will ship, and it was deciding size and wrapping with its own
+    // copy of the rules — so it drew LAUNDRY TUB on one line while the export
+    // broke it over two, and equipment kept full size on a plan whose room
+    // names had shrunk, ending up larger than KITCHEN beside it. Sharing
+    // wrapName and re-deriving everything around it is not sharing the rule.
+    const equip = l.kind === 'equipment';
+    const set = sets.get(l.id);
+    const nameSize = !l.name ? 12
+      : Math.max(equip ? 6 : 9, set?.size ?? 12);
+    const dimSize = Math.max(8, nameSize * 0.55);
+    ectx.font = `600 ${nameSize}px Inter`;
+    // The unlabeled and not-printed chips say something the export never
+    // prints, so they are laid out here; everything with a name comes from the
+    // shared layout.
+    const lines = l.name ? (set?.lines?.length ? set.lines : [name]) : [name];
+    const lineH = nameSize * 0.95;
+    let w = Math.max(...lines.map((t) => ectx.measureText(t).width));
+    if (l.dim && !equip) {
+      ectx.font = `400 ${dimSize}px Inter`;
+      w = Math.max(w, ectx.measureText(l.dim).width);
+    }
+    w += equip ? 10 : 16;
+    // Both lines share the baseline at cy: the name sits on it, the dimension
+    // one name-height below. Pad around that, not around a fixed chip size.
+    const PAD = 5;
+    const firstY = cy - ((lines.length - 1) * lineH) / 2;
+    const lastY = firstY + (lines.length - 1) * lineH;
+    let top = firstY - nameSize * 0.78 - PAD;
+    let bottom = lastY + (l.dim && !equip ? nameSize * 0.85 + dimSize * 0.3 : nameSize * 0.22) + PAD;
+
+    // THE MASK. The chip has two jobs: show the editable value, and hide the
+    // one the wireframe baked into its own pixels underneath. Sized from its
+    // own text it did the first and only most of the second — measured, three
+    // rows of the wireframe's dimension string protruded below every chip and
+    // read as doubled, blurry text.
+    //
+    // `fitBox` is that baked ink's actual bounding box, so the chip is grown to
+    // cover it on all four sides rather than guessed at from font metrics. It
+    // survives renames, which is when the old wording most needs hiding.
+    // Equipment has no baked counterpart, so it keeps its own small footprint.
+    // THE MASK IS NOT THE CHIP, and conflating them was a bug the reviewer saw
+    // as "the label suddenly grows when I drag it".
+    //
+    // Growing the chip to cover `fitBox` works only while the chip still sits
+    // on top of that box. The moment the label is dragged away the box stays
+    // put, and a chip sized from ITS OWN centre has to stretch further and
+    // further to keep reaching it — so the label ballooned in proportion to how
+    // far it was moved.
+    //
+    // They answer different questions: the mask hides the wireframe's baked
+    // text WHERE THAT TEXT IS, and the chip carries the reviewer's label
+    // WHEREVER THEY PUT IT. Painted separately, dragging moves one and leaves
+    // the other alone — which is also the truthful picture, because the baked
+    // ink genuinely has not moved.
+    if (!l.fitBox && l.fitWidth && !equip) {
+      // Older projects, captured before fitBox was recorded, still get the
+      // width guarantee they always had.
+      w = Math.max(w, l.fitWidth * edit.width + 16);
+    }
+    const h = bottom - top;
+    // A hit target must stay grabbable however small the text is: an 8px code
+    // would otherwise be a 20px-tall sliver to click on.
+    const hitH = Math.max(h, 18), hitW = Math.max(w, 34);
+    // Opaque, not tinted: the wireframe has the room name baked into its own
+    // pixels, and a translucent chip let both show through as one smeared
+    // double-exposure. The chip masks it, so what the reviewer reads is the
+    // editable value — the only one that reaches the export.
+    ectx.fillStyle = sel ? '#FBEDE4' : '#EAF2F3';
+    ectx.strokeStyle = sel ? '#c2571f' : '#20606b';
+    ectx.lineWidth = 1.2;
+    ectx.beginPath(); ectx.roundRect(cx - w / 2, top, w, h, 5); ectx.fill(); ectx.stroke();
+    ectx.fillStyle = sel ? '#c2571f' : '#20606b';
+    ectx.font = `600 ${nameSize}px Inter`;
+    lines.forEach((t, i) => ectx.fillText(t, cx, firstY + i * lineH));
+    if (l.dim && !equip) { ectx.font = `400 ${dimSize}px Inter`; ectx.fillText(l.dim, cx, lastY + nameSize * 0.85); }
+    hits.push({ kind: 'label', id: l.id,
+      rect: { x: cx - hitW / 2, y: cy - hitH / 2, w: hitW, h: hitH } });
+  }
+
+  // stair markers — one per staircase, each independently selectable
+  p.staircases.forEach((st, i) => {
+    const cx = st.position.x * edit.width, cy = st.position.y * edit.height;
+    const sel = selection?.kind === 'stair' && selection.id === st.id;
+    // A marker that will NOT print is still drawn here, faintly and dashed, so
+    // the reviewer can find it and switch it on. Hiding it would leave the
+    // staircase the extraction found with nothing on screen to click.
+    const printed = st.printed !== false;
+    ectx.strokeStyle = ectx.fillStyle = sel ? '#c2571f' : '#20606b';
+    ectx.globalAlpha = printed ? 1 : 0.35;
+    ectx.setLineDash(printed ? [] : [5, 4]);
+    ectx.lineWidth = 2.5;
+    const len = edit.height * STAIR_LEN_FRAC[st.length ?? 'medium'];
+    // Drawn along the marker's own heading rather than always down the screen.
+    // [ux,uy] is the unit vector it runs along; [px,py] is perpendicular, which
+    // is all the arrowhead needs to work at any of the four headings.
+    const [ux, uy] = S.headingVector(st.heading ?? (st.direction === 'up' ? 'up' : 'down'));
+    const px = -uy, py = ux;
+    // Review must draw the SAME marker the compositor prints, or the reviewer
+    // signs off on one picture and the buyer receives another.
+    const spiral = st.kind === 'spiral';
+    if (spiral) {
+      const r = len * 0.8;
+      const cwise = st.direction !== 'down';
+      const a0 = cwise ? Math.PI * 0.75 : Math.PI * 0.25;
+      const sweep = Math.PI * 1.5 * (cwise ? 1 : -1);
+      ectx.beginPath();
+      ectx.arc(cx, cy, r, a0, a0 + sweep, !cwise);
+      ectx.stroke();
+      const a1 = a0 + sweep;
+      const tipX = cx + Math.cos(a1) * r, tipY = cy + Math.sin(a1) * r;
+      const tx = -Math.sin(a1) * (cwise ? 1 : -1), ty = Math.cos(a1) * (cwise ? 1 : -1);
+      ectx.beginPath();
+      ectx.moveTo(tipX - tx * 9 - ty * 7, tipY - ty * 9 + tx * 7);
+      ectx.lineTo(tipX, tipY);
+      ectx.lineTo(tipX - tx * 9 + ty * 7, tipY - ty * 9 - tx * 7);
+      ectx.stroke();
+    } else {
+    const tipX = cx + ux * len, tipY = cy + uy * len;
+    ectx.beginPath();
+    ectx.moveTo(cx - ux * len, cy - uy * len); ectx.lineTo(tipX, tipY);
+    ectx.stroke();
+    ectx.beginPath();
+    ectx.moveTo(tipX - ux * 9 + px * 7, tipY - uy * 9 + py * 7);
+    ectx.lineTo(tipX, tipY);
+    ectx.lineTo(tipX - ux * 9 - px * 7, tipY - uy * 9 - py * 7);
+    ectx.stroke();
+    }
+    // Under the marker, centred, the way a construction drawing writes it.
+    // Beside the shaft read as a note attached to something else, and it moved
+    // depending on the heading. The index is gone too: the checklist already
+    // says how many there are, and a number on the drawing is not something a
+    // reader of the finished plan needs.
+    ectx.font = '600 11px Inter';
+    ectx.textAlign = 'center';
+    const below = spiral ? len * 0.8 : Math.abs(uy) * len;
+    ectx.fillText(printed ? dirLabel(st.direction) : 'not printed', cx, cy + below + 14);
+    ectx.globalAlpha = 1;
+    ectx.setLineDash([]);
+    const halfW = (spiral ? len * 0.8 : Math.abs(ux) * len) + 18, halfH = below + 18;
+    hits.push({ kind: 'stair', id: st.id,
+      rect: { x: cx - halfW, y: cy - halfH, w: halfW * 2, h: halfH * 2 } });
+  });
+}
+
+// ---- erase mode
+//
+// A separate mode rather than a modifier key, because this is the one action
+// here that changes the DRAWING rather than the annotation on top of it, and it
+// should never happen by accident. Painting is on the wireframe canvas because
+// that is where the invented geometry is visible.
+// TWO BRUSHES, because there are two corrections and they are not the same.
+//
+// Painting paper removes something standing in open space. But the commonest
+// defect is an invented OPENING — a door where the source has unbroken wall —
+// and erasing that to paper leaves a hole, which is a different wrong answer.
+// Saman hit this the first time he used it, at the end of a staircase.
+// Sizes are FRACTIONS OF THE WIREFRAME'S WIDTH, so a brush means the same thing
+// on a plan re-rendered at another resolution — the same reason erase dabs are
+// stored normalised.
+//
+// The wall nib defaults to this plan's OWN measured wall thickness. A fixed nib
+// cannot serve both jobs: a closet is many times a wall's width, and a wall nib
+// a little too fat leaves a lip that reads as a thicker wall than the house has.
+let brush = { [PAPER]: 0.012, [WALL]: 0.006 };
+let erasing = null;         // null | PAPER | WALL
+let strokeId = 0;
+let painting = null;
+// A THIRD MODE ON THE SAME GESTURE. PAPER and WALL are the eraser's own two
+// colours used as mode names; a window is not a colour, so it gets a name.
+// Both rectangle modes share the rubber band below and differ only in the mark
+// they commit, which is the whole reason adding one was small.
+const WINDOW = 'window';
+const DOOR = 'door';
+let band = null;            // rectangle modes' rubber band, before it is committed
+// Which way the NEXT door faces. Carried over from the last turn, because a
+// reviewer fixing a run of doors along one corridor wants them the same way
+// round, and turning each one back would be the tool arguing with them.
+let swing = 0;
+const isRect = (mode) => mode === WALL || mode === WINDOW || mode === DOOR;
+const lastMark = () => (S.getProject().erases || []).slice(-1)[0] || null;
+// A window and a door both have to sit in the wall's own thickness, and a hand
+// dragging on a canvas does not land there. Where the opening goes ALONG the
+// wall is the reviewer's decision and is left alone; how deep it is never was
+// one. Wall-closing is not snapped: it is often used on things that are not a
+// single wall at all — a stub, a corner, an invented closet.
+const openingRect = (r) => {
+  const { m, w, h } = wireframeInk();
+  return snapToWall(m, w, h, r, { thickness: medianWallThickness(m, w, h) });
+};
+
+// Ink mask of the wireframe, for the erase guard. Built once, lazily — it is
+// only needed when the reviewer actually paints.
+let wfInk = null;
+function wireframeInk() {
+  if (wfInk) return wfInk;
+  const w = 400, h = Math.max(1, Math.round(wfImg.naturalHeight * w / wfImg.naturalWidth));
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d', { willReadFrequently: true });
+  g.drawImage(wfImg, 0, 0, w, h);
+  const d = g.getImageData(0, 0, w, h).data;
+  const m = new Uint8Array(w * h);
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    m[p] = ((d[i] + d[i + 1] + d[i + 2]) / 3) < 128 ? 1 : 0;
+  }
+  wfInk = { m, w, h };
+  return wfInk;
+}
+
+// Default the wall nib to the drawing's own wall thickness. Approximate is
+// fine: it is a starting point the reviewer can move, not a decision.
+try {
+  const { m, w, h } = wireframeInk();
+  const t = medianWallThickness(m, w, h);
+  if (t > 0) brush[WALL] = Math.min(0.03, Math.max(0.003, (t / 2) / w));
+} catch { /* leave the default */ }
+
+function eraseChrome() {
+  const n = (S.getProject().erases || []).length;
+  $('eraseMode').classList.toggle('on', erasing === PAPER);
+  $('wallMode').classList.toggle('on', erasing === WALL);
+  $('windowMode').classList.toggle('on', erasing === WINDOW);
+  $('doorMode').classList.toggle('on', erasing === DOOR);
+  $('doorMode').textContent = erasing === DOOR ? 'Done' : 'Add a door';
+  // While the door tool is on, or while the last mark is a door and can still
+  // be turned. Any other time it is a control for something that is not there.
+  $('swingRow').hidden = erasing !== DOOR && lastMark()?.style !== 'door';
+  if (!$('swingRow').hidden) drawSwingPicks();
+  // "Done" is enough on the armed one, and only one is ever armed. It used to
+  // spell out which job was finishing, which was the longest label on the row
+  // saying what the instruction line was already saying.
+  $('eraseMode').textContent = erasing === PAPER ? 'Done' : 'Erase';
+  $('wallMode').textContent = erasing === WALL ? 'Done' : 'Close a wall';
+  $('windowMode').textContent = erasing === WINDOW ? 'Done' : 'Add a window';
+  $('eraseUndo').hidden = !n;
+  $('eraseClear').hidden = !n;
+  $('eraseNote').textContent = erasing === PAPER
+    ? 'Drag over anything the tracing added that is not on your plan.'
+    : erasing === WALL
+      ? 'Drag a box over the opening, the way you would drag a selection.'
+      : erasing === WINDOW
+        ? 'Drag a box along the wall, from one side of the window to the other.'
+        : erasing === DOOR
+          ? 'Pick which way it opens, then drag a box along the wall, across the doorway.'
+          // ONE INSTRUCTION SLOT, NOT TWO. A permanent line about labels used
+          // to sit under the drawing while the tool's own line sat further
+          // down, so with a tool armed the page gave two instructions at once
+          // and neither was obviously the live one.
+          : (n ? 'Your corrections are part of this floor and travel with it.'
+            : 'Click a label to fix its name or size. Drag it onto the right room. '
+              + 'Exact placement comes later, in Studio.');
+  edit.style.cursor = erasing ? 'crosshair' : '';
+
+  // Only the paper brush has a size. The wall tool is a dragged rectangle, so
+  // its extent IS the gesture — a slider would be a second way to say the same
+  // thing, and a worse one.
+  $('brushRow').hidden = erasing !== PAPER;
+  if (erasing === PAPER) {
+    const px = Math.round(brush[erasing] * 2 * wfImg.naturalWidth);
+    $('brushSize').value = String(Math.max(2, Math.min(60, px)));
+    $('brushNote').textContent = `${px}px${erasing === WALL ? ' · square, like a wall' : ''}`;
+  }
+
+  // FEEDBACK ALWAYS, WARNING ONLY WHEN IT MATTERS.
+  //
+  // The guard measures INK removed, not area painted, so erasing blank floor
+  // inside a room correctly costs nothing. That is right, but it made the tool
+  // look dead: Saman painted over several places, saw no response of any kind,
+  // and could not tell whether it was working. Silence is not the same as
+  // "nothing happened", and the reviewer cannot tell them apart.
+  //
+  // So the number is always shown once anything has been erased, and the
+  // warning stays rare — a warning that fires often stops being read.
+  const { m, w, h } = wireframeInk();
+  const erases = S.getProject().erases || [];
+  const gone = erasedFraction(m, w, h, erases.filter((d) => d.c !== WALL));
+  const pct = gone > 0 && gone < 0.005 ? '<1' : Math.round(gone * 100);
+
+  let marks = '';
+  if (n) {
+    // Counted by what each mark IS. All three rectangle tools paint in the wall
+    // colour, so counting by colour called an added door a wall fill.
+    const rects = erases.filter((d) => d.kind === 'rect');
+    const count = (f) => rects.filter(f).length;
+    const parts = [`${pct}% of the drawing erased`];
+    for (const [n, one, many] of [
+      [count((d) => d.style !== 'window' && d.style !== 'door'), 'wall fill', 'wall fills'],
+      [count((d) => d.style === 'window'), 'window', 'windows'],
+      [count((d) => d.style === 'door'), 'door', 'doors'],
+    ]) if (n) parts.push(`${n} ${n > 1 ? many : one}`);
+    $('eraseCount').textContent = parts.join(' · ');
+    // The summary takes the counts and leaves the percentage behind: "0% of the
+    // drawing erased" is the honest answer to a question nobody asked while the
+    // fold is shut, and it is the first thing the eye lands on.
+    marks = parts.slice(1).join(' · ');
+  } else $('eraseCount').textContent = '';
+
+  const bad = gone > 0.15;
+  $('eraseGuard').hidden = !bad;
+
+  // What the fold is worth opening for, said on its own line while it is shut.
+  // A count of corrections behind a closed fold is the case the shared
+  // component's own comment warns about: a setting left off while folded away
+  // has to be readable from the summary.
+  const fold = $('fixTools');
+  $('fixSummary').textContent = marks ? `· ${marks}` : '';
+  $('fixSummary').className = bad ? 'flag' : 'subtle';
+  if (erasing || n || bad) fold.open = true;
+  if (bad) {
+    $('eraseGuard').textContent =
+      `About ${Math.round(gone * 100)}% of the drawing has been erased. `
+      + 'That is a lot more than one door or closet. Check this is what you meant, '
+      + 'or use Restore all.';
+  }
+}
+$('brushSize').oninput = (e) => {
+  if (!erasing) return;
+  brush[erasing] = (Number(e.target.value) / 2) / wfImg.naturalWidth;
+  $('brushNote').textContent =
+    `${e.target.value}px${erasing === WALL ? ' · square, like a wall' : ''}`;
+};
+// The one thing on this page nobody can work out by looking at it: why a chip
+// sits on top of a name the drawing already carries. Closed by default, because
+// most of the time the answer is not needed and a permanent paragraph above the
+// drawing would be read once and then be in the way forever.
+$('labelInfoBtn').onclick = () => {
+  const note = $('labelInfo');
+  const open = note.hidden;
+  note.hidden = !open;
+  $('labelInfoBtn').setAttribute('aria-expanded', String(open));
+};
+
+$('eraseMode').onclick = () => {
+  erasing = erasing === PAPER ? null : PAPER; select(null); eraseChrome(); drawEdit();
+};
+$('wallMode').onclick = () => {
+  erasing = erasing === WALL ? null : WALL; select(null); eraseChrome(); drawEdit();
+};
+$('windowMode').onclick = () => {
+  erasing = erasing === WINDOW ? null : WINDOW; select(null); eraseChrome(); drawEdit();
+};
+// FOUR ARROWS, THE SAME QUESTION THE STAIRCASE ASKS. Each points into the
+// quarter the door sweeps, which is the quarter the arc draws.
+//
+// WHICH ARROW A SWING IS depends on the wall's direction, and that is not a
+// wrinkle in the display — it is the fact itself. A door hinged at the start of
+// a horizontal wall opening upward sweeps up and to the RIGHT; the same swing on
+// a vertical wall sweeps left and DOWN. So the buttons keep the reading order
+// ↖ ↗ ↘ ↙ and the swing behind each one changes with the wall, rather than the
+// arrows jumping about.
+const SWING_ARROWS = ['↖', '↗', '↘', '↙'];
+const swingOrder = (horizontal) => (horizontal ? [3, 0, 1, 2] : [3, 2, 1, 0]);
+// The door on screen decides which wall we are talking about; before one is
+// drawn there is nothing to read, and a horizontal wall is the assumption.
+const swingHorizontal = () => {
+  const d = lastMark();
+  return d?.style === 'door' ? (d.x1 - d.x0) >= (d.y1 - d.y0) : true;
+};
+
+function drawSwingPicks() {
+  const host = $('swingPicks');
+  const drawn = lastMark()?.style === 'door';
+  const current = drawn ? (lastMark().swing | 0) : swing;
+  const order = swingOrder(swingHorizontal());
+  if (!host.childElementCount) {
+    for (let i = 0; i < 4; i++) {
+      const b = document.createElement('button');
+      b.className = 'btn btn--secondary btn--sm';
+      b.onclick = () => setSwing(Number(b.dataset.swing));
+      host.append(b);
+    }
+  }
+  [...host.children].forEach((b, i) => {
+    const s = order[i];
+    b.dataset.swing = String(s);
+    b.textContent = SWING_ARROWS[i];
+    b.title = `Opens ${['up and left', 'up and right', 'down and right', 'down and left'][i]}`;
+    b.classList.toggle('active', s === current);
+  });
+}
+// One place decides what a chosen swing means, because it means two things: the
+// door already drawn changes, AND the next one starts there. Splitting them
+// would leave the picker showing one door while drawing another.
+function setSwing(s) {
+  swing = ((s | 0) % 4 + 4) % 4;
+  if (lastMark()?.style === 'door') S.updateLastErase({ swing });
+  eraseChrome(); drawEdit();
+}
+
+$('doorMode').onclick = () => {
+  erasing = erasing === DOOR ? null : DOOR; select(null); eraseChrome(); drawEdit();
+};
+$('eraseUndo').onclick = () => { S.undoErase(); eraseChrome(); drawEdit(); };
+$('eraseClear').onclick = () => { S.clearErases(); eraseChrome(); drawEdit(); };
+
+// ---- re-tracing
+//
+// One attempt is one roll: the tracing is not deterministic, so a second pass
+// is a different drawing rather than a repeat of the same computation. Earlier
+// attempts stay selectable, because a new one can fix the defect that prompted
+// it and introduce another.
+let attempts = [{ url: wfImg.src, label: 'First tracing' }];
+let attemptIx = 0;
+
+function retraceChrome() {
+  $('retraceNote').textContent = attemptsNote(attempts.length);
+  $('retraceBtn').disabled = attempts.length >= MAX_ATTEMPTS;
+  const row = $('attemptRow');
+  row.hidden = attempts.length < 2;
+  row.innerHTML = '';
+  attempts.forEach((a, i) => {
+    const b = document.createElement('button');
+    b.className = 'btn btn--secondary btn--sm' + (i === attemptIx ? ' on' : '');
+    b.textContent = a.label;
+    b.onclick = () => useAttempt(i);
+    row.append(b);
+  });
+}
+
+async function useAttempt(i) {
+  // A DIFFERENT DRAWING MEANS THE MARKS ARE ON THE WRONG PICTURE.
+  //
+  // This rule was written once, inside the Trace again button, and every other
+  // way of changing the drawing walked past it — switching back to an earlier
+  // attempt changes the image just as completely. Saman erased KITCHEN and a
+  // room size, switched attempts, and arrived in Studio with 113 marks sitting
+  // beside the words they were drawn over: the blobs land on empty floor, the
+  // text is still there, and on a white plan a stray white mark is invisible,
+  // so it reads as "the eraser did nothing" rather than "these belong to
+  // another tracing".
+  //
+  // Same reasoning as resnapToCurrentTracing() directly below, which re-measures
+  // every label for exactly this reason. Marks cannot be re-measured — they are
+  // gestures over pixels, not facts about rooms — so they go.
+  const changed = i !== attemptIx;
+  attemptIx = i;
+  if (changed && (S.getProject().erases || []).length) {
+    const n = S.getProject().erases.length;
+    S.clearErases();
+    $('retraceNote').textContent =
+      `Your ${n} correction mark${n === 1 ? '' : 's'} belonged to the previous `
+      + 'tracing, so they were cleared. Make them again on this one.';
+  }
+  wfImg = await loadImg(attempts[i].url);
+  // The ink mask is cached for the erase guard and the wall-style test, and it
+  // describes THIS drawing. Left stale, both would answer about the old one.
+  wfInk = null;
+  await putArtifact(artifactScope, 'wireframe', attempts[i].url);
+  resnapToCurrentTracing();
+  retraceChrome();
+  drawEdit();
+  cropToContent('editView', edit, wfImg);
+}
+
+/**
+ * A NEW TRACING MEANS NEW COORDINATES FOR EVERY LABEL.
+ *
+ * `fitBox`, `fitWidth` and `ink` all describe WHERE THINGS ARE IN THE IMAGE,
+ * and re-tracing replaces the image. Carrying them over left every label
+ * pointing at the old drawing: Saman traced twice and found the kitchen sink
+ * and part of the master bath rubbed out, because Review paints a white patch
+ * over each label's `fitBox` to hide the tracing's own wording, and those boxes
+ * were now sitting on plain linework. The chips were in the wrong rooms for the
+ * same reason.
+ *
+ * The erases already worked this way and say so a few lines below — "they mean
+ * nothing on this one, the geometry has moved". Anchors are the same kind of
+ * fact and were simply never given the same treatment.
+ *
+ * The NAME and the DIMENSION are the reviewer's confirmed content and survive.
+ * Only what describes the picture is re-measured.
+ *
+ * A position the reviewer dragged is re-measured too, and that is the honest
+ * trade: on a drawing that no longer exists, a hand-placed chip is not
+ * preserved work, it is a coordinate pointing at nothing.
+ */
+function resnapToCurrentTracing() {
+  const labels = S.getProject().labels || [];
+  if (!labels.length) return;
+  const snapped = snapLabelsToWireframe(
+    labels.map((l) => ({ name: l.name, dim: l.dim, x: l.x, y: l.y })), wfImg);
+  labels.forEach((l, i) => {
+    const s = snapped.labels[i];
+    if (!s) return;
+    S.updateLabel(l.id, {
+      x: s.x, y: s.y,
+      fitWidth: s.fitWidth,
+      fitBox: s.fitBox,
+      // Where the name is READ on this drawing — the box the styling input and
+      // the wireframe download both cover.
+      ink: { x: s.x, y: s.y },
+    });
+  });
+}
+
+$('retraceBtn').onclick = async () => {
+  const btn = $('retraceBtn');
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Tracing…';
+  // The elapsed count is the honest half of this: it cannot say how much is
+  // left, and it can say the work is still going.
+  const t0 = Date.now();
+  $('traceProgress').hidden = false;
+  const tick = setInterval(() => {
+    $('traceElapsed').textContent = `${Math.round((Date.now() - t0) / 1000)}s`;
+  }, 250);
+  try {
+    const src = await getArtifact(artifactScope, 'source');
+    const { url } = await retrace(src);
+    attempts = addAttempt(attempts, { url, label: `Attempt ${attempts.length + 1}` });
+    // Erases were painted onto the previous drawing and mean nothing on this
+    // one — the geometry has moved. useAttempt does the clearing now, for every
+    // way of changing the drawing rather than only this one.
+    await useAttempt(attempts.length - 1);
+  } catch (e) {
+    $('retraceNote').textContent = `Could not trace again: ${e.message}`;
+  } finally {
+    clearInterval(tick);
+    $('traceProgress').hidden = true;
+    $('traceElapsed').textContent = '';
+    btn.textContent = was;
+    retraceChrome();
+  }
+};
+
+// ---- "check these rooms" — the attention trigger.
+//
+// Six ways of DECIDING an invention automatically were built and measured out.
+// This decides nothing. It puts one small question to the customer's plan and
+// to the tracing — how many closets open off each room — and shows where the
+// two answers differ, so a reviewer looking for one added closet on a busy
+// drawing knows which room to look at.
+//
+// The comparison works only because the reviewer has already CONFIRMED the room
+// labels. Asking a model to name the rooms was measured and does not hold: one
+// room came back as null, DEN and UTILITY across three tracings of one plan.
+// Registering by position was measured too, and lands a walk-in closet in the
+// garage. The human already settled it, so both questions use their list.
+let inventory = { state: 'idle', flags: [], checked: 0, error: '' };
+
+async function runInventory() {
+  const p = S.getProject();
+  const rooms = [...new Set(S.roomLabels().map((l) => (l.name || '').trim()).filter(Boolean))];
+  if (!rooms.length) {
+    inventory = { state: 'done', flags: [], checked: 0, error: '' };
+    return renderChecklist();
+  }
+  // HOW MUCH WORK, SAID OUT LOUD.
+  //
+  // This reads the source twice in two phrasings and the tracing once, and a
+  // sheet too big for the API's own downsampling is asked in tiles — so a large
+  // CAD drawing is up to eighteen sequential model calls. The button said
+  // "Checking…" for all of them, with no scale and no movement, and Saman read
+  // that as stuck. It was working.
+  //
+  // Sequential is deliberate and stays: two large images at once is the request
+  // that times out on a slow connection. What was missing was not speed, it was
+  // knowing whether anything is happening.
+  inventory = { state: 'running', flags: [], checked: rooms.length, error: '',
+                done: 0, total: 0 };
+  renderChecklist();
+  try {
+    const asBase64 = (blob) => new Promise((ok, no) => {
+      const r = new FileReader();
+      r.onload = () => ok(String(r.result));
+      r.onerror = () => no(new Error('could not read the image'));
+      r.readAsDataURL(blob);
+    });
+    const one = async (dataUrl, phrasing) => {
+      const [, mimeType] = /^data:([^;]+);/.exec(dataUrl) || [, 'image/png'];
+      const j = await postAI('/api/room-inventory', JSON.stringify({
+        imageBase64: dataUrl.split(',')[1], mimeType, rooms, phrasing,
+      }));
+      inventory.done++;
+      renderChecklist();
+      return j.rooms || [];
+    };
+    // A sheet too big to survive the API's own downsampling is asked in tiles.
+    // MEASURED on Jordan: its 3253x4701 source returned NO enclosures at all
+    // when asked whole, so every closet the tracing drew read as an addition.
+    // Asked in six tiles the same question found three, and the false
+    // additions went away.
+    const ask = async (blob, phrasing) => {
+      const url = await asBase64(blob);
+      const img = await new Promise((ok, no) => {
+        const i = new Image();
+        i.onload = () => ok(i); i.onerror = () => no(new Error('image failed to load'));
+        i.src = url;
+      });
+      const W = img.naturalWidth, H = img.naturalHeight;
+      if (!worthTiling(W, H)) return one(url, phrasing);
+      const per = [];
+      for (const t of tileGrid(W, H)) {
+        const c = document.createElement('canvas');
+        c.width = t.w; c.height = t.h;
+        c.getContext('2d').drawImage(img, t.x, t.y, t.w, t.h, 0, 0, t.w, t.h);
+        per.push(await one(c.toDataURL('image/png'), phrasing));
+      }
+      return mergeInventories(per);
+    };
+    // Sequential, not parallel: two large images at once is the request that
+    // times out on a slow connection, and this is a background courtesy.
+    // The source is read TWICE, in two different phrasings, and only what both
+    // readings agree on is compared. Measured: guards that sniff for a known
+    // failure shape do not generalise — the first plan held out from that
+    // tuning produced four false additions. Agreement measures whether the
+    // reading is reliable at all, which is the actual variable.
+    const srcBlob = await getArtifact(artifactScope, 'source');
+    const wireBlob = await getArtifact(artifactScope, 'wireframe');
+    // Two decodes to learn the tile counts, so the total is known before the
+    // first call rather than growing under the reader as it goes. A progress
+    // figure that keeps moving its own goalposts is worse than none.
+    const tiles = async (blob) => {
+      try {
+        const url = await asBase64(blob);
+        const img = await new Promise((ok, no) => {
+          const i = new Image(); i.onload = () => ok(i); i.onerror = no; i.src = url;
+        });
+        const W = img.naturalWidth, H = img.naturalHeight;
+        return worthTiling(W, H) ? tileGrid(W, H).length : 1;
+      } catch { return 1; }
+    };
+    inventory.total = (await tiles(srcBlob)) * 2 + (await tiles(wireBlob));
+    renderChecklist();
+    const srcA = await ask(srcBlob);
+    const srcB = await ask(srcBlob, 'b');
+    const { rows: src, disputed } = agreedSource(srcA, srcB);
+    const wire = await ask(wireBlob);
+    inventory = {
+      state: 'done', checked: rooms.length, error: '', disputed,
+      flags: inventoryFlags(src, wire.map((r) => ({ room: r.room, closets: r.closets })),
+        { exclude: disputed }),
+    };
+  } catch (e) {
+    inventory = { state: 'error', flags: [], checked: rooms.length, error: e.message };
+  }
+  renderChecklist();
+}
+
+/** What the nothingAdded row shows once the check has run. */
+function inventoryHtml() {
+  if (inventory.state === 'running') {
+    // Named so the wait is legible: a reader who knows it is eight reads of a
+    // large drawing waits differently from one watching a spinner.
+    return '<br><span class="subtle">Comparing your plan with the tracing'
+      + (inventory.total > 1 ? `. This is ${inventory.total} reads of the drawing, one at a time` : '')
+      + '…</span>';
+  }
+  if (inventory.state === 'error') {
+    return `<br><span class="subtle">Could not compare: ${inventory.error}. `
+      + 'Look at the drawing yourself. That is what this row is for.</span>';
+  }
+  if (inventory.state !== 'done') return '';
+  const note = inventoryNote(inventory.flags, inventory.checked) + disputedNote(inventory.disputed);
+  if (!inventory.flags.length) return `<br><span class="subtle">${note}</span>`;
+  return `<br><span class="subtle">${note}</span><ul class="subtle" style="margin:.4em 0 0 1.1em">`
+    + inventory.flags.map((f) => `<li>${f.note}</li>`).join('') + '</ul>';
+}
+
+retraceChrome();
+
+// ---- pointer interactions (drag to move, click to edit, place mode)
+let drag = null;
+edit.addEventListener('pointerdown', (e) => {
+  const r = edit.getBoundingClientRect();
+  const x = (e.clientX - r.left) * (edit.width / r.width);
+  const y = (e.clientY - r.top) * (edit.height / r.height);
+  if (isRect(erasing)) {
+    // Rubber band, committed on release — nothing is written to the project
+    // until the reviewer lets go, so an abandoned drag leaves no trace.
+    band = { from: { x: x / edit.width, y: y / edit.height }, to: null };
+    edit.setPointerCapture(e.pointerId);
+    return;
+  }
+  if (erasing) {
+    painting = { at: { x: x / edit.width, y: y / edit.height }, s: ++strokeId,
+      c: erasing, r: brush[erasing], shape: 'round' };
+    S.addErase([{ ...painting.at, r: painting.r, s: painting.s,
+      c: painting.c, shape: painting.shape }]);
+    edit.setPointerCapture(e.pointerId);
+    drawEdit();
+    return;
+  }
+  if (placeMode) {
+    const nx = x / edit.width, ny = y / edit.height;
+    if (placeMode === 'label') { const l = S.addLabel(nx, ny); select({ kind: 'label', id: l.id }); }
+    else if (placeMode === 'equipment') {
+      const custom = pendingEquipment === CUSTOM_EQUIPMENT;
+      const l = S.addLabel(nx, ny,
+        { name: custom ? CUSTOM_PLACEHOLDER : pendingEquipment, kind: 'equipment' });
+      select({ kind: 'label', id: l.id });
+      // Land the caret in the field with the placeholder selected, so the first
+      // keystroke replaces it. Placing then hunting for the field would make the
+      // custom option feel like more work than it is.
+      if (custom) { $('labelName').focus(); $('labelName').select(); }
+    }
+    else if (placeMode === 'stair') { const st = S.addStaircase(nx, ny); select({ kind: 'stair', id: st.id }); }
+    setPlaceMode(null);
+    return;
+  }
+  const hit = [...hits].reverse().find((h) => x >= h.rect.x && x <= h.rect.x + h.rect.w && y >= h.rect.y && y <= h.rect.y + h.rect.h);
+  if (hit) {
+    select(hit);
+    drag = { kind: hit.kind, id: hit.id, moved: false };
+    edit.setPointerCapture(e.pointerId);
+  } else select(null);
+});
+edit.addEventListener('pointermove', (e) => {
+  if (band) {
+    const r = edit.getBoundingClientRect();
+    band.to = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    drawEdit();
+    return;
+  }
+  if (painting) {
+    const r = edit.getBoundingClientRect();
+    const to = { x: (e.clientX - r.left) / r.width, y: (e.clientY - r.top) / r.height };
+    // Interpolated, or a quick drag leaves the erase in dots.
+    S.addErase(stroke(painting.at, to, painting.r)
+      .map((d) => ({ ...d, s: painting.s, c: painting.c, shape: painting.shape })));
+    painting.at = to;
+    drawEdit();
+    return;
+  }
+  if (!drag) return;
+  const r = edit.getBoundingClientRect();
+  const nx = (e.clientX - r.left) / r.width, ny = (e.clientY - r.top) / r.height;
+  drag.moved = true;
+  // Dragging here answers "is this name on the right ROOM?" — an accuracy
+  // correction, and the wireframe is the honest canvas for it because the walls
+  // are not yet hidden under furniture. Fine placement ("is it sitting on the
+  // bed?") is a different question and belongs in Studio, on the real render.
+  // Both write the same label.x/y; Studio's edits survive a revisit because the
+  // boot path below restores confirmed positions instead of re-snapping.
+  if (drag.kind === 'stair') S.updateStaircase(drag.id, { position: { x: nx, y: ny } });
+  else S.updateLabel(drag.id, { x: nx, y: ny });
+});
+edit.addEventListener('pointerup', () => {
+  if (band) {
+    if (band.to) {
+      let r = rect(band.from, band.to, WALL);
+      if (erasing === WINDOW || erasing === DOOR) r = openingRect(r);
+      // A click with no drag is not a wall; discard rather than drop a speck.
+      if (!isEmptyRect(r)) {
+        // Match the drawing rather than assume it. Some wireframes come back
+        // with solid poché and others with two thin lines and paper between;
+        // filling solid into an outlined plan leaves a black slab where every
+        // other wall is hollow.
+        const { m, w, h } = wireframeInk();
+        // The wall tool matches the drawing; the window tool draws its own
+        // symbol, which is the same in a solid plan and an outlined one.
+        const style = isRect(erasing) && erasing !== WALL
+          ? erasing : wallStyleAt(m, w, h, r);
+        // Face weight for the outline case, as a FRACTION of width — the same
+        // convention as every other measurement here, so one mark renders the
+        // same on the 900px preview and on the full-size export.
+        const lw = Math.max(0.0008, ((medianWallThickness(m, w, h) || 2) * 0.5) / w);
+        S.addErase([{ ...r, s: ++strokeId, style, lw,
+          ...(style === 'door' ? { swing } : {}) }]);
+      }
+    }
+    band = null; eraseChrome(); drawEdit();
+  }
+  if (painting) { painting = null; eraseChrome(); }
+  drag = null;
+});
+
+// FIX OPENS A PANEL IN ANOTHER COLUMN, so it has to take you there.
+//
+// The tools live under the wireframe in the middle column and the checklist is
+// on the right, so pressing Fix opened an editor that was often off the bottom
+// of the screen. The click worked; there was simply no way to tell. Saman's
+// report was "I press Fix and nothing happens", which is exactly what it looks
+// like from the card.
+//
+// Only the Fix actions call this. A click on the canvas already has the tool in
+// view, and scrolling under someone's finger there would be worse than useless.
+function revealTool() {
+  const el = document.querySelector('.tool.open') || $('edit');
+  if (!el) return;
+  const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ block: 'center', behavior: smooth ? 'smooth' : 'auto' });
+}
+
+function select(hit) {
+  selection = hit ? { kind: hit.kind, id: hit.id } : null;
+  for (const id of ['labelTool', 'stairTool']) $(id).classList.remove('open');
+  if (selection?.kind === 'label') {
+    const l = S.getProject().labels.find((x) => x.id === selection.id);
+    const equip = l.kind === 'equipment';
+    // An equipment callout has no dimension pair and no room to shorten a name
+    // for, so those controls are hidden rather than shown doing nothing.
+    $('labelToolHead').textContent = equip ? 'Equipment' : 'Label';
+    $('labelNameLabel').textContent = equip ? 'Code' : 'Room name';
+    $('labelDimRow').hidden = equip;
+    $('labelName').value = l.name || '';
+    $('labelDim').value = l.dim || '';
+    if (equip) $('labelShorten').hidden = true; else showShortenOffer(l);
+    if (!equip) { drawSourceCrop(l); drawWireframeCrop(l); }
+    $('labelDelete').textContent = equip ? 'Delete' : 'Delete label';
+    // NAMES THE THING, NOT THE CATEGORY. "Make equipment" is our word for a
+    // label that annotates a fitting rather than a room, and it means nothing
+    // to a builder reading it for the first time. The examples do the work the
+    // noun cannot.
+    $('labelToEquip').textContent = equip ? 'This is a room' : 'Not a room (water heater, A/C…)';
+    $('labelTool').classList.add('open');
+  } else if (selection?.kind === 'stair') {
+    showStairTool(S.getProject().staircases.find((s) => s.id === selection.id));
+    $('stairTool').classList.add('open');
+  }
+  drawEdit();
+}
+
+// label tool
+// Shorter room name: offered, never applied for the user. The composed image
+// goes to a buyer and the name is the builder's content — silently rewriting it
+// would be exactly the kind of unreviewed change "verified" rules out.
+// The payoff is concrete: a shorter name clears the auto-fit ceiling, so the
+// label renders at full size instead of being shrunk to fit the room.
+/**
+ * The label's own spot on the CUSTOMER'S plan, magnified.
+ *
+ * Label coordinates are normalized to the WIREFRAME, so they go through the
+ * registration transform to land on the source — the same mapping the X-Ray
+ * and the space pins already use. When registration found no transform the
+ * point is used as-is, which is approximate but still lands in the right part
+ * of the sheet.
+ *
+ * Biased downward because a plan prints the size UNDER the room name, so the
+ * line being checked would otherwise sit at the very edge of the crop.
+ */
+const CROP_W = 640, CROP_H = 260;   // intrinsic pixels; CSS scales the element
+function drawSourceCrop(label) {
+  const cv = $('srcCrop');
+  const note = $('srcCropNote');
+  const ctx = cv.getContext('2d');
+  cv.width = CROP_W; cv.height = CROP_H;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CROP_W, CROP_H);
+  if (!srcImg?.naturalWidth) { note.textContent = ''; return; }
+
+  const t = reg?.transform;
+  const nx = t ? t.dx + label.x * t.sx : label.x;
+  const ny = t ? t.dy + label.y * t.sy : label.y;
+
+  // Window over the source, in source pixels. Wide enough to carry the room
+  // name and the line beneath it at a readable size.
+  const W = srcImg.naturalWidth, H = srcImg.naturalHeight;
+  const bw = W * 0.26;
+  const bh = bw * (CROP_H / CROP_W);
+  let sx = nx * W - bw / 2;
+  let sy = ny * H - bh * 0.34;          // room name near the top of the window
+  sx = Math.max(0, Math.min(W - bw, sx));
+  sy = Math.max(0, Math.min(H - bh, sy));
+
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(srcImg, sx, sy, bw, bh, 0, 0, CROP_W, CROP_H);
+
+  // Where the label sits, so the eye starts in the right place.
+  const cx = (nx * W - sx) / bw * CROP_W;
+  const cy = (ny * H - sy) / bh * CROP_H;
+  ctx.strokeStyle = '#1F6F5C';
+  ctx.lineWidth = 2;
+  ctx.setLineDash([5, 4]);
+  ctx.strokeRect(cx - CROP_W * 0.16, cy - CROP_H * 0.10, CROP_W * 0.32, CROP_H * 0.30);
+  ctx.setLineDash([]);
+
+  // Naming the room being edited turns the crop into a two-part check. Labels
+  // are matched to the wireframe by glyph count, and two same-length names have
+  // been swapped before (ENSUITE / LAUNDRY, both 7 letters). Without this line
+  // a swapped label shows a crop that looks perfectly consistent, and the crop
+  // would make a wrong value MORE convincing rather than less.
+  const who = label.name ? `Editing ${label.name}. ` : '';
+  note.innerHTML = t
+    ? `<b>${who}</b>Check the name above matches, then type the size exactly as printed. If none is printed, leave it empty.`
+    : `<b>${who}</b>Approximate position: the wireframe could not be registered to your plan.`;
+}
+
+/**
+ * The same spot on OUR drawing, at the same scale, beside it.
+ *
+ * The window is chosen so the two crops cover the same piece of the house. The
+ * source window is 26% of the source's width; the registration transform scales
+ * wireframe coordinates INTO source coordinates, so dividing by that scale
+ * gives the window on the wireframe that covers the same ground. Without the
+ * division the two crops would be at different magnifications and the
+ * comparison would quietly be between different amounts of house.
+ *
+ * No dashed marker here. On our drawing the label chip is already drawn at that
+ * point in the panel above; a second marker would be a third thing pointing at
+ * a room the reviewer has just clicked.
+ */
+function drawWireframeCrop(label) {
+  const cv = $('wfCrop');
+  const ctx = cv.getContext('2d');
+  cv.width = CROP_W; cv.height = CROP_H;
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0, 0, CROP_W, CROP_H);
+  if (!wfImg?.naturalWidth) return;
+
+  const t = reg?.transform;
+  const W = wfImg.naturalWidth, H = wfImg.naturalHeight;
+  const bw = W * 0.26 / (t?.sx || 1);
+  const bh = bw * (CROP_H / CROP_W);
+  let sx = label.x * W - bw / 2;
+  let sy = label.y * H - bh * 0.34;      // the same bias, so the two agree
+  sx = Math.max(0, Math.min(W - bw, sx));
+  sy = Math.max(0, Math.min(H - bh, sy));
+
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(wfImg, sx, sy, bw, bh, 0, 0, CROP_W, CROP_H);
+}
+
+function showShortenOffer(l) {
+  const btn = $('labelShorten');
+  const short = l.name ? suggestShortName(l.name) : null;
+  btn.hidden = !short || short === l.name;
+  if (!btn.hidden) {
+    btn.textContent = `Shorten to “${short}”`;
+    btn.dataset.short = short;
+  }
+}
+$('labelShorten').onclick = () => {
+  if (!selection) return;
+  S.updateLabel(selection.id, { name: $('labelShorten').dataset.short });
+  const l = S.getProject().labels.find((x) => x.id === selection.id);
+  $('labelName').value = l.name;
+  showShortenOffer(l);
+};
+$('labelName').oninput = () => {
+  if (!selection) return;
+  S.updateLabel(selection.id, { name: $('labelName').value || null });
+  showShortenOffer(S.getProject().labels.find((x) => x.id === selection.id));
+};
+$('labelDim').oninput = () => selection && S.updateLabel(selection.id, { dim: $('labelDim').value || null });
+// Text size: auto by default (the compositor shrinks the name to the width the
+// wireframe drew it at). The slider is an override for when the reviewer wants
+// something other than the automatic fit; "Auto-fit" clears it again.
+// Reclassify in place. Converting to equipment drops the dimension (an
+// appliance has none) and the size override, so it picks up the equipment
+// default rather than keeping a room-sized number.
+$('labelToEquip').onclick = () => {
+  if (!selection) return;
+  const l = S.getProject().labels.find((x) => x.id === selection.id);
+  if (!l) return;
+  S.updateLabel(selection.id, l.kind === 'equipment'
+    ? { kind: 'room', size: null }
+    : { kind: 'equipment', dim: null, size: null });
+  select({ kind: 'label', id: selection.id });
+};
+$('labelDelete').onclick = () => { if (selection) { S.deleteLabel(selection.id); select(null); } };
+$('labelClose').onclick = () => select(null);
+// stair tool — operates on the selected staircase only
+const selStair = () => S.getProject().staircases.find((s) => s.id === selection?.id);
+// Direction is the only stair fact a non-engineer can verify against the plan
+// (they see UP / DN). Flights and divider are engineering detail that only fed
+// the verification metadata, not the styled image (the stair itself comes from
+// the wireframe), so they are no longer user-editable — the extraction's values
+// stay in the JSON for the golden test suite.
+function dirLabel(d) { return d === 'up' ? 'UP' : d === 'down' ? 'DN' : 'set direction'; }
+$('stairDir').onclick = () => {
+  const st = selStair();
+  if (st) S.updateStaircase(st.id, { direction: st.direction === 'up' ? 'down' : 'up' });
+};
+$('stairLen').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-len]');
+  if (!b || !selection) return;
+  S.updateStaircase(selection.id, { length: b.dataset.len });
+  showStairTool(selStair());
+});
+$('stairHeading').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-heading]');
+  if (!b || !selection) return;
+  S.updateStaircase(selection.id, { heading: b.dataset.heading });
+  showStairTool(selStair());
+});
+$('stairKind').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-kind]');
+  if (!b || !selection) return;
+  S.updateStaircase(selection.id, { kind: b.dataset.kind });
+  showStairTool(selStair());
+});
+$('stairPrinted').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-printed]');
+  if (!b || !selection) return;
+  S.updateStaircase(selection.id, { printed: b.dataset.printed === '1' });
+  showStairTool(selStair());
+});
+function showStairTool(st) {
+  const kind = st?.kind ?? 'straight';
+  // `undefined` is printed, matching the compositor — a project saved before
+  // this control existed keeps the image it was signed off on.
+  const printed = st?.printed !== false;
+  for (const b of $('stairPrinted').querySelectorAll('button[data-printed]')) {
+    b.classList.toggle('active', (b.dataset.printed === '1') === printed);
+  }
+  // Says what happened to the plan's own marking, because that is the fact the
+  // decision turns on and it is a thing that was REMOVED, which nobody spots.
+  $('stairPrintedWhy').textContent = printed
+    ? 'An arrow and UP or DN will be drawn on your image.'
+    : 'Your plan’s own arrow is kept in the render, but its UP and DN lettering is not. '
+      + 'Look at the render: print this only if no arrow survived.';
+  $('stairShapeRow').style.display = printed ? '' : 'none';
+  for (const b of $('stairKind').querySelectorAll('button[data-kind]')) {
+    b.classList.toggle('active', b.dataset.kind === kind);
+  }
+  // "Which way it runs" is meaningless on a spiral, and a control that does
+  // nothing is worse than an absent one: it invites the reviewer to set a fact
+  // and then quietly ignores it.
+  $('stairRunRow').style.display = kind === 'spiral' ? 'none' : '';
+  $('stairLenLabel').textContent = kind === 'spiral' ? 'Marker size' : 'Marker length';
+  for (const b of $('stairLen').querySelectorAll('button[data-len]')) {
+    b.classList.toggle('active', b.dataset.len === (st?.length ?? 'medium'));
+  }
+  const heading = st?.heading ?? (st?.direction === 'up' ? 'up' : 'down');
+  for (const b of $('stairHeading').querySelectorAll('button[data-heading]')) {
+    b.classList.toggle('active', b.dataset.heading === heading);
+  }
+}
+$('stairDelete').onclick = () => { if (selection) { S.deleteStaircase(selection.id); select(null); } };
+$('stairClose').onclick = () => select(null);
+// add tools
+let pendingEquipment = null;   // the code the next canvas click will drop
+function setPlaceMode(m, code = null) {
+  placeMode = m;
+  pendingEquipment = m === 'equipment' ? code : null;
+  $('addLabelBtn').classList.toggle('active', m === 'label');
+  $('addStairBtn').classList.toggle('active', m === 'stair');
+  for (const b of $('equipPicker').querySelectorAll('button')) {
+    b.classList.toggle('active', m === 'equipment' && b.dataset.code === code);
+  }
+  edit.style.cursor = m ? 'crosshair' : 'default';
+}
+$('addLabelBtn').onclick = () => setPlaceMode(placeMode === 'label' ? null : 'label');
+$('addStairBtn').onclick = () => setPlaceMode(placeMode === 'stair' ? null : 'stair');
+
+// Equipment picker: pick a code, then click where it goes. Same two-step
+// gesture as adding a room label, so there is nothing new to learn.
+for (const { group, items } of EQUIPMENT_GROUPS) {
+  const h = document.createElement('div');
+  h.className = 'eq-group'; h.textContent = group;
+  const list = document.createElement('div');
+  list.className = 'eq-list';
+  for (const it of items) {
+    const b = document.createElement('button');
+    b.className = 'btn btn--secondary btn--sm'; b.textContent = it.code;
+    b.dataset.code = it.code; b.title = it.name;
+    b.onclick = () => setPlaceMode(
+      placeMode === 'equipment' && pendingEquipment === it.code ? null : 'equipment', it.code);
+    list.append(b);
+  }
+  $('equipPicker').append(h, list);
+}
+// Any plan carries annotations no list can anticipate — a wine fridge, an EV
+// charger, a pet wash. Renaming a stock code already worked, but nobody would
+// guess that path, and the alternative was adding a room label for something
+// that is not a room.
+{
+  const list = document.createElement('div');
+  list.className = 'eq-list';
+  list.style.marginTop = 'var(--s-2)';
+  const b = document.createElement('button');
+  b.className = 'btn btn--secondary btn--sm'; b.id = 'eqCustom';
+  b.textContent = 'Custom…'; b.style.fontFamily = 'inherit';
+  b.title = 'Place a label and type your own text';
+  b.dataset.code = CUSTOM_EQUIPMENT;
+  b.onclick = () => setPlaceMode(
+    placeMode === 'equipment' && pendingEquipment === CUSTOM_EQUIPMENT ? null : 'equipment',
+    CUSTOM_EQUIPMENT);
+  list.append(b);
+  $('equipPicker').append(list);
+}
+window.addEventListener('keydown', (e) => {
+  // NOT WHILE SOMEBODY IS TYPING. A reviewer correcting a room name is inside a
+  // field, and there Delete deletes a character and Ctrl+Z undoes their typing —
+  // both of which the browser does correctly and neither of which should reach
+  // the drawing. Without this, backing out a typo silently removed a brush
+  // stroke somewhere else on the plan.
+  const t = e.target;
+  const typing = t && (t.isContentEditable
+    || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || ''));
+  if (typing) return;
+
+  if (e.key === 'Delete' && selection) {
+    if (selection.kind === 'label') S.deleteLabel(selection.id);
+    if (selection.kind === 'stair') S.deleteStaircase(selection.id);
+    select(null);
+    return;
+  }
+
+  // UNDO, on the shortcut every drawing tool has. Ctrl+Z on Windows and Linux,
+  // Cmd+Z on a Mac — `metaKey` is the Mac's, and checking both is what makes
+  // one line cover both platforms. Shift+Ctrl+Z is redo elsewhere and is
+  // deliberately NOT claimed here: there is nothing to redo into, and a
+  // shortcut that silently does nothing is worse than one that is absent.
+  //
+  // Erasing is the only thing on this page that accumulates strokes, so it is
+  // the only thing undo can mean. It is the same call the Undo button makes, so
+  // the two cannot drift apart.
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && (e.key === 'z' || e.key === 'Z')) {
+    if (!(S.getProject().erases || []).length) return;   // nothing to undo
+    e.preventDefault();
+    S.undoErase();
+    eraseChrome();
+    drawEdit();
+  }
+});
+
+// ---- checklist (progressive disclosure: simple confirm rows; Fix opens tools)
+const CHECKS = [
+  {
+    key: 'spaces',
+    text: (p) => {
+      const rooms = p.labels.filter(S.isRoom);
+      const un = rooms.filter((l) => !l.name).length;
+      // A builder's note read as a room costs twice: it inflates the very count
+      // being confirmed here, and it is a label, so the sentence would be
+      // typeset onto the finished image — an instruction to a builder printed
+      // on something shown to a buyer. Seen live: `SPACE FOR GUN SAFE` came
+      // back as one of 34 spaces while the wireframe correctly left it out.
+      const notes = suspectNames(p.labels);
+      if (notes.length) {
+        const names = notes.map((n) => n.name).join('</b>, <b>');
+        return `<b style="color:var(--err)">${notes.length} label${notes.length > 1 ? 's read' : ' reads'} as a note, not a room</b>: `
+          + `<b>${names}</b>. ${notes[0].reason} Rename or delete each, then confirm the count.`;
+      }
+      // Names the instrument and the question. "Check none were merged" told
+      // the user the risk but not how to look for it, and the markers existed
+      // only on the wireframe — so the job was to count in one panel and match
+      // in another. Now every space is pinned on their own plan.
+      // THREE STATES, AND THEY ARE NOT THE SAME PROBLEM.
+      //
+      // An unpinned room used to mean one thing here — "we read it as part of
+      // the room beside it" — and that sent Saman looking for a merge on a plan
+      // where MASTER BEDROOM and W.I.C. had simply come back without names.
+      // They were found, and counted, and unnamed spaces are the ones that
+      // cannot be snapped to the wireframe's pixels, so they are the ones with
+      // no pin. Telling him we had merged them was wrong.
+      //
+      // An earlier draft of this line also guessed WHY a space had no name,
+      // "usually a closet or a small bathroom". Nothing measured that, and on
+      // his plan it was a bedroom. The app does not guess about the customer's
+      // own drawing.
+      //
+      // So: what is pinned, what is found but unnamed and therefore unplaced,
+      // and the count itself, which is the actual four-point check. Comparing
+      // totals is what catches a merge; the pins are for finding WHICH room.
+      // ONE INSTRUCTION AT A TIME, and never one that needs arithmetic.
+      //
+      // This line used to end with "count the enclosed spaces on your plan: if
+      // your count is higher than 15, two rooms were read as one". That asks
+      // someone to count fifteen rooms on a construction drawing by hand and
+      // then compare totals, which is the very job the pins were added to
+      // remove. It also alarms without saying what to do.
+      //
+      // Worse, it contradicted the sentence before it. While any space is
+      // unnamed there are rooms with no pin for an innocent reason, so "look
+      // for a room with no pin" would send the reviewer to those every time.
+      //
+      // So the card asks for one thing, and which one depends on the state:
+      // name what is unnamed, or, once everything is named, look for the room
+      // the pins missed. Nothing to count either way.
+      const pinned = rooms.length - un;
+      if (un) {
+        return `<b>${rooms.length}</b> space${rooms.length === 1 ? '' : 's'} found, <b>${pinned}</b> pinned on your plan. `
+          + `<b>${un}</b> came back without a name, so ${un > 1 ? 'they are' : 'it is'} not pinned yet. `
+          + `Name ${un > 1 ? 'them' : 'it'} first.`;
+      }
+      return `<b>${rooms.length}</b> space${rooms.length === 1 ? '' : 's'} found, all pinned on your plan. `
+        + `Look for a room on your plan with <b>no pin</b>.`;
+    },
+    // The X-Ray is the only instrument for this one, so it gets its own action.
+    compare: true,
+    // Naming an unlabeled space is a different job; offer it only when there is
+    // one to name — or when a note is sitting in the list waiting to be dealt
+    // with, which is the more urgent of the two.
+    fixWhen: (p) => suspectNames(p.labels).length > 0 || p.labels.some((l) => !l.name),
+    fix: () => {
+      const labels = S.getProject().labels;
+      const note = suspectNames(labels)[0];
+      const target = (note && labels.find((l) => l.id === note.id))
+        || labels.find((l) => !l.name);
+      if (target) { select({ kind: 'label', id: target.id }); revealTool(); }
+    },
+    // The button names the job, so a reviewer can see why it is still there.
+    // A bare "Fix" gave no way to tell a button that has work left from one
+    // that simply always shows.
+    fixLabel: (p) => {
+      const notes = suspectNames(p.labels).length;
+      if (notes) return `Fix ${notes} label${notes > 1 ? 's' : ''}`;
+      const un = p.labels.filter((l) => S.isRoom(l) && !l.name).length;
+      return `Name ${un} space${un > 1 ? 's' : ''}`;
+    },
+  },
+  {
+    // THE ONLY CHECK ABOUT WHAT SHOULD NOT BE THERE.
+    //
+    // The other four ask whether what IS in the drawing is right, and an
+    // invented wall passes all of them: the space count still matches, the
+    // dimensions still transcribe, the stairs and the silhouette are still
+    // correct. Two plans grew a closet that was not on the customer's sheet and
+    // every automatic check said fine.
+    //
+    // Four ways of catching it automatically were built and measured out —
+    // tracing the source, differencing its ink against the wireframe, a
+    // flood-fill exterior test, and stripping annotation before the model sees
+    // it. The eye does it in seconds; the instrument for it, the X-Ray, was
+    // already on this page. Nobody had been asked the question.
+    key: 'nothingAdded',
+    text: () => 'Compare the wireframe with your plan and look for a <b>wall, door '
+      + 'or closet that is not on your plan</b>. The tracing sometimes adds one, '
+      + 'usually beside a dimension line or in a bedroom with no closet. '
+      + 'Use <b>Erase</b> or <b>Close a wall</b> below to remove it.'
+      + inventoryHtml(),
+    compare: true,
+    // Not automatic. It costs two model reads and a few seconds, and a reviewer
+    // who can already see the drawing is fine may not want either. It also must
+    // never look like a gate: the row is confirmable with or without it.
+    probe: {
+      label: () => (inventory.state === 'running'
+        ? (inventory.total ? `Checking ${inventory.done + 1} of ${inventory.total}` : 'Checking…')
+        : inventory.state === 'done' ? 'Check again' : 'Check against my plan'),
+      disabled: () => inventory.state === 'running',
+      run: runInventory,
+    },
+  },
+  {
+    key: 'stairs',
+    // The row confirms the stairs were FOUND, which is four-point check #3 and
+    // does not depend on whether we print anything. The sentence after it is
+    // about the arrow, and it exists because the thing the reviewer has to
+    // notice is a REMOVAL: their plan's UP and DN lettering cannot survive into
+    // the render (red line 1), while the plan's own arrow can and usually does.
+    // Nobody spots an absence they were not told about.
+    text: (p) => {
+      if (!p.staircases.length) return 'No staircase detected. Add one if the plan has stairs';
+      const n = p.staircases.length;
+      const on = p.staircases.filter((s) => s.printed !== false).length;
+      return `<b>${n}</b> staircase${n > 1 ? 's' : ''}: `
+        + p.staircases.map((s) => `<b>${dirLabel(s.direction)}</b>`).join(' · ')
+        + '<br>Your plan’s own stair arrow stays in the render; its UP and DN lettering does not. '
+        + (on
+          ? `Printing our arrow on <b>${on}</b> of them. Turn it off for any stair that already shows one.`
+          : 'Look at the render, and print ours only on a stair that lost its arrow.');
+    },
+    fix: () => {
+      const first = S.getProject().staircases[0];
+      if (first) { select({ kind: 'stair', id: first.id }); revealTool(); }
+      else { setPlaceMode('stair'); revealTool(); }
+    },
+    fixLabel: (p) => (p.staircases.length ? 'Edit staircase' : 'Add staircase'),
+  },
+  {
+    key: 'dims',
+    // A figure taken off a dimension chain is not a room size. Clearing it is a
+    // legitimate answer — plenty of construction sheets print no room sizes at
+    // all — so the way out is one click, not an edit the reviewer must invent.
+    // TWO QUESTIONS, ONE LIST. dim-shape asks whether the string is shaped like
+    // a room size; dim-source asks whether it was written under the room's name
+    // on the customer's sheet. "18' x 10"" passes the first and fails the
+    // second, which is exactly the case that reached a render.
+    block: (p) => {
+      const n = flaggedDims(p).length;
+      return n ? `Retype or clear ${n} dimension${n > 1 ? 's' : ''} that do not look like a room size.` : null;
+    },
+    resolve: {
+      label: 'Clear them',
+      run: () => {
+        for (const sd of flaggedDims(S.getProject())) S.updateLabel(sd.id, { dim: null });
+      },
+    },
+    text: (p) => {
+      const n = p.labels.filter((l) => l.dim).length;
+      // "0 confirmed by two independent readings" read like a verification
+      // result, but nothing was verified — there was nothing to read.
+      if (!n) return 'No dimensions on this plan. Add them by hand, or confirm as is.';
+      if (!crossCheck) return `<b>${n}</b> dimensions transcribed. Spot-check against your plan`;
+      if (crossCheck.disagreed) {
+        const names = crossCheck.rows.filter((r) => r.status === 'disagree').map((r) => r.name).join(', ');
+        return `<b style="color:var(--err)">${crossCheck.disagreed} dimension${crossCheck.disagreed > 1 ? 's' : ''} need checking</b>: `
+          + `the two readings of <b>${names}</b> disagree. Type the figure from your plan.`;
+      }
+      // Agreement is not correctness. Both readings look at the same drawing,
+      // so both can pick up the same stray figure off a dimension chain — and
+      // that reports as "confirmed by two independent readings", which claims
+      // more than happened. A room size is a PAIR; anything else gets shown.
+      const suspects = flaggedDims(p);
+      if (suspects.length) {
+        const names = suspects.map((s) => s.name || 'an unlabelled space').join(', ');
+        return `<b style="color:var(--err)">${suspects.length} dimension${suspects.length > 1 ? 's do' : ' does'} not look like a room size</b>: `
+          + `<b>${names}</b>. ${suspects[0].reason} Retype or clear each.`;
+      }
+      return `<b>${crossCheck.agreed}</b> dimensions confirmed by two readings`
+        + (crossCheck.unverified ? ` · <b>${crossCheck.unverified}</b> not cross-checked` : '');
+    },
+    // With no dimensions on the plan at all, the old fallback searched for a
+    // label that HAS one, found nothing, and returned silently: the button
+    // stayed live and did nothing when pressed. Every branch now lands
+    // somewhere — on the disputed label, on the first one to spot-check, or on
+    // a named room so a missing figure can be typed in.
+    fix: () => {
+      const labels = S.getProject().labels;
+      const bad = crossCheck?.rows.find((r) => r.status === 'disagree');
+      // Same order the message uses, so the button lands on whatever the text
+      // just told the user to look at.
+      const target = (bad && labels.find((l) => l.name === bad.name))
+        || (flaggedDims(S.getProject())[0] && labels.find((l) => l.id === flaggedDims(S.getProject())[0].id))
+        || labels.find((l) => l.dim)
+        || labels.find((l) => l.name);
+      if (target) { select({ kind: 'label', id: target.id }); revealTool(); }
+      else { setPlaceMode('label'); revealTool(); }   // nothing to attach a dimension to yet
+    },
+    fixLabel: () => 'Check a dimension',
+  },
+];
+// Blink-comparison: drive the overlay from the plan to the wireframe and back.
+// A room that was merged shows up as a wall that appears in one pass and not
+// the other — a difference the eye catches instantly in motion and can easily
+// miss in two still images side by side.
+let sweeping = false;
+// Compare used to sweep the overlay's slider. With the two drawings side by
+// side there is nothing to sweep, so it brings the map into view and blinks the
+// pins instead: the pins are what the reference map is for, and the blink says
+// "these are the things to match against the wireframe" without a caption.
+function sweepXray() {
+  const pins = $('showPins');
+  if (!pins || sweeping) return;
+  $('xray').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const was = pins.checked;
+  sweeping = true;
+  const path = [false, true, false, true, was];
+  let i = 0;
+  const step = () => {
+    pins.checked = path[i];
+    drawXray();
+    if (++i < path.length) setTimeout(step, 380);
+    else sweeping = false;
+  };
+  step();
+}
+
+// `p` defaults, because the inventory check re-renders from an async callback
+// that has no project in hand and should not have to fetch one to redraw a row.
+// What each numbered tab is FOR, since a numbered square says nothing on its
+// own. These are the shortest true name for each step, not a restatement of the
+// question the card asks.
+const STEP_TITLES = {
+  spaces: 'Room count',
+  nothingAdded: 'Nothing added',
+  stairs: 'Staircases',
+  dims: 'Dimensions',
+  specs: 'Listing specs',
+};
+
+// WHICH STEP IS ON SCREEN.
+//
+// `null` means "follow the work": show the first step that is not finished.
+// That is the state on arrival and the state after every confirmation, so the
+// stack walks forward on its own and nobody has to press Next.
+//
+// A number means the reviewer went back to look at something. That has to
+// stick, because the re-render fires on every state change — including the
+// ones a reviewer causes while re-reading a finished step — and a stack that
+// yanked them forward again would be unusable.
+let atStep = null;
+
+/** The steps, in the order they are worked. Geometry is not one of them. */
+/**
+ * Every dimension worth a second look, from both questions, without repeats.
+ *
+ * A label can fail both — a single figure lifted off a chain is malformed AND
+ * came from the wrong place — and naming it twice in the same sentence would
+ * make two problems out of one.
+ *
+ * `offPlanDims` is measured once at boot against the source; a label edited
+ * since then keeps its flag until the page is reopened, which is the honest
+ * side to err on: the reviewer is being asked to look, not being overruled.
+ */
+/** The width a typical room on THIS plan holds, from the labels that matched. */
+function flaggedDims(p) {
+  const out = suspectDims(p.labels);
+  const seen = new Set(out.map((s) => s.id));
+  const live = new Set((p.labels || []).filter((l) => l.dim).map((l) => l.id));
+  for (const d of offPlanDims) if (!seen.has(d.id) && live.has(d.id)) out.push(d);
+  return out;
+}
+
+const stepDefs = () => {
+  const out = CHECKS.map((c) => ({ key: c.key, check: c }));
+  out.push({ key: 'specs', specs: true });
+  return out;
+};
+
+const stepDone = (st, p) => (st.specs ? Boolean(p.specs?.confirmed) : Boolean(p.checklist[st.key]));
+
+function renderChecklist(p = S.getProject()) {
+  const ul = $('checklist');
+  ul.innerHTML = '';
+  const steps = stepDefs();
+  const firstOpen = steps.findIndex((st) => !stepDone(st, p));
+  // Everything finished: `firstOpen` is -1 and the stack has nothing to show.
+  const here = atStep === null ? (firstOpen === -1 ? steps.length : firstOpen) : atStep;
+  const done = steps.filter((st) => stepDone(st, p)).length;
+
+  // ---- the head: where you are, and how much is left
+  $('stepBar').firstElementChild.style.width = `${(done / steps.length) * 100}%`;
+  // The line describes WHERE YOU ARE, not the total. It read "All steps
+  // confirmed" while the reviewer was looking at step 2, because it was keyed
+  // to the count rather than to the card on screen.
+  $('stepCount').textContent = here === steps.length
+    ? 'All steps confirmed.'
+    : `Step ${here + 1} of ${steps.length}` + (done === steps.length
+      ? ' · confirmed, open again'
+      : ` · ${steps.length - done} left`);
+  const dots = $('stepDots');
+  dots.innerHTML = '';
+  steps.forEach((st, i) => {
+    const b = document.createElement('button');
+    const ok = stepDone(st, p);
+    // A step whose Confirm button is refused is marked, so the reason to go
+    // back is visible from the head rather than only from inside the card.
+    const stuck = !ok && st.check?.block ? Boolean(st.check.block(p)) : false;
+    b.className = (i === here ? 'here' : '') + (ok ? ' done' : '') + (stuck ? ' blocked' : '');
+    b.textContent = ok ? '✓' : String(i + 1);
+    b.title = STEP_TITLES[st.key] || '';
+    b.setAttribute('aria-label', `Step ${i + 1}: ${STEP_TITLES[st.key] || ''}`);
+    // Only a finished step can be revisited. Jumping ahead to a step whose
+    // question depends on the one before it is how a reviewer confirms
+    // something they have not actually looked at.
+    b.disabled = !ok && i !== here;
+    b.onclick = () => { atStep = i; renderChecklist(); };
+    dots.append(b);
+  });
+
+  // ---- the card
+  $('specCard').hidden = !(steps[here] && steps[here].specs);
+  $('doneCard').hidden = here !== steps.length;
+  // BACK AND NEXT, because confirming is not the only way to move.
+  //
+  // Confirming a step hands the stack back to "follow the work" and it lands on
+  // the next unfinished one, which is the common path. But a reviewer who steps
+  // back to re-read something they already ticked was then stuck: the card had
+  // an Undo and a Back and no way forward at all, because the only forward
+  // control was the Confirm button that step no longer has. Saman found it by
+  // doing exactly that.
+  //
+  // Next is offered only from a step that is already finished. Letting it skip
+  // an open step would be a way to arrive at a later question without having
+  // answered the one it depends on.
+  const stepFinished = here < steps.length && stepDone(steps[here], p);
+  $('stepBack').hidden = here === 0;
+  $('stepNext').hidden = !stepFinished;
+  $('stepNext').textContent = here === steps.length - 1 ? 'Finish' : 'Next';
+  $('stepNav').classList.toggle('on', here > 0 || stepFinished);
+  $('stepBack').onclick = () => { atStep = Math.max(0, here - 1); renderChecklist(); };
+  $('stepNext').onclick = () => { atStep = Math.min(steps.length, here + 1); renderChecklist(); };
+
+  for (const c of (steps[here] && steps[here].check ? [steps[here].check] : [])) {
+    const li = document.createElement('li');
+    const confirmed = p.checklist[c.key];
+    li.className = confirmed ? 'confirmed' : '';
+    li.innerHTML = `<div class="row"><span class="state">${confirmed ? '✓' : '○'}</span>` +
+      `<span class="label">${c.text(p)}</span><span class="actions"></span></div>`;
+    const actions = li.querySelector('.actions');
+    // Some rows cannot be ticked yet. Letting the tick land while the gate
+    // still refuses would show a green row beside a dead button, which is the
+    // dead end the geometry row already taught us to avoid.
+    const blocked = c.block ? c.block(p) : null;
+    if (!confirmed) {
+      const ok = document.createElement('button'); ok.className = 'btn btn--secondary btn--sm'; ok.textContent = 'Confirm';
+      ok.disabled = Boolean(blocked);
+      if (blocked) ok.title = blocked;
+      ok.onclick = () => { atStep = null; S.confirmItem(c.key); };
+      actions.append(ok);
+      if (blocked && c.resolve) {
+        const rs = document.createElement('button'); rs.className = 'btn btn--secondary btn--sm';
+        rs.textContent = c.resolve.label;
+        rs.onclick = c.resolve.run;
+        actions.append(rs);
+      }
+      // "check none were merged" is answerable ONLY by comparing the wireframe
+      // against the plan — the automatic guardrail is blind to it, because a
+      // merge is a wall the wireframe OMITS and the coverage probe only tests
+      // ink the wireframe DREW (erasing two interior walls leaves 0.04% aspect,
+      // 0% coverage and zero shaded cells). This row's action used to open the
+      // label tool, which cannot show a merge at all.
+      if (c.compare) {
+        const cmp = document.createElement('button'); cmp.className = 'btn btn--secondary btn--sm'; cmp.textContent = 'Compare';
+        cmp.onclick = sweepXray;
+        actions.append(cmp);
+      }
+      if (c.probe) {
+        const pb = document.createElement('button'); pb.className = 'btn btn--secondary btn--sm';
+        pb.textContent = c.probe.label();
+        pb.disabled = c.probe.disabled();
+        pb.onclick = c.probe.run;
+        actions.append(pb);
+      }
+      if (c.fix && (!c.fixWhen || c.fixWhen(p))) {
+        const fx = document.createElement('button'); fx.className = 'btn btn--secondary btn--sm';
+        fx.textContent = c.fixLabel ? c.fixLabel(p) : 'Fix';
+        fx.onclick = c.fix;
+        actions.append(fx);
+      }
+
+      // ---- ONE OF THESE IS THE NEXT THING TO DO. SAY WHICH.
+      //
+      // A row could offer four buttons — Confirm, a resolve, Compare, a probe,
+      // a fix — and every one of them looked the same, so the sentence above
+      // was the only thing saying which to press. "Name them first" sat over a
+      // row whose LEFTMOST and most default-looking button was Confirm.
+      //
+      // DERIVED FROM THE SAME CONDITION THAT WRITES THE SENTENCE, not chosen
+      // here. `c.text(p)` says "name them first" exactly when `c.fixWhen(p)` is
+      // true, and it says the gate's reason exactly when `c.block(p)` returns
+      // one. Reading those two is what keeps the emphasis and the wording from
+      // drifting apart — a primary button contradicting the sentence above it
+      // would be worse than the flat row this replaces.
+      //
+      // AND NEVER A PRIMARY THAT CANNOT BE PRESSED. When Confirm is blocked the
+      // emphasis goes to whatever clears the block, or to nothing at all: a
+      // large filled button that refuses the click is a dead end wearing the
+      // costume of an invitation.
+      const lead = blocked
+        ? actions.querySelector('button:not([disabled])')      // the resolve, if there is one
+        : (c.fix && (!c.fixWhen || c.fixWhen(p)))
+          ? actions.lastElementChild                            // the fix this row is asking for
+          : ok;                                                 // otherwise: tick it and move on
+      if (lead && !lead.disabled) lead.className = 'btn btn--primary btn--sm';
+    } else {
+      const undo = document.createElement('button'); undo.className = 'btn btn--secondary btn--sm'; undo.textContent = 'Undo';
+      // Stay on the step being undone rather than following the work, which
+      // would jump to it anyway but from underneath the reviewer's finger.
+      undo.onclick = () => { atStep = here; S.unconfirmItem(c.key); };
+      actions.append(undo);
+    }
+    ul.append(li);
+  }
+  // THE GEOMETRY GATE IS NOT A STEP, and it is not in the stack.
+  //
+  // It is measured rather than answered: a pass asks the reviewer for nothing,
+  // so making it a card would be a card that says "press Next". A fail is not a
+  // step either — it is a condition on the whole review, and it has to be
+  // visible whichever step is on screen rather than waiting its turn.
+  //
+  // So it renders under the card when it fails or was acknowledged, and stays
+  // out of the way entirely when it passes.
+  const showGeom = !(verdict.ok && !p.geometry?.acknowledged);
+  $('geomNote').hidden = !showGeom;
+  const gl = $('geomList');
+  gl.innerHTML = '';
+  if (showGeom) renderGeometryRow(p, gl);
+}
+
+function renderGeometryRow(p, ul) {
+  // Four-point check #4 — measured, not model-reported. A PASS needs nothing
+  // from the reviewer. A FAIL is a gate: it used to be advisory, so a wireframe
+  // of a different building could be confirmed, styled and shipped with a
+  // verification report while the page said "all four checks confirmed".
+  const li = document.createElement('li');
+  // The SAME verdict the gate uses. This row used to read `aspectDev` alone,
+  // so a plan that passed the outline check but failed the linework check
+  // showed a green tick with no buttons, while the gate still demanded "the
+  // outline mismatch" be dealt with. There was no way through: the only control
+  // that can satisfy the gate is rendered inside `if (!ok)`. A real plan hit
+  // this at 0.80% outline and 54% linework.
+  const geoOk = verdict.ok;
+  const ack = p.geometry?.acknowledged;
+  li.className = (geoOk || ack) ? 'confirmed' : '';
+  const tolPct = (reg.aspectTolerance * 100).toFixed(0);
+  // Conclusion first. The raw aspect ratios (1.325 vs 1.331) are intermediate
+  // values, and a builder cannot act on them; the deviation and the tolerance
+  // ARE the check, so those are what stays. The verification report carries the
+  // same percentages for the customer-facing record (./src/report.js).
+  const mark = geoOk ? '✓' : (ack ? '!' : '✗');
+  const markClass = geoOk ? '' : (ack ? ' warn' : ' err');
+  li.innerHTML = `<div class="row"><span class="state${markClass}">${mark}</span><span class="label">` +
+    (geoOk
+      ? `Outline matches, within <b>${(verdict.aspectDev * 100).toFixed(2)}%</b> (limit ${tolPct}%)`
+      // reg.reason names whichever check failed, so the row and the X-Ray
+      // message can never describe different problems.
+      : `${verdict.reason}` + (ack ? ' · <b>you chose to continue</b>' : '')) +
+    `</span><span class="actions"></span></div>`;
+  if (!geoOk) {
+    const acts = li.querySelector('.actions');
+    if (!ack) {
+      const cmp = document.createElement('button'); cmp.className = 'btn btn--secondary btn--sm'; cmp.textContent = 'Compare';
+      cmp.onclick = sweepXray;
+      const redo = document.createElement('button'); redo.className = 'btn btn--secondary btn--sm'; redo.textContent = 'Re-upload';
+      redo.onclick = () => { location.href = activeFloor
+        ? floorHref('extract.html', activeFloor.projectId, activeFloor.floorId) : 'extract.html'; };
+      const go = document.createElement('button'); go.className = 'btn btn--secondary btn--sm'; go.textContent = 'Continue anyway';
+      go.onclick = () => {
+        // States what the check did, not what the drawing is. The gate itself
+        // is unchanged: failing geometry still needs an explicit, recorded
+        // acknowledgement — only the claim about WHY has been corrected.
+        askConfirm({
+          title: 'Continue without an automatic geometry check?',
+          body: ['The geometry could not be checked automatically.',
+            'Continuing records that you checked it yourself.'],
+          confirm: 'I checked it',
+        }).then((yes) => { if (yes) S.acknowledgeGeometry(); });
+      };
+      acts.append(cmp, redo, go);
+    } else {
+      const undo = document.createElement('button'); undo.className = 'btn btn--secondary btn--sm'; undo.textContent = 'Undo';
+      undo.onclick = () => S.unacknowledgeGeometry();
+      acts.append(undo);
+    }
+  }
+  ul.append(li);
+}
+
+// ---- listing specs
+const sugg = S.suggestSpecs();
+$('specBeds').value = sugg.beds;
+$('specBaths').value = sugg.baths;
+$('specSqft').value = '';        // the builder types their official figure
+// The unique information here is WHY the suggestion is low, so it sits next to
+// the field that raises the doubt rather than repeating "it's a suggestion".
+// Not "the legal figure": the product makes process claims, never outcome ones.
+// "0 is the sum of the room dimensions" is a true sentence that tells the user
+// nothing. When no dimensions were read there is no suggestion to explain, only
+// a figure to supply.
+$('sqftNote').textContent = sugg.roomSum
+  ? `Enter your official figure. The room sizes add up to ${sugg.roomSum}, which leaves out walls, stairs and hallways. Leave empty to print no size.`
+  : 'No dimensions to add up. Enter the official figure.';
+$('specConfirm').onclick = () => S.confirmSpecs({
+  beds: Number($('specBeds').value),
+  baths: Number($('specBaths').value),
+  // Empty means "do not print a size", not zero. `Number('')` is 0, which
+  // would have put "0 SQFT" on the image; the strip already omits null.
+  sqft: $('specSqft').value.trim() === '' ? null : Number($('specSqft').value),
+});
+for (const id of ['specBeds', 'specBaths', 'specSqft'])
+  $(id).addEventListener('input', () => S.setSpecs({ confirmed: false }));
+
+// ---- confirm & style + export
+$('confirmBtn').onclick = async () => {
+  // WHO signed this off. The signed-in person's own name, and only if there is
+  // one — this used to fall back to the brand kit's COMPANY name, which made
+  // the product's central claim unattributable: a report saying "Northgate
+  // Homes confirmed these dimensions" cannot answer "which of you, and when".
+  // With no account the record says so plainly rather than borrowing a name.
+  const p = S.confirmAndStyle(await signOffName() || 'an unidentified user');
+  $('doneText').textContent = `${p.labels.filter(S.isRoom).length} spaces, ${p.specs.beds} bed / ${p.specs.baths} bath / ${p.specs.sqft == null ? 'no size' : p.specs.sqft.toLocaleString() + ' sqft'}. Confirmed ${new Date(p.confirmedAt).toLocaleString()}.`;
+  // Persist the promotable "verified" asset into the project store (step 5).
+  if (activeFloor) {
+    store.ensureSeed();
+    // Attach this upload's images to the floor, so Studio and the delivery
+    // pack compose the customer's real plan rather than a placeholder.
+    const floorScope = scopeFor(activeFloor.projectId, activeFloor.floorId);
+    await moveScope(artifactScope, floorScope);
+    artifactScope = floorScope;
+    store.setFloorVerified(activeFloor.projectId, activeFloor.floorId, {
+      labels: p.labels, staircases: p.staircases, specs: p.specs,
+      extraction: p.extraction,
+      // What the reviewer painted out or closed up. Part of the sign-off, not a
+      // view setting: it changes the drawing the render is made from, so a
+      // floor reopened later must show the same corrected wireframe.
+      erases: p.erases,
+      registration: {
+        deviation: verdict.deviation, aspectDev: verdict.aspectDev ?? 0, ok: verdict.ok,
+        // Carried so the report can say the reviewer was shown the mismatch.
+        acknowledgedAt: S.getProject().geometry?.acknowledgedAt || null,
+      },
+      artifactScope: floorScope,   // images live in the artifact store, not here
+      // Which drawing this sign-off is about. The version history compares the
+      // record, and the record alone cannot tell a revision from a re-review.
+      source: await sourceFingerprint(await getArtifact(floorScope, 'source')),
+      confirmedBy: p.confirmedBy, confirmedAt: p.confirmedAt,
+    });
+  }
+  $('doneDialog').showModal();
+};
+$('toStudio').onclick = () => {
+  const p = S.getProject();
+  // Only the small JSON travels; Studio pulls the images from the artifact store.
+  sessionStorage.setItem('confirmedProject', JSON.stringify({
+    mock: isMock || Boolean(l1.mock),
+    artifactScope,
+    // Anything with something to print. Filtering on `name` alone dropped every
+    // label on a plan that captions its rooms with dimensions and never names
+    // one, so the transcribed sizes never reached the canvas.
+    labels: p.labels.filter(isPrintable),
+    staircases: p.staircases,
+    specs: p.specs,
+    extraction: p.extraction,
+    // Studio applies these to the wireframe before styling AND before the
+    // wireframe export — without them the customer downloads the uncorrected
+    // drawing, which is what happened the first time this shipped.
+    erases: p.erases,
+    confirmedBy: p.confirmedBy,
+    confirmedAt: p.confirmedAt,
+  }));
+  location.href = activeFloor
+    ? floorHref('studio.html', activeFloor.projectId, activeFloor.floorId)
+    : 'studio.html';
+};
+// ---- re-render on every state change
+// EDITS AFTER A CONFIRM WERE BEING LOST, and it looked like a rendering bug.
+//
+// `setFloorVerified` was called in exactly one place — inside "Confirm & style".
+// So a reviewer who confirmed a floor, came back, dragged a few names into the
+// right rooms and went to Studio got the PREVIOUS confirmed record: their moves
+// were never written anywhere. It reads as "the wireframe download ignores my
+// labels", which is where the hunt started, and the download was innocent.
+//
+// A floor that has already been confirmed keeps its record current as it is
+// edited. A floor that has NEVER been confirmed is left alone — writing a
+// record for it would mark it confirmed without the reviewer ever passing the
+// checklist, which is the one thing the gate exists to prevent.
+let saveSoon = null;
+function saveNote(msg) { const el = $('saveState'); if (el) el.textContent = msg; }
+
+function persistIfConfirmed(p) {
+  if (!activeFloor) {
+    // No floor in the URL: this page is running on the bundled sample or a
+    // direct visit, and there is no floor record to write to.
+    saveNote('Sample plan. Nothing is saved.');
+    return;
+  }
+  const { floor } = store.getFloor(activeFloor.projectId, activeFloor.floorId);
+  if (!floor?.verified) {
+    saveNote('Not saved yet. Press Confirm & style once to start keeping changes.');
+    return;
+  }
+  // Coalesced: a drag fires this on every pointermove, and localStorage writes
+  // during a drag are what make one feel sticky.
+  clearTimeout(saveSoon);
+  saveSoon = setTimeout(() => {
+    store.setFloorVerified(activeFloor.projectId, activeFloor.floorId, {
+      ...floor.verified,
+      labels: p.labels, staircases: p.staircases, specs: p.specs, erases: p.erases,
+    });
+    // AND the session snapshot, because Studio has TWO doors.
+    //
+    // With floor params in the URL it reads the floor's record; without them it
+    // reads `confirmedProject` from sessionStorage — a copy written only by the
+    // Confirm button. Updating the record alone therefore fixed one door and
+    // left the other serving the version from the last confirm, which is
+    // exactly what "the download ignores my labels" looked like from outside.
+    // Two stores for one fact is the shape of every drift bug here; keeping
+    // them in step is the least this can do until there is only one.
+    saveNote(`Saved ${new Date().toLocaleTimeString()}`);
+    const snap = JSON.parse(sessionStorage.getItem('confirmedProject') || 'null');
+    if (snap) {
+      sessionStorage.setItem('confirmedProject', JSON.stringify({
+        ...snap,
+        labels: p.labels.filter(isPrintable),
+        staircases: p.staircases, specs: p.specs, erases: p.erases,
+      }));
+    }
+  }, 400);
+}
+
+// THE FIRST PAINT MUST NOT MEASURE IN A FALLBACK FONT.
+//
+// Canvas text falls back to a serif until the webfont has loaded, and it
+// MEASURES in that fallback too — so the first draw sized and wrapped every
+// label against the wrong glyph widths, then corrected itself the next time
+// anything repainted. Saman saw a page of blurry serif chips that turned
+// sans-serif the moment he clicked one. Studio has waited for this since it was
+// written; Review never did.
+document.fonts.load('600 20px Inter')
+  .then(() => document.fonts.load('500 20px Inter'))
+  .then(() => document.fonts.load('400 20px Inter'))
+  .then(() => document.fonts.ready)
+  .then(() => { if (wfImg) drawEdit(); })
+  .catch(() => {});
+
+S.subscribe((p) => {
+  drawEdit();
+  paintStatus(p);
+  renderChecklist(p);
+  $('specState').textContent = p.specs.confirmed ? '✓ confirmed' : '';
+  updateGate();
+  persistIfConfirmed(p);
+});
+
+// The primary action reports its own gate. A disabled button that will not say
+// what it is waiting for turns the page's single goal into a guessing game.
+function updateGate() {
+  const left = S.remainingToConfirm();
+  const btn = $('confirmBtn');
+  btn.disabled = left.length > 0;
+  btn.title = left.length ? `Still to confirm: ${left.join(', ')}.` : '';
+  const total = S.gateItemCount();
+  $('gateNote').textContent = left.length
+    ? `${total - left.length} of ${total} confirmed. Still to check: ${left.join(', ')}`
+    : 'Everything checked and confirmed.';
+  $('gateNote').classList.toggle('done', left.length === 0);
+}
+
+// ---- the action dock
+//
+// The controls live in the page head while the page head is on screen, and in
+// a floating bar at the bottom once it is not. They are the SAME nodes, moved,
+// so there is exactly one button, one disabled state and one handler; a mirror
+// copy would be a second state to keep in step and it would eventually drift.
+//
+// An IntersectionObserver rather than a scroll listener: it reports the fact we
+// actually care about — is the head visible — without running code on every
+// frame of every scroll.
+{
+  const actions = $('reviewActions');
+  // The row the controls BELONG to, which is no longer the title row. Watching
+  // the title row instead would dock the button while its own row was still on
+  // screen, putting the same control in two places at once.
+  const head = $('actionRow');
+  const dock = $('actionDock');
+  const dockIn = dock.firstElementChild;
+
+  const show = () => {
+    if (!dock.hidden) return;
+    dockIn.append(actions);
+    dock.hidden = false;
+    document.body.classList.add('docked');
+    // Start off-screen and spring up on the next frame; setting both in one
+    // frame would skip the transition entirely.
+    dock.setAttribute('data-leaving', '');
+    requestAnimationFrame(() => dock.removeAttribute('data-leaving'));
+  };
+  const hide = () => {
+    if (dock.hidden) return;
+    head.append(actions);       // back where it came from, the way it arrived
+    dock.hidden = true;
+    document.body.classList.remove('docked');
+  };
+
+  // rootMargin trims the sticky app header off the top of the viewport, so the
+  // head counts as hidden the moment it slides under it rather than behind it.
+  new IntersectionObserver(
+    ([e]) => (e.isIntersecting ? hide() : show()),
+    { rootMargin: '-64px 0px 0px 0px', threshold: 0 },
+  ).observe(head);
+}
+
+applyKitHouseStyle();
+drawEdit();
+// After the first draw of each, because the crop is expressed against the
+// canvas dimensions those draws establish.
+cropToContent('xrayView', xray, srcImg);
+cropToContent('editView', edit, wfImg);
+renderChecklist(S.getProject());
+updateGate();
+</script>
+</body>
+</html>

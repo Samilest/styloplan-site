@@ -1,0 +1,2919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Studio · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;600;700&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  /* a work surface: a plan canvas beside a control column. */
+  body { --page-max: 1600px; }
+  main { display: grid; grid-template-columns: 320px 1fr; gap: 24px; padding: 8px 24px 32px;
+         align-items: start; }
+  .panel + .panel { margin-top: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+  /* Segmented control: one choice, both options visible. */
+  .seg { display: flex; gap: 0; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); overflow: hidden; }
+  .seg button { flex: 1; border: 0; border-radius: 0; background: var(--surface); font-weight: 500; }
+  .seg button + button { border-left: 1px solid var(--line-strong); }
+  .seg button:hover { background: #FBFAF7; }
+  .seg button.active { background: var(--accent); color: #fff; }
+  /* Separates the paid control above from the free ones below. */
+  .grouphead { margin: 16px 0 0; padding-top: 16px; border-top: 1px solid var(--line);
+               font-size: 11px; font-weight: 600; letter-spacing: .09em;
+               text-transform: uppercase; color: var(--ink-2); }
+  /* A grouped list: one row per role, hairline separators, name on the left and
+     value on the right. Two columns of stacked label-swatch-field put four
+     controls in eight places and left nothing aligned to scan down. */
+  .roles { display: block; margin-top: 12px; border: 1px solid var(--line);
+           border-radius: var(--r-ctl); overflow: hidden; background: var(--surface); }
+  .roles > div { display: flex; align-items: center; gap: 12px; padding: 8px 12px; }
+  .roles > div + div { border-top: 1px solid var(--line); }
+  .roles label { flex: 1; display: block; margin: 0; font-size: 12.5px; color: var(--ink); }
+  /* THE SWATCH IS OURS, NOT THE BROWSER'S.
+     <input type="color"> is drawn by the engine, and what it draws has changed:
+     recent Chromium paints a colour-wheel affordance BESIDE the swatch, so each
+     row showed two marks where the design has one and the panel read as
+     cluttered. Styling the shadow parts only reaches the parts that build knew
+     about. A plain span carries the colour and the real input sits over it,
+     invisible and clickable, which renders the same in every engine and cannot
+     be changed out from under us again. */
+  .roles .sw { position: relative; width: 24px; height: 24px; flex: none;
+               border: 1px solid var(--line-strong); border-radius: 5px;
+               overflow: hidden; cursor: pointer; }
+  .roles .sw input[type=color] {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    padding: 0; margin: 0; border: 0; background: none; opacity: 0; cursor: pointer;
+  }
+  /* THE SWATCH SHOWS THE FOCUS THE INPUT CANNOT.
+     The real control is an <input type=color> at opacity 0 laid over a styled
+     square, because no engine lets the native swatch be styled. It is focusable
+     on purpose — a keyboard user has to be able to reach the colour picker —
+     but it is invisible, so its focus ring was invisible too and tabbing
+     through Studio's palette moved the caret into nowhere. Twice, silently:
+     smoke.html's "nothing hidden is focusable" has been red on this page,
+     naming `cBg` and `cWalls`.
+     The answer is not to take it off the tab path, which would lose the
+     control. It is to let the square it is drawn as take the ring for it. */
+  .roles .sw:focus-within {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .roles .sw input[type=color]:focus,
+  .roles .sw input[type=color]:focus-visible { outline: none; }
+  /* `.roles .hex` (0,2,0), not `.hex` (0,1,0): ui.css styles `input[type="text"]`
+     at (0,1,1) with width:100%, which outranks a single class and stretched the
+     field to 257px, pushing every row's value to a different x. */
+  .roles .hex {
+    width: 88px; flex: none; padding: 4px 8px; text-align: right;
+    font-family: var(--mono); font-size: 12px; text-transform: uppercase;
+  }
+  .roles .hex.bad { border-color: var(--err); color: var(--err); }
+  .preset { display: flex; gap: 8px; align-items: center; padding: 8px 12px; border: 1px solid var(--line-strong);
+            border-radius: var(--r-ctl); cursor: pointer; font-size: 12px; background: var(--surface);
+            transition: border-color .12s ease; }
+  .preset:hover { border-color: var(--ink-3); }
+  .preset.active { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .sw { display: flex; border-radius: 3px; overflow: hidden; }
+  .sw i { width: 10px; height: 22px; display: block; }
+  label.fld { display: block; font-size: 11.5px; color: var(--ink-2); margin: 12px 0 4px; }
+  #preview { width: 100%; display: block; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); }
+  /* One element, four meanings. It was hard-coded to --warn, so the success
+     line "styled. Geometry and text verified" was painted the same colour as
+     a failure. Colour that means "attention" has to be spent on things that
+     need it. */
+  #renderNote { font-size: 12px; color: var(--ink-2); margin-top: 12px; min-height: 16px; }
+  #renderNote.ok   { color: var(--ok); }
+  #renderNote.warn { color: var(--warn); }
+  #renderNote.err  { color: var(--err); }
+  /* Progress for a call whose duration we genuinely cannot predict (~25-30s per
+     attempt, up to three). An indeterminate sweep is the honest shape: it says
+     "working" without inventing a percentage. The elapsed count and the attempt
+     number carry the real information. */
+  /* The longest wait in the product, half a minute or more, and it used to be
+     a 3px hairline under 11px grey text tucked below the colour pickers. At
+     that weight a user cannot tell the difference between "working" and
+     "nothing happened". It now reads as its own object on the page. */
+  #renderProgress { margin-top: 12px; display: none; }
+  #renderProgress.on { display: block; }
+  #renderProgress .card {
+    background: var(--accent-soft); border-radius: var(--r-ctl); padding: 12px 16px;
+  }
+  #renderProgress .track {
+    height: 6px; border-radius: 6px; background: rgba(33,30,25,0.10); overflow: hidden;
+  }
+  #renderProgress .fill {
+    height: 100%; width: 38%; border-radius: 6px; background: var(--accent);
+    animation: sweep 1.5s ease-in-out infinite;
+  }
+  #renderProgress .meta {
+    display: flex; gap: 8px; align-items: baseline; margin-bottom: 8px;
+    font-size: 13px; font-weight: 600; color: var(--accent);
+  }
+  #renderProgress .meta .grow { flex: 1; }
+  #renderProgress .meta b { font-weight: 700; }
+  #renderProgress #rpElapsed, #renderProgress #rpAttempt {
+    font-weight: 500; font-size: 12px; font-family: var(--mono); color: var(--ink-2);
+  }
+  /* Says the wait is expected, so a long one does not read as a hang. */
+  #renderProgress .hint { margin-top: 8px; font-size: 11.5px; color: var(--ink-2); }
+  @keyframes sweep {
+    0%   { transform: translateX(-100%); }
+    100% { transform: translateX(363%); }
+  }
+  /* Respect a user who has asked the system to stop animating: hold a steady
+     bar rather than a moving one, so the state is still visible. */
+  @media (prefers-reduced-motion: reduce) {
+    #renderProgress .fill { animation: none; width: 100%; opacity: .45; }
+  }
+  /* SHRINKABLE, so it cannot widen the page. At its natural size the three
+     tabs need 272px, which does not fit a 320px screen once the page and panel
+     padding are taken out. Sharing the row equally and trimming the padding
+     fits them at 320 with the labels intact, which beats wrapping a segmented
+     control onto two lines or scrolling options out of sight. */
+  .fmt-tabs { display: flex; gap: var(--s-2); min-width: 0; }
+  .fmt-tabs button { min-width: 0; }
+  .fmt-bar { display: flex; gap: var(--s-3); align-items: center; justify-content: space-between;
+             flex-wrap: wrap; margin-bottom: var(--s-3); }
+  /* ONE COLUMN OF FULL-WIDTH CONTROLS ONCE THE PAGE STACKS.
+     `space-between` on a wrapping row puts the tabs on one line and leaves the
+     Render button on the next at its own width, ending 80px short of the panel
+     it sits in: the product's one paid action, stranded mid-row. Side by side
+     that arrangement is right, because the tabs are a choice and Render is the
+     act; stacked, a primary action that does not reach both edges reads as
+     unfinished. Same breakpoint the layout itself collapses at, so the two
+     changes are one change. */
+  @media (max-width: 900px) {
+    .fmt-bar { flex-direction: column; align-items: stretch; }
+    .fmt-bar > * { width: 100%; }
+    .fmt-tabs button { flex: 1 1 0; padding: 0 var(--s-2); }
+    .render-group { justify-content: center; }
+  }
+  /* Occupies the Render button's place, quietly. Success colouring, because
+     "already paid for" is good news, not a warning. */
+  .render-group { display: flex; gap: 8px; align-items: center; }
+  /* A QUIET BUTTON IN THIS ROW STILL HAS TO READ AS A BUTTON.
+     `.btn--quiet` carries colour and nothing else, which is right where it sits
+     among other buttons in a dialog footer and wrong here: these two stand
+     between a status chip and a yellow paid action, with nothing around them to
+     borrow an affordance from, so they read as labels. Saman could not tell
+     Compare was clickable. A hairline is the least that says "control" without
+     competing with the paid button beside it. */
+  /* Collapsed by default: it is a checklist for the moment someone doubts the
+     picture, not a paragraph to read past every time. The summary carries the
+     whole promise on one line. */
+  .ai-note { border: 1px solid var(--line); border-radius: var(--r-ctl);
+    padding: 8px 12px; background: var(--surface-2); }
+  .ai-note > summary { cursor: pointer; font-size: var(--t-13); color: var(--ink-2);
+    list-style: none; }
+  .ai-note > summary::-webkit-details-marker { display: none; }
+  .ai-note > summary::before { content: 'A'; display: inline-block;
+    margin-right: 6px; transition: transform var(--d-micro) var(--ease); }
+  .ai-note[open] > summary::before { transform: rotate(90deg); }
+  .ai-note > summary:hover { color: var(--ink); }
+  @media (prefers-reduced-motion: reduce) { .ai-note > summary::before { transition: none; } }
+  .render-group .btn--quiet { border: 1px solid var(--line-strong); }
+  .render-group .btn--quiet:hover,
+  .render-group .btn--quiet:focus-visible { border-color: var(--ink-3); }
+  /* Names a group AND states how far its changes reach. The reach is the point:
+     the fields above it edit the shared kit, the ones below edit this export,
+     and nothing else on the panel would tell you which is which. */
+  .scope-head { display: flex; flex-direction: column; gap: 1px; margin: 0 0 4px;
+                padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .scope-head b { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+  .scope-head span { font-size: 11px; color: var(--ink-2); }
+  .logo-row { display: flex; gap: 8px; align-items: center; margin-top: 4px; flex-wrap: wrap; }
+  .logo-row input[type=file] { flex: 1; min-width: 120px; font-size: 11.5px; }
+  #bLogoPreview { height: 30px; max-width: 96px; object-fit: contain;
+                  border: 1px solid var(--line); border-radius: 4px;
+                  padding: 4px; background: #fff; }
+  /* Reads as the quiet way out of this panel, not as a fourth button competing
+     with the ones that do the work. */
+  .linkbtn { font-size: 12px; color: var(--accent); text-decoration: none; }
+  .linkbtn:hover { text-decoration: underline; }
+  /* `.more` lives in ui.css — shared with Review, so a fold behaves the same
+     wherever it appears. */
+  /* Each export is its own named thing with its own controls, separated by a
+     hairline rather than a heading — three headings in one panel would compete
+     with the panel's own. */
+  .deliverable + .deliverable { margin-top: 16px; padding-top: 16px;
+                                border-top: 1px solid var(--line); }
+  .d-head { display: flex; flex-direction: column; gap: 1px; margin-bottom: 8px; }
+  .d-head b { font-size: 13px; font-weight: 600; color: var(--ink); }
+  .d-head span { font-size: 11.5px; color: var(--ink-2); }
+  .deliverable .row { margin: 0; }
+  .deliverable .subtle { margin-top: 8px; }
+  .done-chip { font-size: 12px; font-weight: 500; color: var(--ok);
+               background: var(--ok-soft); padding: 8px 12px; border-radius: 999px;
+               white-space: nowrap; }
+  /* Sits directly above the image it describes, not in the sidebar. This is a
+     status, so it is the same amber the rest of the app spends on "attention",
+     and it disappears entirely once a render exists — the normal state carries
+     no chrome. */
+  .preview-state { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+                   font-size: 12.5px; line-height: 1.45; color: var(--warn);
+                   background: var(--warn-soft); border-radius: var(--r-ctl);
+                   padding: 8px 12px; margin-bottom: 12px; }
+  .preview-state b { font-weight: 600; }
+  .preview-state .why { color: var(--ink-2); }
+  /* `hidden` is enforced globally in ui.css — an author `display` rule
+     otherwise outranks the UA stylesheet and this banner would stay on screen
+     after a render even though the code had hidden it. */
+  #preview { cursor: default; }
+  #preview.grabbable { cursor: grab; }
+  #preview.grabbing { cursor: grabbing; }
+  .tool { margin-top: 12px; padding: 16px; background: var(--paper); border-radius: var(--r-ctl); display: none; }
+  .tool.open { display: block; }
+  /* The preview runs to ~1300px tall, so a panel below it opened 600px under
+     the fold: selecting a label appeared to do nothing and the size control
+     might as well not have existed. It floats over the viewport instead, in one
+     fixed place so it is the same target every time. */
+  #labelTool.open { position: fixed; z-index: 40; bottom: 20px; left: 50%;
+    transform: translateX(-50%); width: min(420px, calc(100vw - 32px));
+    margin-top: 0; box-shadow: 0 10px 34px rgba(0,0,0,.22);
+    border: 1px solid var(--line); }
+  .tool h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--accent); }
+  .tool .grow { flex: 1; }
+  #labelToolName { font-weight: 600; font-size: 13px; }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1>Style &amp; brand</h1>
+  <span class="sub" id="who"></span>
+  <div class="actions">
+    
+  </div>
+</div>
+<main>
+  <aside>
+    <section class="panel">
+      <h3>Plan style</h3>
+      <!-- The credit warning sits on the ONLY control that spends one. It used
+           to say "changing the palette or theme", which was wrong twice over:
+           the four colours never reached the image model, and changing one
+           still billed a re-render that came back identical. -->
+      <div class="subtle" style="margin:-2px 0 8px">Re-renders the plan. Costs 1 credit. If a render
+        fails our checks we try again free.</div>
+      <!-- Two modes, four colours. Six named presets asked the user to hold six
+           combinations in their head to find the one they wanted; the mode is
+           the only choice that changes the drawing's character, and the four
+           roles are the only things worth adjusting after it. -->
+      <div class="seg" id="themeSeg" role="group" aria-label="Theme">
+        <button type="button" data-theme="light" class="btn btn--secondary">Light</button>
+        <button type="button" data-theme="dark" class="btn btn--secondary">Dark</button>
+      </div>
+      <!-- ONE PROJECT IS ONE HOME MODEL, and its floors are shown together. An
+           all-floors 3D embed refuses a mixed set — a visitor stepping from the
+           main floor to the basement and finding the plan has gone light to
+           dark reads it as broken. That refusal is right; arriving at the embed
+           was the wrong moment to hear about it, after two renders had been
+           paid for in two looks. So the project's look is stated HERE, on the
+           control that spends the credit. Quiet when the floors agree, because
+           agreement is not news; coloured only when this choice would break
+           it. -->
+      <div id="lookNote" hidden></div>
+      <h4 class="grouphead">Colours</h4>
+      <div class="subtle" style="margin:-2px 0 8px">Free, applied instantly. No re-render.</div>
+      <!-- The plan's own tones are no longer editable role by role. Measured:
+           setting "floors" alone recoloured 2.1% floor and 97.9% something
+           else, because a luminance ramp cannot tell a floor field from a
+           fixture outline of the same lightness. Monotone removes the problem
+           instead of working around it — when every colour is a tint of one
+           hue, a line taking the floor's colour is correct rather than wrong.
+
+           Canvas and Text stay: those are drawn by the compositor, not remapped
+           out of the render, so they were always exact. -->
+      <!-- TINT IS GATED ON A RENDER; CANVAS AND TEXT ARE NOT.
+           The three look alike and are not alike. Canvas and Text are drawn by
+           the compositor onto whatever plan image is in hand, so they are exact
+           in every state including the unstyled preview — and this panel tells
+           the user to "set everything up, then press Render", so taking them
+           away first would deny the two settings they can accurately make.
+
+           Tint is different in kind: it remaps the PLAN IMAGE. Before a render
+           that image is a faded wireframe, so tinting it produces a monotone
+           wireframe, which is nothing like the monotone render it promises.
+           A control whose preview lies is worse than one that is unavailable,
+           so it waits and says what it is waiting for. -->
+      <label class="check" style="margin-top:2px" id="monoLabel"><input type="checkbox" id="monoOn"> Tint the plan in one brand colour</label>
+      <div class="subtle" id="monoLocked" hidden style="margin-top:-2px">Available once the plan is rendered.</div>
+      <div class="roles" id="monoRow" hidden>
+        <div><span class="sw"><input type="color" id="cMono" value="#2E6B4F"></span><label for="cMono">Brand colour</label>
+          <input type="text" id="hMono" class="hex" spellcheck="false" maxlength="7" aria-label="Brand colour code"></div>
+      </div>
+      <div class="subtle" id="monoNote" hidden style="margin-top:8px">The whole plan renders in tints of this colour, from its darkest walls to its lightest paper.</div>
+      <div class="roles" style="margin-top:12px">
+        <div><span class="sw"><input type="color" id="cBg"></span><label for="cBg">Canvas</label>
+          <input type="text" id="hBg" class="hex" spellcheck="false" maxlength="7" aria-label="Canvas colour code"></div>
+        <div><span class="sw"><input type="color" id="cWalls"></span><label for="cWalls">Text</label>
+          <input type="text" id="hWalls" class="hex" spellcheck="false" maxlength="7" aria-label="Text colour code"></div>
+      </div>
+      <!-- Left, and small. Right-aligned at full size on a row of its own, it
+           read as another section heading rather than as the quiet undo it is —
+           the same treatment "Match the others" already gets in the label
+           tool. -->
+      <div class="row" style="margin-top:10px">
+        <button id="resetPalette" class="btn btn--quiet btn--sm">Reset to default</button>
+      </div>
+      <div id="renderProgress" aria-live="polite">
+        <div class="card">
+          <!-- Stage first: the label is the message, the bar only says it is
+               still moving. Reversed before, so the eye met the hairline. -->
+          <div class="meta">
+            <span id="rpStage">Preparing</span>
+            <span class="grow"></span>
+            <span id="rpAttempt"></span>
+            <span id="rpElapsed"></span>
+          </div>
+          <div class="track"><div class="fill"></div></div>
+          <div class="hint" id="rpHint">Usually 20 to 40 seconds. You can leave this tab open.</div>
+        </div>
+      </div>
+      <div id="renderNote"></div>
+    </section>
+
+    <section class="panel">
+      <h3>Labels &amp; typography</h3>
+      <label class="check"><input type="checkbox" id="labelsOn" checked> Room labels</label>
+      <!-- A label removed from the image cannot be clicked to get it back — it
+           is not drawn any more. Without somewhere to say so, "remove" is a
+           one-way door on this screen and the only way back is the previous
+           step. -->
+      <div id="hiddenLabels" class="subtle" style="margin-top:8px" hidden></div>
+      <!-- These three controls carried no labels at all: the font was a bare
+           dropdown, and the two text fields relied on placeholders, which vanish
+           the moment the field has a value — so a filled field said nothing
+           about what it was. -->
+      <label class="fld" for="fontSel">Font</label>
+      <select id="fontSel">
+        <option>Inter</option><option>Roboto</option><option>Montserrat</option>
+        <option>DM Sans</option><option>Playfair Display</option><option>Cormorant Garamond</option>
+      </select>
+    </section>
+
+    <section class="panel">
+      <h3>Title &amp; footer</h3>
+      <!-- EVERYTHING PRINTED IN THE FOOTER, EDITED WHERE THE FOOTER IS VISIBLE.
+           The three fields a builder actually needs — logo, company name,
+           contact line — lived only in Brand kits, a page you had to already
+           know about. Nothing on this screen said so, while the plan title and
+           the disclaimer WERE here, so half the footer was editable in front of
+           you and half was somewhere unnamed. That split is arbitrary from the
+           user's seat.
+
+           THE TWO GROUPS BELOW HAVE DIFFERENT SCOPE, AND THAT IS WHY THEY ARE
+           LABELLED. Brand fields write to the active KIT and therefore change
+           every plan that uses it; title and disclaimer belong to this export
+           alone. A silent global rebrand from a screen that looks like it is
+           editing one image would be the worst outcome here, so the scope is
+           stated in words rather than implied by grouping. -->
+      <div class="scope-head">
+        <b>Brand</b>
+        <span id="kitScope">Applies to every plan using this kit</span>
+      </div>
+      <label class="fld" for="bLogo">Logo</label>
+      <div class="logo-row">
+        <input type="file" id="bLogo" accept="image/png,image/svg+xml,image/jpeg">
+        <img id="bLogoPreview" alt="" hidden>
+        <button id="bLogoClear" class="btn btn--secondary btn--sm btn--quiet" hidden>Remove</button>
+      </div>
+      <label class="fld" for="bCompany">Company name</label>
+      <!-- Says what empty MEANS, because empty is a legitimate choice here and
+           the field should not read as unfinished. -->
+      <input type="text" id="bCompany" placeholder="Leave empty if your logo already has it">
+      <label class="fld" for="bTagline">Contact line</label>
+      <input type="text" id="bTagline" placeholder="Web address, phone, or a strapline">
+      <div class="row" style="margin-top:12px">
+        <a class="linkbtn" href="brandkits.html" id="bMore">Colours, type and house style →</a>
+        <span class="grow"></span>
+        <span class="subtle" id="bSaved" aria-live="polite"></span>
+      </div>
+
+      <!-- Folded away, because these two are set once and then left alone while
+           the brand fields above are what a user comes here to fix. Same
+           disclosure the Review station uses for its equipment codes, so the
+           two pages behave alike.
+
+           The summary reports its own contents when they are not at their
+           defaults. A collapsed section that hides a switched-off disclaimer
+           would be a legal line quietly missing from an export with nothing on
+           screen to say so — the whole reason it defaults ON (red line 7). -->
+      <details class="more" id="planMore">
+        <summary><span id="planMoreLabel">Plan title and disclaimer</span></summary>
+        <label class="fld" for="titleTxt">Plan title (optional)</label>
+        <!-- Deliberately EMPTY. It used to ship "Main Floor · The Geena" — a real
+             plan's name, hardcoded, so every customer's first render carried a
+             previous customer's title until they noticed and cleared it. A
+             default that names someone else's project is worse than no default:
+             it is wrong in a way that looks intentional. Filled from this
+             floor's own name at boot when there is one. -->
+        <input type="text" id="titleTxt" value="" placeholder="e.g. Main Floor">
+        <label class="check" style="margin-top:12px"><input type="checkbox" id="discOn" checked> Disclaimer line</label>
+        <label class="fld" for="discTxt">Disclaimer text</label>
+        <!-- The placeholder IS the shipped default, so it must be imported rather
+             than retyped: a hard-coded copy went stale the moment the default was
+             rewritten, and showed the user a line the product no longer prints. -->
+        <input type="text" id="discTxt">
+      </details>
+    </section>
+
+    <section class="panel">
+      <h3>Export</h3>
+      <!-- WHY THE BUTTONS ARE GREY, said in the panel rather than in a tooltip.
+           Every one of these needs a rendered plan, and until there is one they
+           are all disabled with nothing on screen to say so — the same dead end
+           the wireframe button's title was written to avoid, except a title
+           only exists for someone already hovering the thing they have given up
+           on. The Tint control two panels up already does this properly; this
+           is the same sentence in the same voice. -->
+      <div class="subtle" id="exportLocked" hidden style="margin:-2px 0 10px">
+        Available once the plan is rendered. There is no image to export until then.
+      </div>
+      <!-- THREE DELIVERABLES, NOT ONE PLUS TWO FOOTNOTES.
+           This was a row of format buttons followed by two quiet one-liners, so
+           the branded image looked like the product and the other two looked
+           like options someone had bolted on. They are not options. The
+           MLS-safe image is a DIFFERENT deliverable — most boards will not
+           accept a listing image carrying a logo or a web address, so for a
+           listing it is the only one that can be used at all. The wireframe is
+           the record of what the customer actually confirmed.
+
+           A builder who never discovers those two has bought a third of what
+           they paid for, so each is named for the job it does and carries the
+           one line that says when to reach for it. -->
+      <div class="deliverable">
+        <div class="d-head"><b>Branded image</b><span>Your logo, company name and the spec strip</span></div>
+        <!-- JPG leads because the listing is where these go: MLS systems treat a
+             floor plan as listing media and JPG is the format every board accepts.
+             Which format suits which job is conventional knowledge, so it lives in
+             the tooltips rather than on the page. -->
+        <div class="row">
+          <button id="dlJpg" title="Best for listings and MLS. Every board accepts it." class="btn btn--secondary">JPG</button>
+          <button id="dlPng" title="For sharp line work or a transparent background." class="btn btn--secondary">PNG</button>
+          <button id="dlPdf" title="For print and client approval." class="btn btn--secondary">PDF</button>
+        </div>
+        <!-- The PLAN, not the canvas. The canvas is 2048px and prints to about 7
+             inches at 300dpi, but a third of it is margin, title band and footer:
+             the drawing itself lands at ~1565px, or 5 inches. Quoting the canvas
+             figure overstated the useful size by a third to anyone asking how big
+             the plan comes out. -->
+        <div class="subtle">Prints to about 5 in / 13 cm at 300 dpi. Fine for a listing or brochure, small for a sales-centre board.</div>
+      </div>
+
+      <!-- For a builder who lays out the branding themselves, and for every
+           listing that has to clear a board. Same plan, same labels, without the
+           brand block, at the plan's own shape. "Many boards" rather than a
+           compliance promise, because the rules genuinely differ by board and
+           promising compliance we cannot verify is the same error as promising
+           accuracy (red line 7). -->
+      <div class="deliverable">
+        <div class="d-head"><b>MLS-safe image</b><span>The plan alone. No logo, name, web address or disclaimer.</span></div>
+        <div class="row">
+          <button id="dlBare" title="One PNG: the plan and its labels, edge to edge, at the plan's own proportions." class="btn btn--secondary">Download PNG</button>
+        </div>
+        <div class="subtle">Most boards reject listing images with branding, so this is usually the one to send. Rules differ by board, so check yours.</div>
+      </div>
+
+      <!-- Moved here from a collapsed panel in Review called "Equipment codes
+           and wireframe export". It is a download, and every download the
+           product makes belongs in the panel called Export — a user looking for
+           their files should never have to remember which page produced which
+           one. -->
+      <!-- WITHDRAWN, NOT DELETED. See WIREFRAME_DOWNLOAD below for why and for
+           how to bring it back. The markup stays so turning it on is one
+           constant rather than a rebuild. -->
+      <div class="deliverable" id="wireBlock" hidden>
+        <div class="d-head"><b>Wireframe</b><span>The plain drawing, no branding or styling</span></div>
+        <div class="row">
+          <button id="dlWire" title="A record of the plan exactly as you confirmed it." class="btn btn--secondary">Download PNG</button>
+        </div>
+        <div class="subtle" id="wireNote">A record of the plan exactly as you confirmed it.</div>
+      </div>
+    </section>
+  </aside>
+
+  <section class="panel">
+    <!-- Render sits OUTSIDE #fmtTabs on purpose: the format code treats every
+         button inside that container as a format tab, so putting it there made
+         Render pick up the active class and left `format` undefined. -->
+    <div class="fmt-bar">
+      <div class="fmt-tabs" id="fmtTabs">
+        <button data-fmt="square" class="btn btn--secondary active">Square</button>
+        <button data-fmt="landscape" class="btn btn--secondary">Landscape</button>
+        <button data-fmt="portrait" class="btn btn--secondary">Portrait</button>
+      </div>
+      <!-- THE ONE CONTROL IN THIS PRODUCT THAT SPENDS MONEY, and the only place
+           --paid yellow is allowed to appear. Not on a badge, not on a chart,
+           not on the logo: the moment the colour shows up somewhere free, it
+           stops meaning "this costs you something".
+
+           The price is a mono chip INSIDE the button rather than words in its
+           label. A paid button whose cost is a parenthesis reads as part of a
+           sentence; a figure in its own chip reads as a figure, and it is the
+           thing the customer is deciding about.
+
+           44px tall even on a mouse. Every other button here is 36px, and the
+           extra height is the deliberateness signal — this is the one you
+           should not press by accident. -->
+      <button id="renderBtn" class="btn btn--paid" hidden>
+        Render this palette <span class="cost">1 credit</span>
+      </button>
+      <!-- Stands in the button's place when a render already exists. The button
+           vanishing left an empty gap, and switching Light/Dark made the page's
+           primary action appear and disappear with no stated reason — which
+           reads as "this mode cannot be rendered" rather than "this one is
+           already paid for". -->
+      <!-- One group, so the state and the action it belongs to read as a pair.
+           The chip sat alone in the middle of the bar with the button at the far
+           end, and a status floating away from what it describes is just a
+           loose word on the page. -->
+      <div class="render-group" id="renderGroup" hidden>
+        <span id="renderState" class="done-chip">Rendered</span>
+        <!-- COMPARE WITH THE DRAWING THEY CONFIRMED.
+             Before the first render this pane shows the wireframe, so what is
+             on screen matches Review and nothing is mysterious. After it, only
+             the render is ever shown -- and if the render DROPPED something,
+             there is no longer anything to notice it against. Saman confirmed
+             an exterior stair in Review, the render merged it into the deck,
+             and the only visible difference was that his own label edits had
+             happened in between -- so he blamed those.
+             It shows the same watermarked preview the pre-render state does,
+             which is his own suggestion and better than a new picture: the
+             watermark says which one you are looking at, so the two can never
+             be confused. Free, and it spends nothing. -->
+        <button id="compareBtn" class="btn btn--quiet btn--sm" aria-pressed="false"
+                title="Show the drawing you confirmed, in this same frame.">
+          Compare with your drawing
+        </button>
+        <!-- Re-render. The image model is not deterministic, so the same palette
+             can come back better or worse; refusing to let anyone ask again meant
+             the only way to a second attempt was switching mode and back, which
+             threw the paid render away as a side effect. It costs a credit and
+             says so, and it confirms first, because unlike the first Render this
+             one REPLACES something the user already has. -->
+        <!-- Also paid, and it was styled .quiet — the least emphatic control in
+             the system. A button that spends a credit must not look like one
+             that does not, whatever else is true about it. It stays smaller
+             than the first Render because it is the secondary path, but it
+             carries the same colour and the same cost chip. -->
+        <button id="rerenderBtn" class="btn btn--paid btn--sm"
+                title="Draws this plan again and replaces your current render.">
+          Render again <span class="cost">1 credit</span>
+        </button>
+      </div>
+    </div>
+    <!-- WHAT AM I LOOKING AT.
+         The unstyled preview is a faded wireframe: no furniture, no cars, and
+         the room names are the wireframe's own. It previews layout, labels,
+         footer and format truthfully, which is why it is shown — but it sat in
+         the same frame as a finished render with only a small grey line in the
+         far sidebar to tell them apart. Switching Light/Dark then swapped a
+         real render for a preview, and the missing car and unlabelled kitchen
+         read as a difference between the two STYLES. It is not; it is the
+         difference between rendered and not. So the canvas says so itself. -->
+    <div id="previewState" class="preview-state" hidden></div>
+    <canvas id="preview"></canvas>
+    <!-- Label placement happens HERE, on the finished image, because the
+         wireframe's clear areas are exactly where the styling model puts the
+         furniture — so anchors chosen on the wireframe land on beds and sofas. -->
+    <div class="subtle" id="labelHint" style="margin-top:8px">Click a label to move or resize it. Arrow keys nudge the selected one.</div>
+    <div class="subtle" id="labelCheck" style="margin-top:4px"></div>
+    <!-- CHECK THE DRAWING, AND WHAT TO CHECK IT FOR.
+         Shown only once a render exists, because before that there is nothing
+         to check and the sentence would be noise.
+         DELIBERATELY NO PERCENTAGE. A stated error rate is an OUTCOME claim --
+         the thing red line 7 exists to keep out of this product -- and we have
+         no measured figure to stand behind: one render read 96.6% faithful, the
+         openings vary 19% between generations, and the real faults so far are
+         single incidents. A number would be invented, and a customer holding
+         their third bad render would hold that number up to us.
+         So it names the failures we have actually seen instead. That is honest,
+         it is useful, and it turns a warning into a short checklist -- which is
+         what the Compare control above is for. -->
+    <details class="ai-note" id="aiNote" hidden style="margin-top:10px">
+      <summary>What to check on this render</summary>
+      <p class="subtle" style="margin:6px 0 0">
+        The plan is drawn by an image model, and it can differ from your drawing
+        in small ways. Compare it with your drawing above, and look for:
+      </p>
+      <ul class="subtle" style="margin:6px 0 0; padding-left:18px">
+        <li>a stair, closet or small room merged into the space beside it</li>
+        <li>a car drawn anywhere that is not a garage</li>
+        <li>a window or door that has moved, or is missing</li>
+        <li>anything in a room that is not on your drawing</li>
+      </ul>
+      <p class="subtle" style="margin:6px 0 0">
+        Room names, dimensions and your branding are added by us afterwards, so
+        those always match what you confirmed. If the plan itself is not right,
+        Render again draws it afresh.
+      </p>
+    </details>
+    <div class="tool" id="labelTool">
+      <h4 id="labelToolHead">Label</h4>
+      <!-- THE NAME GETS ITS OWN LINE. With the name and the buttons sharing a
+           row, where the row broke depended on how wide the name was: BATH
+           pushed Done onto a second line and DEN did not, so the panel
+           rearranged itself as the reviewer clicked from label to label. -->
+      <div class="row"><span id="labelToolName"></span></div>
+      <div class="row">
+        <button class="btn btn--secondary btn--sm" id="labelReset">Reset position</button>
+        <!-- "DO NOT PRINT IT", NOT "IT IS NOT A ROOM". What counts as a space
+             is Review's decision and the space count is one of the four checks;
+             this screen decides what appears on the image. So it sets the same
+             `hidden` flag the house style uses, the space stays counted, and it
+             can be brought back. The wording is Review's own: a label it hides
+             already reads "not printed" there. -->
+        <button class="btn btn--secondary btn--sm" id="labelHide">Don't print this</button>
+        <span class="grow"></span>
+        <button class="btn btn--secondary btn--sm" id="labelDone">Done</button>
+      </div>
+      <label class="fld" for="labelSize">Text size <span id="labelSizeVal" class="subtle"></span></label>
+      <div class="row">
+        <button class="btn btn--secondary btn--sm" id="labelSizeDown" aria-label="Smaller">−</button>
+        <input type="range" id="labelSize" min="8" max="44" step="1" class="grow">
+        <button class="btn btn--secondary btn--sm" id="labelSizeUp" aria-label="Larger">+</button>
+      </div>
+      <div class="row"><button class="btn btn--secondary btn--sm" id="labelSizeAuto">Match the others</button></div>
+      <!-- A room name cannot render below the print-legible floor, so the slider
+           stops at 14 and going lower would change nothing on the export. An
+           appliance callout is exempt and reaches 8 — but that is a change to
+           what COUNTS as a room, so it belongs in Review, not here. -->
+      <div class="subtle" id="labelSizeNote" style="margin-top:8px" hidden></div>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { askConfirm } from './src/ask.js';
+import { onAuthChange } from './src/auth.js';
+import { surveyLooks, projectLook, lookNote } from './src/project-look.js';
+import { lookOfImage } from './src/model3d/theme3d.js';
+import { renderChrome } from './src/chrome.js';
+import { floorHref, planTitleOf } from './src/floor-context.js';
+import { composeFormat, composeAll, toPngBlob, toWebJpgBlob, isPrintable, drawLabels, layoutLabels, mapFrame, LABEL_REF_WIDTH } from './src/compositor.js';
+import { makeRecorder } from './src/text-runs.js';
+import { stampLabels, stampNote } from './src/review/stamp.js';
+import { textBoxes } from './src/review/text-guard.js';
+import { formatsByFit } from './src/formats.js';
+import { canvasToPdfBlob } from './src/pdf.js';
+import { planContentBox } from './src/plan-trim.js';
+import { applyErases, erasesFingerprint } from './src/review/eraser.js';
+import { PRESETS, derived } from './src/palettes.js';
+import { carsVar } from './src/garage.js';
+import { roomsVar } from './src/room-guide.js';
+import { makeStyledMock } from './src/mock-style.js';
+import { makeMockLogo } from './src/mock-plan.js';
+import { runL1, fetchHealth } from './src/l1-client.js';
+import { DEFAULT_DISCLAIMER } from './src/footer.js';
+import * as store from './src/store.js';
+import { renderStyled, coverBakedText, bakedTextBoxes } from './src/style-client.js';
+import { detectBakedText } from './src/review/text-guard.js';
+import { findHatchedAreas } from './src/review/hatch-guard.js';
+import { getArtifact, getArtifactUrl, putArtifact, restoreScope, DRAFT, styledKind, styledKeyKind, resolveStyled, putReject, clearRejects } from './src/artifacts.js';
+import { ApiError } from './src/api.js';
+import { openSignIn } from './src/auth-ui.js';
+
+const $ = (id) => document.getElementById(id);
+const loadImg = (url) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
+
+// ---- boot
+// A floor in the URL is authoritative: its stored sign-off is what Studio
+// styles, whether we arrived from Review or straight from Projects, a refresh,
+// or a link. Only a Studio opened with NO floor falls back to the sample.
+const { ctx: floorCtx } = await renderChrome();
+let project = null;
+if (floorCtx) {
+  const v = floorCtx.floor.verified;
+  if (!v) {
+    // THE BOUNCE SAYS WHY, ON ARRIVAL.
+    //
+    // Studio cannot exist without a confirmed record — every palette, the
+    // render button and the artifact scope all read it — so sending the user to
+    // Review is right. It was SILENT, which is the fault: a bookmarked Studio,
+    // or a tab left open from yesterday, dropped the user on a different page
+    // with no explanation and nothing to connect the click to the result.
+    //
+    // sessionStorage rather than a query parameter: the reason belongs to this
+    // one navigation, not to the URL a user might bookmark or share. Review
+    // reads it once and deletes it, the same way extract.html consumes a
+    // handed-over plan.
+    try {
+      sessionStorage.setItem('bounced', JSON.stringify({
+        from: 'studio', floor: floorCtx.floor.id,
+        message: 'Studio opens once this floor is confirmed. Finish the checks below and press Confirm & style.',
+      }));
+    } catch { /* a private window without storage still gets the redirect */ }
+    location.replace(floorHref('review.html', floorCtx.project.id, floorCtx.floor.id));
+    throw new Error('redirecting to review');
+  }
+  project = { ...v, mock: false, artifactScope: v.artifactScope || floorCtx.scope };
+} else {
+  project = JSON.parse(sessionStorage.getItem('confirmedProject') || 'null');
+}
+let isMock = !project || project.mock !== false;
+if (project) {
+  // Images come from the artifact store, keyed by the scope Review recorded.
+  // On a browser that has never seen this floor — a new machine, or one whose
+  // storage was cleared — pull them down first. Awaited, because without the
+  // wireframe this page falls through to the bundled sample and would show a
+  // demo plan where the customer's own should be.
+  const artScope = project.artifactScope || DRAFT;
+  await restoreScope(artScope);
+  project.wireframeUrl = await getArtifactUrl(artScope, 'wireframe');
+  if (!project.wireframeUrl) isMock = true;   // nothing real to style
+} else {
+  const l1 = await runL1(null, 'mock', () => {});
+  project = {
+    ...l1, mock: true, artifactScope: DRAFT,
+    // Ids matter as much here as they do on a real floor: every label lookup in
+    // Studio keys on them, and without one `find(l => l.id === undefined)`
+    // matches the FIRST label — so grabbing any name on the sample dragged
+    // Living Room instead. Same `s${i}` scheme Review assigns (review/state.js).
+    labels: l1.extraction.spaces.filter((s) => s.name)
+      .map((s, i) => ({ id: `s${i}`, name: s.name, dim: s.dim, x: s.anchor.x, y: s.anchor.y })),
+    specs: { beds: 2, baths: 1, sqft: 1240, confirmed: true },
+    confirmedBy: 'sample', confirmedAt: new Date().toISOString(),
+  };
+}
+// Only labels with something to print are drawn, and the two ways into Studio
+// disagreed about which array to carry: arriving from Review filtered them,
+// arriving from a floor URL did not — so the same floor announced "6 labeled
+// spaces" by one door and "8" by the other. Filter here, once, with the same
+// rule the compositor uses, and the count matches the image.
+project.labels = (project.labels || []).filter(isPrintable);
+// Remember where the wireframe put each label, so "Reset position" can undo a
+// drag without needing the wireframe again.
+for (const l of project.labels) l.anchor0 = l.anchor0 || { x: l.x, y: l.y };
+{
+  // "1 rooms labelled" was printing on any single-room floor. A count that
+  // reaches 1 has to carry its own plural.
+  const rooms = project.labels.filter((l) => l.kind !== 'equipment').length;
+  // A FIGURE THAT WAS NEVER CONFIRMED IS NOT PRINTED, not even as the word for
+  // its absence. This read "null bed / null bath / no size" on a floor signed
+  // off without bed and bath counts: sqft had a guard and the other two did
+  // not, so the page showed a customer the literal string "null" twice.
+  //
+  // The rule is the spec strip's own — it skips a value that is not there
+  // (see drawSpecStrip, which is why the printed image was never affected) —
+  // and using the same rule here keeps the line above the plan and the strip
+  // on it telling one story.
+  const figures = [
+    project.specs.beds == null ? null : `${project.specs.beds} bed`,
+    project.specs.baths == null ? null : `${project.specs.baths} bath`,
+    project.specs.sqft == null ? null : `${project.specs.sqft.toLocaleString()} sqft`,
+  ].filter(Boolean);
+  $('who').textContent = `${rooms} room${rooms === 1 ? '' : 's'} labelled · `
+    + (figures.length ? figures.join(' / ') : 'no listing figures confirmed');
+}
+
+// A reused plan looks identical to a fresh one here, and it should not: the
+// person styling it never saw the review, and the sheet they are about to
+// produce will carry a sign-off dated earlier than any work they did. Say so.
+if (project.reusedFrom?.confirmedAt) {
+  const when = new Date(project.reusedFrom.confirmedAt)
+    .toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+  const tag = document.createElement('span');
+  tag.className = 'sub';
+  tag.style.cssText = 'display:block;margin-top:2px';
+  tag.textContent = `Reused verified plan. Reviewed ${by(project.reusedFrom.confirmedBy)} on ${when}. Styling only.`;
+  $('who').after(tag);
+}
+function by(name) { return name ? `by ${name}` : ''; }
+const health = await fetchHealth();
+
+// ---- brand kit (step 5): company, tagline, logo, default font + palette
+const kit = store.getActiveKit();
+let kitLogo = null;
+if (kit?.logoDataUrl) kitLogo = await loadImg(kit.logoDataUrl).catch(() => null);
+if (kit?.font) $('fontSel').value = kit.font;
+
+// ---- state
+let palette = kit?.palette ? { ...kit.palette } : { ...PRESETS[0] };
+let format = 'square';
+let formatChosen = false;   // first render switches to the best-fit shape once
+let styledCanvas = null;   // current AI (or mock) render — reused across all composite changes
+// ONE FRAME FOR A LABEL POSITION: the wireframe image, because that is the
+// picture Review edits against.
+//
+// A label's x/y are a fraction of the IMAGE, and the wireframe, the light
+// render and the dark render are three different images of the same drawing —
+// the wireframe is padded to the model's aspect before it is sent, and each
+// render comes back framed its own way. So one pair of numbers meant three
+// different places, and nothing mapped between them. Registration measures
+// exactly this transform and was only ever used to pass or fail a render.
+//
+// What it looked like from outside, and Saman described it exactly: fix the
+// labels in Review, and they are right on the theme that has not been rendered
+// (which shows the wireframe) and wrong on the one that has. Render the other
+// theme first and the two swap over. On his plan the wireframe's drawing sits
+// at x 0.107 w 0.794 — well inset — so a label at 0.85 of the image is at 93.6%
+// of the drawing there and 87.2% of it on a full-framed render: six percent of
+// the plan's width, plainly visible.
+//
+// Stored coordinates do not change. This maps them onto whatever picture is
+// being shown, and maps a drag back.
+let wireBox = null;
+function shownBox() {
+  // Null means "the same frame the labels are already in", which is what
+  // mapFrame passes through untouched.
+  if (!styledCanvas || styledCanvas.isWireframe) return null;
+  // composeFormat reads this property when it is present, so setting it here
+  // both memoises the measurement and keeps the two in step.
+  if (!('contentBox' in styledCanvas)) styledCanvas.contentBox = planContentBox(styledCanvas);
+  return styledCanvas.contentBox;
+}
+/** A stored position, moved onto the picture currently on screen. */
+const toShown = (p) => mapFrame(p, wireBox, shownBox());
+/** And back, so a drag on a render is stored in the wireframe's frame. */
+const fromShown = (p) => mapFrame(p, shownBox(), wireBox);
+let styleSeq = 0;
+
+// The four roles, in one place, so the picker, the hex field and the state
+// can never drift apart.
+// Only the roles the compositor actually draws with: `background` becomes the
+// canvas, `walls` becomes labelInk and footerInk (see derived()).
+const ROLES = [
+  ['cBg', 'hBg', 'background'],
+  ['cWalls', 'hWalls', 'walls'],
+];
+
+// Plan tones are deliberately NOT part of `palette`. The palette feeds
+// paletteKey(), which decides whether a stored render can be reused; putting a
+// free, instant colour choice in there would invalidate the cache and bill a
+// re-render for an image that cannot change.
+// Off means the render is shown exactly as the model drew it, which is the
+// answer for most plans: Light and Dark are finished looks, not starting points.
+//
+// Opens on the KIT's tint, because the brand colour is a property of the builder
+// rather than of one export — set it once in the kit and every plan for them
+// arrives already tinted. Changing it here still only affects this export.
+// The brand COLOUR is remembered; the tint MODE is not. They are different
+// kinds of setting and were being treated as one.
+//
+// The colour is a fact about the builder — set it once and it is theirs. Which
+// plans get tinted is a decision per image, and a decision per image must not
+// arrive already made: a kit saved with the tint on meant every plan the
+// builder ever opened came up recoloured, and the only clue was a switch far
+// down the sidebar. Tinting is also the one styling choice most likely to be
+// wrong for a given plan, so it starts off and is asked for deliberately.
+let planTone = { brand: kit?.planTint?.brand || '#2E6B4F', mode: 'off' };
+
+function toneToInputs() {
+  const on = planTone.mode === 'mono';
+  $('monoOn').checked = on;
+  $('monoRow').hidden = !on;
+  $('monoNote').hidden = !on;
+  $('cMono').value = planTone.brand;
+  $('hMono').value = String(planTone.brand).toUpperCase();
+  $('hMono').classList.remove('bad');
+  paintSwatch('cMono');
+}
+
+// One default per mode, and they are NOT arbitrary. These two are the palettes
+// the styling prompts already encode, so the swatches match what the model
+// actually draws. Any other default would show one colour and render another.
+const DEFAULTS = {
+  light: PRESETS.find((p) => p.id === 'editorial-light'),
+  dark: PRESETS.find((p) => p.id === 'ink-navy'),
+};
+
+// The swatch is a span behind an invisible input, so the colour has to be put
+// on it whenever the value moves. One place, called by everything that sets a
+// value, or the square and the code beside it could show different colours.
+function paintSwatch(pickId) {
+  const el = $(pickId);
+  if (el?.parentElement?.classList.contains('sw')) el.parentElement.style.background = el.value;
+}
+
+function paletteToInputs() {
+  for (const [pick, hex, role] of ROLES) {
+    $(pick).value = palette[role];
+    $(hex).value = String(palette[role]).toUpperCase();
+    $(hex).classList.remove('bad');
+    paintSwatch(pick);
+  }
+  for (const el of $('themeSeg').children)
+    el.classList.toggle('active', el.dataset.theme === palette.theme);
+}
+
+// WHAT THE REST OF THE PROJECT IS IN. Surveyed once — it reads the stored
+// renders, which do not change while this page is open unless this page renders
+// something, and paintLook is called again when it does.
+let lookState = { look: null, split: false, rendered: { light: [], dark: [] }, unrendered: [] };
+let floorCount = 1;
+async function surveyProject() {
+  if (!floorCtx) return;
+  floorCount = (floorCtx.project.floors || []).length;
+  if (floorCount < 2) return;
+  const legacy = async (fScope) => {
+    try {
+      const url = await getArtifactUrl(fScope, 'styled');
+      return url ? lookOfImage(await loadImg(url)) : null;
+    } catch { return null; }   // an unreadable render is not a look
+  };
+  lookState = projectLook(await surveyLooks(floorCtx.project, legacy));
+}
+
+// Quiet when the floors agree, coloured only when this choice would break it.
+// Reassurance does not need a box; a consequence does.
+function paintLook() {
+  const el = $('lookNote');
+  if (!el) return;
+  const { text, tone } = lookNote(lookState, palette.theme, floorCount);
+  el.hidden = !text;
+  el.textContent = text;
+  el.className = tone === 'warn' ? 'msg warn' : 'subtle';
+  el.style.margin = tone === 'warn' ? '8px 0 0' : '6px 0 0';
+}
+
+// Switching mode loads that mode's default. Editing a colour afterwards keeps
+// the mode and marks the palette custom.
+for (const b of $('themeSeg').children) {
+  b.onclick = () => {
+    if (palette.theme === b.dataset.theme) return;   // already there; no credit
+    palette = { ...DEFAULTS[b.dataset.theme] };
+    // The tint carries across, because it is a property of the brand rather
+    // than of the theme: the same green reads over a light plan and a dark one.
+    paletteToInputs(); toneToInputs(); paintLook(); restyle();
+  };
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+// Page colours are FREE: they are drawn by the compositor, so this only
+// re-composes. Nothing here can change the plan image.
+function setRole(role, value) {
+  if (palette[role] === value) return;
+  palette = { ...palette, id: 'custom', [role]: value };
+  paletteToInputs(); compose();
+}
+
+for (const [pick, hex, role] of ROLES) {
+  $(pick).addEventListener('change', () => setRole(role, $(pick).value));
+  // Typing a code only ever commits a COMPLETE, valid one. Reacting to every
+  // keystroke would fire a re-render — and a credit — on "#2", "#2E", "#2E3".
+  $(hex).addEventListener('input', () => {
+    $(hex).classList.toggle('bad', !HEX.test($(hex).value.trim()));
+  });
+  const commit = () => {
+    const v = $(hex).value.trim();
+    if (HEX.test(v)) setRole(role, v.toLowerCase());
+    else paletteToInputs();          // put the real value back
+  };
+  $(hex).addEventListener('change', commit);
+  $(hex).addEventListener('keydown', (e) => { if (e.key === 'Enter') commit(); });
+}
+
+// Tinting is free: it remaps the stored render on the way to the canvas and
+// never touches the artifact, so nothing here can spend a credit.
+const setTint = (patch) => {
+  const next = { ...planTone, ...patch };
+  if (next.mode === planTone.mode && next.brand === planTone.brand) return;
+  planTone = next;
+  toneToInputs(); compose();
+};
+$('monoOn').addEventListener('change', () => setTint({ mode: $('monoOn').checked ? 'mono' : 'off' }));
+$('cMono').addEventListener('change', () => setTint({ brand: $('cMono').value, mode: 'mono' }));
+$('hMono').addEventListener('input', () => {
+  $('hMono').classList.toggle('bad', !HEX.test($('hMono').value.trim()));
+});
+const commitMono = () => {
+  const v = $('hMono').value.trim();
+  if (HEX.test(v)) setTint({ brand: v.toLowerCase(), mode: 'mono' });
+  else toneToInputs();
+};
+$('hMono').addEventListener('change', commitMono);
+$('hMono').addEventListener('keydown', (e) => { if (e.key === 'Enter') commitMono(); });
+
+$('resetPalette').onclick = () => {
+  const d = DEFAULTS[palette.theme] || DEFAULTS.light;
+  const clean = ROLES.every(([, , r]) => palette[r] === d[r]) && planTone.mode === 'off';
+  if (clean) return;
+  palette = { ...d };          // same theme, so no re-render and no credit
+  planTone = { ...planTone, mode: 'off' };
+  paletteToInputs(); toneToInputs(); compose();
+};
+
+// What a stored render is a function of, and therefore what decides whether it
+// can be reused for free.
+//
+// Segment 0 is the THEME. Two live tests proved the image model ignores both
+// hex codes and colour words (see AGENT-HANDOFF), so keying on the four role
+// colours invalidated a perfectly good render — and charged a credit — for an
+// image that came back identical.
+//
+// Segment 1 is the ENGINE: an opaque hash of the image model and its output
+// resolution, from /api/health. Without it the cache answered the wrong
+// question. The adapter exists so the model can be swapped (handoff principle
+// 4), and on the day it is, every floor styled before the swap would keep
+// serving its OLD render — no error, no marker, a customer looking at a stale
+// image believing it is current. That is the one cache failure nobody can see.
+//
+// A render is dropped only when the engine is KNOWN to have changed. If either
+// side is unknown — a key written before this change, or a server that cannot
+// be reached to say what it runs now — the stored render is kept. Unknown is
+// not a reason to throw away work the customer already paid for, and when the
+// server is unreachable re-rendering is impossible anyway, so rejecting would
+// leave them with neither the old image nor a new one.
+// THE CORRECTIONS ARE PART OF WHAT WAS DRAWN, so they are part of the key. A
+// render is made from the CORRECTED wireframe; a floor whose reviewer has since
+// added a window is a different drawing, and reusing the old image answers the
+// wrong question. Empty when there are no corrections, so every floor that has
+// none keys exactly as it did before and no paid render is disturbed.
+const paletteKey = (p) => `${p.theme}|${health.engineKey || ''}`
+  + `|${erasesFingerprint(project.erases)}`;
+// Split into "is this the same look" and "was it drawn from the same drawing",
+// because the answers deserve different treatment: a different look is the
+// wrong picture and is not shown, while a picture of an older drawing is still
+// the customer's own paid render — shown, and labelled.
+// SHOWING IS DECIDED BY THE LOOK. Everything else is a LABEL.
+//
+// These were one function, and an engine mismatch made it return false — so a
+// render made before the model or size changed was not merely unlabelled, it
+// was not shown at all, and the page said "Not styled yet" over a render the
+// customer had bought. That is the silent failure the note a few lines below
+// already argues against for corrections: "hiding it would leave them with
+// nothing; calling it current would be the silent failure."
+//
+// A different LOOK is genuinely the wrong picture and stays a reason not to
+// show. A different engine is the right picture drawn by an older renderer, and
+// the person whose credit it is gets to decide whether that matters.
+const sameLook = (stored, forTheme = palette.theme) =>
+  String(stored || '').split('|')[0] === forTheme;
+const sameEngine = (stored) => {
+  const engine = String(stored || '').split('|')[1];
+  return !engine || !health.engineKey || engine === health.engineKey;
+};
+// UNKNOWN IS NOT STALE. A key written before this field existed has two parts,
+// and there is nothing in it to disagree with — the same rule the engine key
+// follows. Only a key that names a DIFFERENT set of corrections is stale.
+const staleCorrections = (stored) => {
+  const parts = String(stored || '').split('|');
+  if (parts.length < 3) return false;
+  return parts[2] !== erasesFingerprint(project.erases);
+};
+// "Light"/"Dark", not the model id. Which model drew this is ours to change
+// (handoff principle 4) and nothing the user can act on.
+const themeName = () => palette.theme.charAt(0).toUpperCase() + palette.theme.slice(1);
+// Name the rooms when the copied text landed on them — that is the version the
+// user can see at a glance — otherwise just say how much text there is.
+const textDetail = (t) => t?.hits?.length
+  ? ` (${t.hits.join(', ')})`
+  : ` (${t?.words ?? 0} piece${t?.words === 1 ? '' : 's'})`;
+// Reads THIS theme's stored render, falling back to the legacy single slot so a
+// project styled before the per-theme split still opens. The legacy render is
+// only accepted when its stored key names the theme being asked for — otherwise
+// it belongs to the other look and would be the wrong picture.
+async function readStyledKey(scope, theme = palette.theme) {
+  const own = await getArtifact(scope, styledKeyKind(theme));
+  if (own) return (await own.text()).trim();
+  const legacy = await getArtifact(scope, 'styled-key');
+  return legacy ? (await legacy.text()).trim() : null;
+}
+function toCanvas(img) {
+  // The same pair the rest of this file uses: an <img> has naturalWidth, a
+  // canvas has only width, and this is a shape that has already cost one
+  // silently dead export button.
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth || img.width;
+  c.height = img.naturalHeight || img.height;
+  c.getContext('2d').drawImage(img, 0, 0);
+  return c;
+}
+
+/**
+ * The stand-in shown before anything has been rendered: the wireframe faded
+ * back over the palette's own background. Faded for two reasons — it can never
+ * be mistaken for the finished plan, and the wireframe has room names baked
+ * into its pixels, which at full strength collide with the labels the
+ * compositor draws on top and read as a rendering fault.
+ */
+// The letters this wireframe has baked into it, found once. The same set the
+// render paints over and the same set Review shows, so the three cannot
+// disagree about which ink is text.
+let wireLetterKey = null, wireLetterBoxes = [];
+function wireLetters(img) {
+  // `naturalWidth` OR `width`, because this is handed both kinds of picture.
+  // applyErases returns the <img> untouched when there is nothing to erase and
+  // a CANVAS when there is — and a canvas has no naturalWidth. Reading it alone
+  // made a 0x0 canvas, drawImage threw on it, and because the download had no
+  // catch the button did nothing at all: every floor with an erase on it could
+  // not export its wireframe, silently. The rest of this handler has used the
+  // pair since it was written.
+  const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+  const key = `${w}x${h}|${(project.labels || []).length}`;
+  if (key === wireLetterKey) return wireLetterBoxes;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  c.getContext('2d').drawImage(img, 0, 0);
+  wireLetterBoxes = bakedTextBoxes(c, project.labels || []).letters;
+  wireLetterKey = key;
+  return wireLetterBoxes;
+}
+
+/** A copy of a canvas with its tones turned over: black paper, white ink. */
+function invert(src) {
+  const out = document.createElement('canvas');
+  out.width = src.width;
+  out.height = src.height;
+  const cx = out.getContext('2d');
+  cx.fillStyle = '#ffffff';
+  cx.fillRect(0, 0, out.width, out.height);
+  cx.drawImage(src, 0, 0);
+  cx.globalCompositeOperation = 'difference';
+  cx.fillStyle = '#ffffff';
+  cx.fillRect(0, 0, out.width, out.height);
+  cx.globalCompositeOperation = 'source-over';
+  return out;
+}
+
+/** Rec. 601 luminance of a #rgb or #rrggbb, 255 when it cannot be read. */
+function luminanceOf(hex) {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(String(hex || '').trim());
+  if (!m) return 255;
+  const h = m[1].length === 3 ? m[1].replace(/./g, (ch) => ch + ch) : m[1];
+  const n = parseInt(h, 16);
+  return 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+}
+
+function unstyledPreview(source) {
+  // THE PREVIEW SHOWS THE CORRECTED DRAWING, because that is what will be
+  // rendered. Saman erased a staircase in Review that his plan does not have,
+  // came to Studio, and the staircase was still there.
+  //
+  // It was only ever the preview: the styling call applies the same dabs before
+  // the model sees anything, and so does the wireframe download. This one path
+  // drew the raw wireframe, so the page contradicted both of them and asked the
+  // reviewer to trust a picture of work they had already undone.
+  const img = applyErases(source, project.erases);
+  // AND THE TRACING'S OWN WORDING, covered exactly as the render covers it.
+  //
+  // Saman erased KITCHEN and a room size in Review, saw them gone, came here and
+  // found them back — twice, through a hard refresh. Neither the eraser nor the
+  // save was at fault: Review paints a white patch over every label's fitBox to
+  // keep the tracing's wording from colliding with the chip, so those words are
+  // invisible there whether or not anyone erased them, while this preview drew
+  // the tracing raw. Three pages, three different drawings, and the one the
+  // customer trusted least was the honest one.
+  //
+  // The render has covered this text since the day the model started copying it,
+  // so showing it here was never a preview of anything that would be delivered.
+  const covered = document.createElement('canvas');
+  covered.width = img.naturalWidth || img.width;
+  covered.height = img.naturalHeight || img.height;
+  covered.getContext('2d').drawImage(img, 0, 0);
+  coverBakedText(covered, project.labels);
+  // A DARK PLAN IS THE TRACING INVERTED, NOT THE TRACING FADED.
+  //
+  // The tracing is black on white. Fading it onto a dark canvas keeps that
+  // polarity, so the paper came out LIGHTER than the linework on a dark page —
+  // a pale grey slab with black lines drawn on it, which is what Saman saw and
+  // called a mess. The styled dark render is the other way round: light lines
+  // on dark ground.
+  //
+  // The fade's own calibration is untouched. Worked through at alpha 0.28
+  // against a 237 canvas and a 26 one:
+  //
+  //     light            paper 242   line 171   contrast 71
+  //     dark, as it was  paper  90   line  19   contrast 71
+  //     dark, inverted   paper  19   line  90   contrast 71
+  //
+  // Identical separation all three ways. Only the direction changes, which is
+  // the whole complaint.
+  //
+  // The white the cover and the eraser paint inverts with everything else, so
+  // it lands on the paper's own value and stays invisible — the thing it is
+  // there to be.
+  const dark = luminanceOf(palette.background) < 128;
+  // ON ITS OWN CANVAS, and laid on white first. `difference` against a
+  // transparent pixel returns the white it is given, so a tracing with any
+  // transparency would invert to a bright slab; painting the paper in first
+  // makes every pixel opaque and transparent areas end up as paper, which is
+  // what they are. Done with the compositor rather than pixel by pixel because
+  // this runs again on every palette change, over a 2000px sheet.
+  const shownPlan = dark ? invert(covered) : covered;
+  const c = document.createElement('canvas');
+  c.width = covered.width;
+  c.height = covered.height;
+  const x = c.getContext('2d');
+  x.fillStyle = palette.background;
+  x.fillRect(0, 0, c.width, c.height);
+  x.globalAlpha = 0.28;
+  x.drawImage(shownPlan, 0, 0);
+  // Measured on the ORIGINAL wireframe, before the fade. The fade is the whole
+  // problem: at 0.28 alpha a pure black line lands at luminance 168 on the
+  // light canvas, well above plan-trim's ink threshold of 120, so the framing
+  // test found no drawing at all and fell back to the full AI frame — which is
+  // why an unrendered floor showed the plan small, inside its empty band,
+  // while the same floor's finished render filled the canvas. It was never a
+  // light-versus-dark difference; both themes failed the same way, and only
+  // whichever one had not been rendered yet showed it.
+  c.contentBox = planContentBox(img);
+  // THE PREVIEW IS THE WIREFRAME ITSELF, drawn one-to-one into a canvas of the
+  // same size. A label's x/y is a fraction of that very image, so there is
+  // nothing to map: the frames are the same frame. Marked, because measuring
+  // the two content boxes and mapping between them is NOT the same as doing
+  // nothing — this canvas is measured after erasing and the wireframe before,
+  // and any erase that moves the edge of the ink then moved every label on the
+  // plan. That is what put them adrift on The Sky's top floor.
+  c.isWireframe = true;
+  markUnstyled(c, dark);
+  return c;
+}
+
+/**
+ * SAY IT ON THE PICTURE, because the picture is what gets screenshotted.
+ *
+ * The banner above the canvas already said this, and it was still being missed:
+ * a customer reads a drawing that is centred, labelled, footered and formatted
+ * as the finished thing, and the sentence beside it does not undo that. Worse,
+ * a banner is page furniture — it does not travel. Screenshot the canvas to
+ * show a colleague, or drag the image out, and every word of the warning is
+ * left behind.
+ *
+ * THE WORDING NAMES WHAT WILL CHANGE, not that a step remains. "Preview" was
+ * the wrong word and Saman is the one who caught it: everywhere else in
+ * software a preview IS the final thing, provisional. Here the canvas is a
+ * DIFFERENT OBJECT — the drawing the render is made from — so "preview, press
+ * Render" reads as "confirm this image", and the customer expects the same
+ * picture back with a receipt. What they actually get is colour, shading and
+ * texture that are not here at all -- and, notably, NOT furniture: the
+ * styling prompt refuses to draw any, which is why the wording below no
+ * longer promises it.
+ *
+ * Tiled and faint rather than one banner across the middle: this canvas is a
+ * work surface — the user is dragging labels on it — so the mark has to be
+ * unmissable without being in the way.
+ *
+ * 0.07 IS MEASURED, not chosen by eye, and the number that matters is where it
+ * lands relative to the plan's OWN linework rather than to the paper. Sampled
+ * at 900x700, against this file's existing calibration of the 0.28 fade:
+ *
+ *     light   paper 240   mark 207   plan line 168   separation 33
+ *     dark    paper  21   mark  53   plan line  90   separation 32
+ *
+ * Both ways the mark sits between the paper and the drawing, nearer the paper:
+ * plainly present, and never competing with the lines being worked on. One
+ * alpha serves both polarities — the separation comes out 33 and 32 — which is
+ * the same result the fade above records for itself. It covers 3.6% of pixels.
+ * Raising it to 0.14 puts the mark at 177, level with the linework, and the
+ * watermark starts reading as part of the plan.
+ *
+ * NOTHING MEASURES THESE PIXELS, which is what makes painting on them safe:
+ *   - `contentBox` above is measured off `img`, the erased wireframe, before
+ *     this runs, so framing never sees the mark. That is the same rule the
+ *     compositor states for itself — measure the original tones, never a
+ *     re-toned copy.
+ *   - `shownBox()` returns early on `isWireframe`, so the one path that would
+ *     re-measure a canvas's ink is closed for this one.
+ *   - the canvas keeps its size, so every label's x/y still maps one-to-one.
+ *
+ * It also cannot reach a delivered file: export stays disabled until a real
+ * render exists, and once one does, this function is not the one drawing.
+ */
+function markUnstyled(canvas, dark) {
+  const x = canvas.getContext('2d');
+  const step = Math.max(canvas.width, canvas.height) / 5;
+  const size = Math.round(step / 13);
+  x.save();
+  x.globalAlpha = 0.07;
+  x.fillStyle = dark ? '#FFFFFF' : '#000000';
+  x.font = `600 ${size}px Lato, system-ui, sans-serif`;
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.translate(canvas.width / 2, canvas.height / 2);
+  x.rotate(-Math.PI / 9);
+  const reach = Math.hypot(canvas.width, canvas.height);
+  // NOT "FURNITURE". Saman caught this: the styling prompt forbids loose
+  // furniture outright -- "beds, nightstands, dressers, sofas ... An empty
+  // room is the correct result" -- so the one thing this mark promised is
+  // the one thing that provably never arrives. It is not a small slip
+  // either: a watermark exists to be believed, and this one taught the
+  // customer to expect a furnished plan and then handed them an empty one.
+  // The three named here are read off the same prompt: the palette is the
+  // colour, solid charcoal walls and toned floor fills are the shading, and
+  // the tile grid and the outdoor diagonal hatch are the texture. Every
+  // OBJECT in the render is already in the wireframe -- the render adds no
+  // thing, only the finish on the things that are there.
+  const text = 'UNSTYLED · THE RENDER ADDS COLOUR, SHADING AND TEXTURE';
+  for (let ty = -reach; ty <= reach; ty += step) {
+    // Offset every other row so the tiles do not line up into columns, which
+    // reads as a grid laid over the plan rather than as a watermark.
+    const shift = (Math.round(ty / step) % 2) ? step * 0.5 : 0;
+    for (let tx = -reach + shift; tx <= reach; tx += step * 2.2) {
+      x.fillText(text, tx, ty);
+    }
+  }
+  x.restore();
+}
+
+// ---- styling
+// Rendering is NEVER automatic. Opening Studio used to fire a paid render on
+// the default palette before the user had chosen anything, so arriving at the
+// page cost a credit and the first thing you saw was a render you had not asked
+// for. Settle the palette, the labels, the format — then press Render.
+//
+// Until then the preview composites over the WIREFRAME, so layout, labels,
+// footer and canvas format all preview truthfully; only the styling is absent.
+let rendered = false;
+// Set when the user overrules the baked-text detector. Recorded so the
+// verification report can distinguish "the checker passed it" from "the person
+// looked at it and passed it" — those are different claims.
+let textCheckOverridden = false;
+
+/** Boot and every palette change: reuse a paid render if one matches, else preview. */
+async function restyle() {
+  // THIS FUNCTION DECIDES WHAT IS ON SCREEN, so it ends any comparison rather
+  // than being fought by one. Switching look while comparing used to replace
+  // the picture and leave the button still reading "Back to the render".
+  if (comparing) { comparing = false; syncCompareBtn(); }
+  const seq = ++styleSeq;
+  // Be explicit about WHY a placeholder is showing. A silent mock fallback is
+  // how the delivery pack shipped placeholder plans unnoticed for weeks.
+  const placeholderReason = !project.wireframeUrl
+    ? 'No wireframe for this floor yet. Start at Upload.'
+    : isMock ? 'Sample plan. This is a placeholder, not a real render.'
+    : !health.live ? 'Live mode is off, so this is a placeholder render.'
+    : null;
+  if (placeholderReason) {
+    setNote(`⚠ Placeholder: ${placeholderReason}`, 'warn');
+    styledCanvas = makeStyledMock(palette);
+    rendered = true;                 // nothing to pay for, so nothing to gate
+    setRenderState('placeholder');   // ...but do not call a mock a render
+    if (seq === styleSeq) compose();
+    return;
+  }
+  const scope = project.artifactScope || DRAFT;
+  // THE FRAME EVERY LABEL POSITION IS IN, measured before anything branches.
+  // A render taken from cache never touches the preview path, and without this
+  // the mapping would have no wireframe to map FROM on exactly the plans that
+  // have been rendered — which is every plan where the fault shows.
+  if (!wireBox && project.wireframeUrl) {
+    wireBox = planContentBox(await loadImg(project.wireframeUrl));
+  }
+  const wantKey = paletteKey(palette);
+  let rejectedCache = null;
+  // ASK WHAT THIS FLOOR HAS, THEN JUDGE IT — and that order is the fix.
+  //
+  // The key used to be read for the CURRENT theme, and a picture was fetched
+  // only if that key agreed. So a floor rendered in light, opened against a
+  // dark kit, asked for `styled-dark-key`, found nothing, compared null against
+  // "dark", and reported "Not styled yet" — over a render that existed. The
+  // project card found it, because the card tries both looks.
+  //
+  // Asking `resolveStyled` first is what makes the OTHER look knowable, and
+  // knowing is the whole point: this pane is one LOOK at a time, so a render of
+  // the other look is not shown here. Showing it read as the toggle lying —
+  // Saman switched to Dark and got the Light picture — and worse, the export
+  // buttons go live with it, which is how a builder ships a "Dark" plan that is
+  // the Light one. It is not hidden either: the message says which look this
+  // floor is rendered in, and that look is one click away.
+  const hit = await resolveStyled(scope, palette.theme);
+  const hitTheme = hit?.theme || null;
+  // A legacy `styled` whose look cannot be read counts as this one: there is
+  // nothing to disagree with, the same rule the engine key follows.
+  const thisLook = Boolean(hit) && (!hitTheme || hitTheme === palette.theme);
+  const storedKey = hit ? await readStyledKey(scope, hitTheme || palette.theme) : null;
+  const stale = staleCorrections(storedKey);
+  const cached = thisLook && sameLook(storedKey, palette.theme) ? hit.url : null;
+  const oldEngine = Boolean(cached && !sameEngine(storedKey));
+  // Set when the floor IS rendered, just not in the look being viewed. Drives
+  // the message on the preview branch below rather than the picture.
+  const renderedInOtherLook = hit && !thisLook ? hitTheme : null;
+  if (cached) {
+    const img = await loadImg(cached).catch(() => null);
+    // Re-check the stored render, cheaply and client-side. Renders saved before
+    // the text guard existed passed a geometry check only, so one of them may
+    // carry the room names — and reusing it would keep showing doubled labels
+    // however many times the user came back.
+    const text = img ? detectBakedText(img, project.labels) : { ok: true, hits: [] };
+    if (img && text.ok) {
+      styledCanvas = toCanvas(img);
+      rendered = true;
+      // SHOWN, AND LABELLED. It is still the render they paid for and it is
+      // still nearly the right picture, so hiding it would leave them with
+      // nothing; calling it current would be the silent failure. Saying which
+      // it is puts the choice — spend a credit or keep this — with the person
+      // whose credit it is.
+      const madeName = hitTheme
+        ? hitTheme.charAt(0).toUpperCase() + hitTheme.slice(1)
+        : themeName();
+      if (oldEngine) {
+        setNote(`${madeName} edition reused. It was made by an earlier version of `
+          + 'our renderer — press Render if you want it remade with the current one.',
+        'warn');
+      } else if (stale) {
+        setNote(`${themeName()} edition reused, but it was rendered before your `
+          + 'latest corrections to the drawing. Press Render to include them.', 'warn');
+      } else {
+        setNote(`${themeName()} edition reused. No credit spent.`, 'ok');
+      }
+      setRenderState('rendered');
+      if (seq === styleSeq) compose();
+      return;
+    }
+    if (img) rejectedCache =
+      `⚠ The saved render has text drawn into it${textDetail(text)}. Press Render to replace it.`;
+  }
+  // Nothing paid for at this palette: show the plan unstyled and wait.
+  styledCanvas = unstyledPreview(await loadImg(project.wireframeUrl));
+  rendered = false;
+  // "Not styled yet" is false when the floor IS styled in the other look, and
+  // it was the sentence that made a paid render look lost. Say where it is.
+  const otherName = renderedInOtherLook
+    ? renderedInOtherLook.charAt(0).toUpperCase() + renderedInOtherLook.slice(1) : null;
+  setNote(rejectedCache
+    || (otherName
+      ? `This floor is rendered in ${otherName}, not ${themeName()}. Switch to `
+        + `${otherName} to see it, or press Render for the ${themeName()} edition.`
+      : 'Not styled yet. Set everything up, then press Render.'),
+  (rejectedCache || otherName) ? 'warn' : '');
+  setRenderState('preview');
+  if (seq === styleSeq) compose();
+}
+
+// Exporting an unstyled preview would ship a wireframe dressed as a finished
+// plan. That is the same failure as the placeholder delivery pack, so the
+// export buttons are closed until a real render exists.
+/**
+ * @param {'rendered'|'preview'|'placeholder'} [mode] what the canvas is showing.
+ *   Defaults to reading `rendered`, which is what the error path wants: it has
+ *   to restore whatever the state was before the attempt.
+ *
+ * `rendered` alone could not answer this, because it means "safe to export" and
+ * the bundled sample sets it true while showing a mock. Two different facts had
+ * one flag, so the sample would have claimed a paid render exists.
+ */
+/**
+ * Whether the drawing is borrowing the screen from the render.
+ *
+ * `styledCanvas` is what everything composes from, including the exports, so
+ * comparing swaps IT rather than threading a second picture through every
+ * consumer -- which also means the compare view inherits, for free, the two
+ * behaviours the pre-render state already has: label positions map to the
+ * wireframe's own frame (see shownBox, which reads `isWireframe`), and nothing
+ * can be exported from a picture that is not the render.
+ */
+let comparing = false;
+
+const syncCompareBtn = () => {
+  const b = $('compareBtn');
+  b.setAttribute('aria-pressed', String(comparing));
+  b.textContent = comparing ? 'Back to the render' : 'Compare with your drawing';
+};
+
+/**
+ * COMING BACK RE-DERIVES THE RENDER; IT DOES NOT RESTORE A SNAPSHOT.
+ *
+ * The first version held the render in a variable while the drawing was on
+ * screen and put it back on the way out. That snapshot goes stale the moment
+ * the LOOK changes underneath it -- Saman compared on Dark, came back, and got
+ * the Light render, because the held canvas was whichever look had been showing
+ * when he pressed Compare. `restyle()` is the one function that knows which
+ * render belongs to the current palette, so coming back simply asks it. There
+ * is nothing left to hold, so there is nothing left to go stale.
+ */
+async function setComparing(on) {
+  if (on === comparing) return;
+  if (on) {
+    if (!rendered || !project?.wireframeUrl) return;
+    // Rebuilt each time rather than cached: an erase in Review changes this
+    // picture, and a cached one would show a drawing the customer has already
+    // corrected -- the exact failure the note on unstyledPreview describes.
+    styledCanvas = unstyledPreview(await loadImg(project.wireframeUrl));
+    comparing = true;
+    syncCompareBtn();
+    setRenderState();
+    compose();
+    return;
+  }
+  comparing = false;
+  syncCompareBtn();
+  await restyle();
+}
+
+function setRenderState(mode = (rendered ? 'rendered' : 'preview')) {
+  $('renderBtn').hidden = rendered;
+  // Button and chip are mutually exclusive and share the same spot, so the bar
+  // keeps its shape and the user is never left asking why the page's primary
+  // action disappeared when they switched mode.
+  // Status and action move together. Only where there is genuinely something to
+  // replace: the bundled sample has no render to redo, and offering one there
+  // would promise a call this floor never makes.
+  $('renderGroup').hidden = mode !== 'rendered';
+  // Nothing to compare before the first render: that state IS the drawing.
+  $('compareBtn').hidden = mode !== 'rendered';
+  // And nothing to check before there is a render to check.
+  $('aiNote').hidden = mode !== 'rendered';
+  // AND NOT WHILE COMPARING. What is on screen then is the drawing, not the
+  // render, and the rule this file already keeps is that no labelled wireframe
+  // ever leaves the page. The exports would in fact compose from the picture
+  // being shown, so this is the guard that makes the swap safe rather than a
+  // caution on top of one.
+  for (const id of ['dlPng', 'dlJpg', 'dlPdf', 'dlBare']) $(id).disabled = !rendered || comparing;
+  // And say so where the buttons are, not only on hover.
+  $('exportLocked').hidden = rendered;
+
+  // Tint waits for something to tint. Switched OFF as well as disabled: leaving
+  // it on would keep a monotone wireframe on screen with the control greyed out
+  // and no way to undo it.
+  const canTint = mode === 'rendered';
+  $('monoOn').disabled = !canTint;
+  $('monoLabel').classList.toggle('is-locked', !canTint);
+  $('monoLocked').hidden = canTint;
+  if (!canTint && planTone.mode === 'mono') setTint({ mode: 'off' });
+
+  const el = $('previewState');
+  el.hidden = mode === 'rendered';
+  if (mode === 'placeholder') {
+    // The sample never calls the model at all. Saying "press Render" here would
+    // promise something this floor cannot do.
+    el.innerHTML =
+      '<b>Placeholder image, not a real render.</b>'
+      + '<span class="why">Upload your own plan to see a real render.</span>';
+  } else if (mode === 'preview') {
+    // Name the two things that differ MOST visibly between a preview and a
+    // render, because those are exactly what gets misread as a difference
+    // between the Light and Dark styles: the floor fills, wall tone and cars
+    // are drawn by the styling model and are simply not in the wireframe, and
+    // the room names on a preview are the wireframe's own rather than the
+    // composited ones. It said "furniture and cars" until Saman pointed out
+    // that the prompt forbids furniture; cars are real, the rest was not.
+    // ONE FACT PER SENTENCE. This was four clauses in one paragraph and read as
+    // a wall of text over the thing it was describing. Nothing is dropped:
+    // each of the three still earns its place — the first is why the
+    // positioning work on this screen is real, the second is why the plan looks
+    // bare, and the third is the one Saman met himself, our label printed above
+    // the tracing's own. Only "this is the drawing the render will be made
+    // from" is gone, because the heading already says so.
+    // THE WORD "PREVIEW" WAS DOING THE DAMAGE. Everywhere else in software a
+    // preview is the final thing, provisional — so "Preview, press Render"
+    // reads as "confirm this image", and the customer waits for the same
+    // picture back with a receipt. This canvas is not a smaller version of the
+    // render; it is the drawing the render is made FROM. So the heading names
+    // the two objects, and the last sentence points at the control that turns
+    // one into the other, because the banner sits above the canvas and the
+    // button is at the far end of the format bar.
+    el.innerHTML =
+      '<b>This is the drawing, not the picture.</b>'
+      + '<span class="why">Labels, layout and format are final. '
+      + 'Colour, shading and texture are added by the render and are not '
+      + 'here yet. '
+      + 'A name still showing in the drawing is the tracing’s own — '
+      + 'erase it in Review. '
+      + '<b>Render this palette to see the picture.</b></span>';
+  }
+}
+
+// OUT OF CREDITS IS A STATE OF THE BUTTON, NOT AN ERROR AFTER PRESSING IT.
+//
+// It used to be found the hard way: press Render, the call comes back
+// `no_credits`, and a warning appears in the left column. The button that says
+// "Render this palette · 1 credit" was still sitting there offering a credit
+// the account does not have, so the page had to be pressed before it would say
+// so — and then said it somewhere other than where the press happened.
+//
+// The button carries it now. Same button, same place, different words, and
+// pressing it goes where the answer is: buying more.
+let creditsLeft = null;
+const PAID = ['renderBtn', 'rerenderBtn'];
+const WORDS = {
+  renderBtn: 'Render this palette',
+  rerenderBtn: 'Render again',
+};
+
+function paintPaidButtons() {
+  const broke = creditsLeft === 0;
+  // THE LAST ONE IS WORTH SAYING BEFORE IT IS SPENT. Between five credits and
+  // one the button reads exactly the same, and then the next press is the wall.
+  //
+  // Said in the chip rather than beside it, because at a balance of one the
+  // price and the balance are the same number — "last credit" is true as both,
+  // and the chip is where ui.css deliberately keeps the price so it can never
+  // be read without it. Anywhere else would be a second place saying something
+  // about the same fact.
+  const last = creditsLeft === 1;
+  for (const id of PAID) {
+    const b = $(id);
+    if (!b) continue;
+    // With nothing to spend there is no price to show, and leaving "1 credit"
+    // beside "Get more credits" reads as a claim about what the top-up costs.
+    b.innerHTML = broke
+      ? 'Get more credits'
+      : `${WORDS[id]} <span class="cost">${last ? 'last credit' : '1 credit'}</span>`;
+    b.classList.toggle('is-topup', broke);
+    b.title = broke
+      ? 'Your account has no render credits left.'
+      : (last ? 'This is the last render credit on your account.'
+        : (id === 'rerenderBtn' ? 'Draws this plan again and replaces your current render.' : ''));
+  }
+}
+
+// The balance arrives with the session and again on every paid call, so this
+// tracks it rather than asking.
+onAuthChange(({ credits }) => { creditsLeft = credits; paintPaidButtons(); });
+
+/**
+ * Where "Get more credits" goes.
+ *
+ * STRIPE IS NOT CONNECTED YET, and a button that silently does nothing is the
+ * fault this session already found once on the wireframe download. So it says
+ * where it stands, in the same note every other render outcome is reported in.
+ * When the checkout exists, only this function changes.
+ */
+function topUp() {
+  setNote('Top-ups are not switched on yet. Nothing here is lost — your plan, '
+    + 'labels and branding stay exactly as they are.', 'warn');
+}
+
+$('compareBtn').onclick = () => setComparing(!comparing);
+$('renderBtn').onclick = () => (creditsLeft === 0 ? topUp() : renderNow());
+// Confirmed, unlike the first Render: this one spends a credit AND discards a
+// render the user already has, and the model may well return something worse.
+$('rerenderBtn').onclick = async () => {
+  if (creditsLeft === 0) return topUp();
+  const again = await askConfirm({
+    title: 'Render this plan again?',
+    body: ['Costs 1 credit and replaces your current render.',
+      'The new one may be better or worse, and you cannot go back to this one.'],
+    confirm: 'Render again',
+    danger: true,
+  });
+  if (!again) return;
+  renderNow();
+};
+
+/** The paid call. Only ever reached by pressing Render. */
+async function renderNow() {
+  const seq = ++styleSeq;
+  const scope = project.artifactScope || DRAFT;
+  const wantKey = paletteKey(palette);
+  $('renderBtn').disabled = true;
+  setNote('');
+  const progress = startRenderProgress();
+  try {
+    const wfImg = await loadImg(project.wireframeUrl);
+    // How many cars belong in this floor's garage. ALWAYS SENT, including
+    // 'none'. It used to be omitted when the floor named no garage, on the
+    // belief that leaving it out let the prompt's own "no garage → no cars"
+    // rule run untouched. It did the opposite: the placeholder is
+    // `{{CARS | one}}`, so an omitted value fills in ONE and we instruct the
+    // model to draw a car in a space nobody named.
+    const cars = carsVar(project.labels);
+    // WHAT THE MODEL CAN NO LONGER READ OFF THE DRAWING. The prompt calls the
+    // wireframe's room labels a function guide, and every one of them is
+    // painted white before the image is sent — so it has been furnishing blind,
+    // and it put two cars in a master bedroom on a floor whose confirmed spaces
+    // name no garage. The guide moves into the prompt, where it cannot be
+    // copied into the picture. Sent now and unused by the live templates, which
+    // carry no {{ROOMS}}; it comes alive with the candidate.
+    const rooms = roomsVar(project.labels);
+    const result = await renderStyled(wfImg, project.labels,
+      // CARS is the only variable the styling prompts have. The palette's
+      // colours used to be spread in here too and matched nothing — see the
+      // note in src/palettes.js for why colour cannot come from the model.
+      // `theme` still reaches it, but by choosing the template, not as a var.
+      { theme: palette.theme, vars: { CARS: cars, ROOMS: rooms },
+        // What the reviewer painted out in Review. Carried here rather than
+        // burned into the stored wireframe, so the confirmed drawing stays
+        // intact and an erase can still be undone.
+        erases: project.erases },
+      (stage, detail) => { if (seq === styleSeq) progress.stage(stage, detail); });
+    // A fresh render ends the comparison: leaving it on would hide the very
+    // thing the user just paid for behind the drawing it was made from.
+    comparing = false;
+    syncCompareBtn();
+    styledCanvas = toCanvas(result.image);
+    // Both verdicts have to pass. Geometry alone used to be the gate, so a
+    // render carrying the room names could be stored and exported, and the
+    // compositor drew the same names over the top — doubled, offset labels.
+    const textOk = result.text?.ok !== false;
+    const accepted = result.registration.ok && textOk;
+    // Keep a verified render: the delivery pack composes from it, and coming
+    // back to this floor costs no further credits. A rejected render is not
+    // stored — it must never reach an export.
+    if (accepted) {
+      await putArtifact(scope, styledKind(palette.theme), result.url);
+      // This floor has just gained a look, so the project's may have changed
+      // with it — and the note above the switch is the thing that would go
+      // stale first.
+      await surveyProject().then(paintLook);
+      await putArtifact(scope, styledKeyKind(palette.theme),
+        new Blob([wantKey], { type: 'text/plain' }));
+      // THE HEADER LEARNED THE FLOOR'S STAGE AT PAGE LOAD AND NEVER AGAIN.
+      //
+      // `floorStage` calls a floor `styled` once a render is stored, and only
+      // then does the pipeline offer 3D — the 3D view builds its walls out of
+      // the styled image, so before that it would open onto an error. But the
+      // header is drawn once, at boot, when this floor was still `confirmed`.
+      // Saman rendered, watched it pass every check, and step 04 stayed greyed
+      // out with nothing on the page to say a reload would open it.
+      //
+      // Redrawn here, where the fact it reports has just changed.
+      await renderChrome();
+    }
+    rendered = accepted;
+
+    // KEEP WHAT WAS REFUSED, so the next look at this is evidence and not a
+    // sentence. A rejected render still cost a call to the model; discarding it
+    // meant Plan A's three attempts left nothing but "3.1% apart" to reason
+    // from. Local only, never uploaded, cleared when the floor is deleted and
+    // absent from backups — see putReject.
+    //
+    // Cleared first, so what is on disk always belongs to the most recent run
+    // rather than accumulating across them.
+    await clearRejects(scope);
+    for (const r of result.refused || []) {
+      try { await putReject(scope, r.attempt, await (await fetch(r.url)).blob()); } catch { /* diagnostics are never worth failing a render for */ }
+    }
+    if (result.refused?.length) {
+      console.log('[render] refused attempts kept for this floor:',
+        result.refused.map((r) => `#${r.attempt} aspectDev=${(r.aspectDev * 100).toFixed(2)}% ${r.reason}`));
+    }
+
+    const tries = result.attempts > 1 ? ` after ${result.attempts} attempts` : '';
+    if (accepted) {
+      setNote(`${themeName()} edition ready${tries}. Geometry and text checked.`, 'ok');
+      noteHatchedAreas(result.image);
+    } else if (!result.registration.ok) {
+      setNote(`⚠ This render does not match your wireframe. ${result.registration.reason} Press Render to try again.`, 'warn');
+    } else {
+      // Text-only rejection. The three attempts cost the one credit already
+      // spent (./src/credit-jobs.js), and the render
+      // is on screen, so the user can see for themselves whether the guard is
+      // right — it has been wrong before, on a car outline and on stair treads.
+      // Their eyes decide; the decision is recorded either way.
+      setNote(`⚠ There may be text drawn into this render${textDetail(result.text)}. Look at the preview. If you see no words, it is fine to use.`, 'warn');
+      offerTextOverride(result, scope, wantKey);
+    }
+    if (seq === styleSeq) compose();
+  } catch (e) {
+    // Keep the unstyled preview rather than swapping in a mock: a failed paid
+    // call should leave the user where they were, not hand them a fake.
+    rendered = false;
+    // Being signed out or out of credits is not a failure of the render — the
+    // render never started, and nothing is wrong with their plan. Saying
+    // "Styling failed" there describes the wrong thing and offers nothing to
+    // do about it, so these get the fix instead of a diagnosis.
+    if (e instanceof ApiError && e.actionable) offerAccountFix(e);
+    else setNote(`Styling failed: ${e.message}`, 'err');
+  } finally {
+    progress.stop();
+    $('renderBtn').disabled = false;
+    setRenderState();
+  }
+}
+
+/**
+ * Point out every hatched area and ask the user to confirm each is outdoor.
+ *
+ * The styling prompt reserves the diagonal hatch for decks, porches, patios and
+ * the like, but it will not reliably keep it off interior rooms and stairs —
+ * four prompt formulations were measured and the best only halved the problem.
+ * Detecting the hatch is reliable; deciding whether it BELONGS is not (see
+ * src/review/hatch-guard.js for the measurements that ruled that out). So the
+ * count is stated and the person looking at the plan decides.
+ *
+ * Never a rejection: a wrong reject would spend a credit on a good render.
+ */
+function noteHatchedAreas(styledImg) {
+  const { regions } = findHatchedAreas(styledImg);
+  if (!regions.length) return;
+  const n = regions.length;
+  const el = document.createElement('div');
+  el.className = 'subtle';
+  el.style.marginTop = '6px';
+  // Says what the usual answer is.
+  //
+  // This is a note, not a fault: on most plans the hatching is a deck or porch
+  // and the right action is none. Offering "Remove" as the only control read as
+  // an instruction, so a correct porch got erased just to see what the button
+  // did. Removal is for the case the guard exists for — the model hatching an
+  // INTERIOR room, which four prompt formulations have not stopped.
+  el.textContent = n === 1
+    ? 'One hatched area marks outdoor space. If it is a deck, porch or patio, leave it. '
+    : `${n} hatched areas mark outdoor space. Leave any that are a deck, porch or patio. `;
+
+  // Each area gets its own removal, because on a real plan some of them are
+  // correct and a single "fix everything" would delete those too.
+  regions.forEach((r, i) => {
+    const b = document.createElement('button');
+    b.className = 'btn btn--quiet';           // secondary: the exception, not the step
+    b.style.marginLeft = '6px';
+    b.textContent = n === 1 ? 'Not outdoor, remove' : `Remove #${i + 1}`;
+    b.onclick = () => removeHatchedArea(r, b);
+    el.append(b);
+  });
+  $('renderNote').append(el);
+}
+
+/**
+ * Erase one hatched area the detector found.
+ *
+ * Deliberately NOT a free-form eraser. The cells come from the texture
+ * detector, so only squares that actually read as diagonal hatching are
+ * touched — a fixture sitting beside the hatching has no diagonal texture and
+ * is never in the list. That is what makes this safe enough to be one click:
+ * the user is answering "is this area outdoor?", not operating an image editor.
+ *
+ * Costs nothing and is deterministic, unlike re-rendering.
+ */
+/**
+ * Detector cells joined into one rect per horizontal run.
+ *
+ * Each cell used to be filled on its own: every one looked for its own donor
+ * or fell back to the tone around itself, so a porch came back as a patchwork
+ * of slightly different greys with hard edges between them. Filling a whole run
+ * at once gives that run one tone and one piece of cloned floor.
+ *
+ * Runs, not the region's bounding box. A deck that wraps a corner is L-shaped,
+ * and its bounding box covers indoor floor that was never hatched — merging
+ * that far would erase part of the plan. This keeps the covered area EXACTLY
+ * what the detector flagged.
+ */
+function mergeRows(rects) {
+  const rows = new Map();
+  for (const r of rects) {
+    const key = r.y.toFixed(5);
+    if (!rows.has(key)) rows.set(key, []);
+    rows.get(key).push(r);
+  }
+  const out = [];
+  for (const row of rows.values()) {
+    row.sort((a, b) => a.x - b.x);
+    let run = { ...row[0] };
+    for (const c of row.slice(1)) {
+      // Contiguous when the next cell starts where this run ends (a tenth of a
+      // cell of slack absorbs the grid's rounding).
+      if (c.x <= run.x + run.w + c.w * 0.1) {
+        run.w = Math.max(run.x + run.w, c.x + c.w) - run.x;
+        run.h = Math.max(run.h, c.h);
+      } else {
+        out.push(run);
+        run = { ...c };
+      }
+    }
+    out.push(run);
+  }
+  return out;
+}
+
+function removeHatchedArea(region, btn) {
+  if (!region.rects?.length) return;
+  btn.disabled = true;
+  btn.textContent = 'Removing…';
+  // Patches accumulate on the project so the delivery pack and every format
+  // show the same corrected image, not just this preview.
+  project.patches = [...(project.patches || []), ...mergeRows(region.rects)];
+  persistPatches();
+  compose();
+  btn.textContent = 'Removed';
+  patchNote();
+}
+
+function patchNote() {
+  const n = (project.patches || []).length;
+  if (!n) return;
+  const el = document.createElement('div');
+  el.className = 'subtle';
+  el.style.marginTop = '4px';
+  el.innerHTML = `${n} area${n > 1 ? 's' : ''} removed from this render. `;
+  const undo = document.createElement('button');
+  undo.className = 'btn btn--secondary btn--sm';
+  undo.textContent = 'Undo all';
+  undo.onclick = () => { project.patches = []; persistPatches(); compose(); undo.remove(); };
+  el.append(undo);
+  $('renderNote').append(el);
+}
+
+function persistPatches() {
+  if (!floorCtx) return;
+  store.updateFloorPatches(floorCtx.project.id, floorCtx.floor.id, project.patches || []);
+}
+
+/**
+ * The render did not happen because of the account, not the plan.
+ *
+ * Three different situations that a single error string would flatten into one
+ * unhelpful sentence. Each says what is true and offers the one thing that
+ * changes it — signing in is a button here rather than an instruction to go
+ * find one, because the user is mid-task and the header control is small.
+ */
+function offerAccountFix(err) {
+  const note = $('renderNote');
+  const WORDS = {
+    not_signed_in: ['Sign in to render. Everything else here works without an account.', 'Sign in'],
+    // NOT REPEATED HERE. The button says it, in the place the press happened —
+    // see paintPaidButtons. This branch still fires when the balance runs out
+    // between loading the page and pressing, so it refreshes the button rather
+    // than writing a second sentence about it somewhere else.
+    no_credits: [null, null],
+    daily_cap: ['Rendering is paused until tomorrow. This is a daily limit, not a problem with your plan.', null],
+  };
+  const [text, action] = WORDS[err.code] || [err.message, null];
+  if (err.code === 'no_credits') { creditsLeft = 0; paintPaidButtons(); }
+  if (!text) return;
+  setNote(text, 'warn');
+  if (!action) return;
+  const btn = document.createElement('button');
+  btn.className = 'btn btn--secondary btn--sm';
+  btn.style.marginLeft = '8px';
+  btn.textContent = action;
+  // Straight back into the render they were trying to do. Being sent back to
+  // the button they already pressed is the kind of small tax that makes a
+  // product feel like paperwork.
+  btn.onclick = () => { openSignIn(); note.contains(btn) && btn.remove(); };
+  note.append(btn);
+}
+
+/**
+ * Let the user overrule a TEXT rejection, and only a text rejection.
+ *
+ * Geometry is a measurement the user cannot check by eye, so a failed
+ * silhouette stays failed. Baked text is the opposite: it is the one verdict
+ * the person looking at the preview can settle better than the detector, which
+ * counts glyph-like blobs and has previously flagged a car and a flight of
+ * stairs. Without this the render is discarded and the credits are gone.
+ *
+ * The override is written onto the stored artifact key so the verification
+ * report can say the text check was cleared by the user, not by the checker
+ * (handoff red line 7: process claims, never outcome guarantees).
+ */
+function offerTextOverride(result, scope, wantKey) {
+  const note = $('renderNote');
+  const use = document.createElement('button');
+  use.className = 'btn btn--secondary btn--sm';
+  use.style.marginLeft = '8px';
+  use.textContent = 'I checked. No text';
+  use.onclick = async () => {
+    await putArtifact(scope, styledKind(palette.theme), result.url);
+    await putArtifact(scope, styledKeyKind(palette.theme),
+      new Blob([wantKey], { type: 'text/plain' }));
+    // Kept in step with the accepted path: the floor has a look now either way.
+    await surveyProject().then(paintLook);
+    textCheckOverridden = true;
+    rendered = true;
+    // A render is stored here too, so the floor is `styled` now — same reason
+    // as the accepted path above.
+    await renderChrome();
+    setRenderState('rendered');
+    note.textContent = `${themeName()} edition in use. You confirmed there is no text in the render.`;
+    compose();
+  };
+  note.append(use);
+}
+
+/**
+ * Visible progress for the paid call. Without it the page sat unchanged for
+ * ~30 seconds — three times over when the guard re-rolled — and the only clue
+ * anything was happening was a line of small text.
+ *
+ * No percentage is shown: the duration is not knowable, and a fake bar that
+ * stalls at 90% is worse than none. What IS knowable gets said — seconds
+ * elapsed, and which attempt of three this is.
+ */
+function startRenderProgress() {
+  const box = $('renderProgress');
+  const t0 = Date.now();
+  box.classList.add('on');
+  const tick = setInterval(() => {
+    $('rpElapsed').textContent = `${Math.round((Date.now() - t0) / 1000)}s`;
+  }, 250);
+
+  // Say what the system is DOING. A retry count is an implementation detail,
+  // and "attempt 2 of 3" made normal, designed behaviour read as failures
+  // stacking up — the thing most likely to make someone close the tab.
+  //
+  // What replaced it is not "almost done". Nothing here knows whether this pass
+  // will be the last one, and claiming progress that cannot be verified is what
+  // destroys trust the moment a wait runs long. Later passes are named for what
+  // they are for, and the expectation line carries the reassurance instead.
+  const WORDS = {
+    strip: 'Preparing your wireframe',
+    render: 'Drawing your plan',
+    rejected: 'Refining the match to your plan',
+    verified: 'Checking it against your plan',
+  };
+  const HINTS = {
+    first: 'Usually 20 to 40 seconds. You can leave this tab open.',
+    later: 'Getting the match closer. This one takes a little longer.',
+  };
+  // Reset AFTER the two tables exist. Reading HINTS above them threw a
+  // ReferenceError the moment a render started (const, temporal dead zone).
+  $('rpStage').textContent = WORDS.strip;
+  $('rpHint').textContent = HINTS.first;
+  $('rpAttempt').textContent = '';
+
+  return {
+    stage(stage, detail) {
+      // "attempt N" arrives inside the detail string. It decides the WORDING,
+      // and is never shown as a number.
+      const m = /attempt (\d+)/i.exec(detail || '');
+      const pass = m ? Number(m[1]) : 0;
+      $('rpStage').textContent = (stage === 'render' && pass > 1)
+        ? WORDS.rejected            // a second drawing pass, named for its purpose
+        : (WORDS[stage] || stage);
+      $('rpAttempt').textContent = '';
+      if (pass > 1) $('rpHint').textContent = HINTS.later;
+      // No alarm for a retry. Attempt 2 of 3 is the system working as designed:
+      // there is no decision for the user, the run usually succeeds, and a red
+      // failure with percentages mid-wait is what makes someone close the tab.
+      // The card already says "attempt 2 of 3" and names the stage. If every
+      // attempt fails, the final note says so — that is where it belongs.
+    },
+    stop() { clearInterval(tick); box.classList.remove('on'); },
+  };
+}
+
+// ---- composite (instant, client-side — handoff UX principle 3)
+let currentCanvas = null;
+/** The render note, with the state it is actually in. */
+function setNote(text, kind = '') {
+  const el = $('renderNote');
+  el.className = kind;
+  el.textContent = text;
+}
+
+let lastComposeInput = null;
+async function compose() {
+  if (!styledCanvas) return;
+  const font = $('fontSel').value;
+  await document.fonts.load(`600 20px "${font}"`);
+  await document.fonts.load(`400 20px "${font}"`);
+  const d = derived(palette);
+  // NOTHING IS SUBSTITUTED FOR THE BUILDER'S OWN IDENTITY.
+  //
+  // These two used to fall back to "Northgate Homes" and a Vancouver address,
+  // which are the BUNDLED SAMPLE's details — so a customer who left the field
+  // empty got another company's name and web address printed across their
+  // marketing image. The seeded kit ships with `companyName: ''`, so this was
+  // not an edge case; it was the default.
+  //
+  // An empty name is also a legitimate choice: a builder whose logo already
+  // carries the wordmark does not want it set twice. The footer templates lay
+  // out around whatever is actually there.
+  //
+  // The sample keeps its own details because they live in its own kit
+  // (./src/sample-project.js), which is where a sample's data belongs.
+  const brand = {
+    // Read from the FIELDS, not the stored kit: the kit is only written on
+    // `change`, and the preview has to keep up with the typing.
+    companyName: $('bCompany').value.trim(),
+    tagline: $('bTagline').value.trim(),
+    font,
+    canvasBg: palette.background,
+    labelInk: d.labelInk,
+    footerInk: d.footerInk,
+    disclaimerOn: $('discOn').checked,
+    disclaimerText: $('discTxt').value || DEFAULT_DISCLAIMER,
+    logo: kitLogo || makeMockLogo(d.footerInk),
+  };
+  // THE PREVIEW WEARS ITS LABELS AGAIN.
+  //
+  // This used to read `checked && rendered`, and the reason was real at the
+  // time: the unstyled preview drew the wireframe raw, wording and all, so our
+  // label layer on top printed every room twice — ours house-styled, the CAD's
+  // as it was drawn. The answer then was to hide ours.
+  //
+  // The preview now covers the tracing's text with the same pass the render
+  // uses, so there is nothing left to collide with, and hiding the labels
+  // costs more than it saves: Saman set up nine of them and the page would not
+  // show him one until he had paid for a render. Where the cover DOES miss a
+  // name, the doubling is now information — it is the residue the model is
+  // about to be handed, in the one place he can still do something about it.
+  //
+  // Nothing can be exported from this state: the export buttons stay closed
+  // until a real render exists, so no labelled wireframe can leave the page.
+  const showLabels = $('labelsOn').checked;
+  // Held so the plan-only export composes from exactly the same input, and
+  // the two downloads can never disagree about labels or erased areas.
+  // Mapped onto the picture being shown — see toShown. Copies, so the stored
+  // position stays in the wireframe's frame whatever is on screen.
+  const onShown = (l) => ({ ...l, ...toShown(l) });
+  lastComposeInput = {
+    planImage: styledCanvas,
+    labels: showLabels ? project.labels.map(onShown) : [],
+    // The UP/DN markers confirmed in Review. They ride with the labels because
+    // they are the same kind of thing: text this layer owns and the image AI is
+    // forbidden to draw.
+    staircases: showLabels
+      ? (project.staircases || []).map((st) => (st.position
+        ? { ...st, position: { ...st.position, ...toShown(st.position) } } : st))
+      : [],
+    // Areas the user erased. Not tied to the label toggle: an invented car is
+    // wrong whether or not labels are showing.
+    patches: project.patches || [],
+    brand,
+    specs: project.specs,           // user-confirmed only (red line 5)
+    meta: { title: $('titleTxt').value || null },
+    planTone,
+  };
+  // THE PREVIEW ASKS FOR THE PLACEHOLDER; NOTHING ELSE DOES. `lastComposeInput`
+  // stays clean, so every other consumer of it — the three-format pack, the
+  // unbranded export — composes exactly as before. See drawIdentity in
+  // src/footer.js for why an export must never carry sample words.
+  currentCanvas = composeFormat({
+    ...lastComposeInput,
+    brand: { ...lastComposeInput.brand, preview: true },
+    formatId: format,
+  });
+  // All three canvases stay available (three-format export is part of the
+  // package); on first render the Studio simply OPENS on the one that carries
+  // this plan best rather than always on square.
+  if (!formatChosen) {
+    formatChosen = true;
+    const best = formatsByFit(styledCanvas.width, styledCanvas.height)[0];
+    if (best !== format) {
+      format = best;
+      for (const b of $('fmtTabs').querySelectorAll('button[data-fmt]')) {
+        b.classList.toggle('active', b.dataset.fmt === format);
+      }
+      return compose();   // re-run on the best-fit format
+    }
+  }
+
+  // downscaled preview; full-res kept for export
+  const pv = $('preview');
+  const s = 980 / currentCanvas.width;
+  pv.width = 980; pv.height = Math.round(currentCanvas.height * s);
+  const ctx = pv.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(currentCanvas, 0, 0, pv.width, pv.height);
+  previewScale = s;
+  markUnchecked(ctx);
+  if (selectedLabelId) outlineSelected(ctx);
+  showCheckProgress();
+}
+
+// ---- label placement, on the rendered image
+let previewScale = 1;
+let selectedLabelId = null;
+let labelDrag = null;
+
+// A LABEL IS DRAGGABLE ON THE PREVIEW TOO. This required a render, from when
+// the preview did not draw labels at all — and since it started drawing them,
+// the page has been showing labels it would not let anyone touch. On a theme
+// that has not been rendered yet that is every label on the plan, which is
+// where Saman met it: the dark preview looked finished and answered no clicks.
+// Nothing can be exported from this state, so a position moved here is a
+// correction to the record, not an unpaid render.
+const canPlaceLabels = () => $('labelsOn').checked && Boolean(currentCanvas?.labelBoxes);
+// A missing id must find NOTHING. Left unguarded, `l.id === undefined` matches
+// the first label that also has no id, so a lookup for a label that does not
+// exist silently returns a real one and edits it — which is how dragging any
+// name on the sample moved Living Room. A no-op is the honest failure.
+const labelById = (id) => (id == null ? null : project.labels.find((l) => l.id === id) || null);
+
+// ---- "checked against this render"
+//
+// A label can be on the RIGHT ROOM and still sit on a bed, and Review cannot
+// show that because the furniture does not exist yet. So the only real guard is
+// that a human looked at each label on the finished image. This tracks which
+// ones have been looked at, and marks the rest.
+//
+// The check is bound to the render it was made against: a new palette is a new
+// render with the furniture in new places, so every label goes back to
+// unchecked. A check carried over would be a claim about an image nobody saw.
+const renderKey = () => paletteKey(palette);
+const isChecked = (l) => rendered && l.checkedFor === renderKey();
+const uncheckedLabels = () => project.labels.filter((l) => !isChecked(l));
+
+/** Record that the user has dealt with this label on the current render. */
+function markChecked(id) {
+  if (!rendered) return;
+  const l = labelById(id);
+  // A stair marker has nothing to check off — it carries no name to read back —
+  // but its new position still has to be written, and returning early here left
+  // a dragged staircase looking moved and saved as nothing.
+  if (!l) { persistLabelGeometry(); return; }
+  l.checkedFor = renderKey();
+  persistLabelGeometry();
+  showCheckProgress();
+}
+
+/**
+ * Ring every label the user has not yet passed judgement on. At first render
+ * that is all of them, which is correct: it reads as a to-do list over the
+ * image, and empties as the user works.
+ */
+function markUnchecked(ctx) {
+  if (!canPlaceLabels()) return;
+  ctx.save();
+  // The preview backing store is 980px wide but displays at roughly a third of
+  // that, so a 1px hairline at low alpha vanished on screen. Sized to survive
+  // the downscale, and opaque enough to read over a dark render.
+  ctx.strokeStyle = 'rgba(194,87,31,.9)';
+  ctx.lineWidth = 3;
+  ctx.setLineDash([6, 5]);
+  for (const box of currentCanvas.labelBoxes) {
+    const l = labelById(box.id);
+    if (!l || isChecked(l) || box.id === selectedLabelId) continue;
+    ctx.strokeRect(box.x * previewScale, box.y * previewScale,
+      box.w * previewScale, box.h * previewScale);
+  }
+  ctx.restore();
+}
+
+function showCheckProgress() {
+  const el = $('labelCheck');
+  if (!el) return;
+  if (!canPlaceLabels()) { el.textContent = ''; return; }
+  const left = uncheckedLabels().length;
+  // Process claim, never an outcome guarantee (handoff red line 7).
+  el.textContent = left
+    ? `${left} of ${project.labels.length} label${project.labels.length === 1 ? '' : 's'} not checked on this render yet.`
+    : `All ${project.labels.length} label${project.labels.length === 1 ? '' : 's'} checked on this render.`;
+  el.classList.toggle('done', left === 0);
+}
+
+function outlineSelected(ctx) {
+  const box = currentCanvas.labelBoxes.find((b) => b.id === selectedLabelId);
+  if (!box) return;
+  ctx.save();
+  ctx.strokeStyle = '#c2571f';
+  ctx.lineWidth = 4;
+  ctx.setLineDash([9, 6]);
+  ctx.strokeRect(box.x * previewScale, box.y * previewScale,
+    box.w * previewScale, box.h * previewScale);
+  ctx.restore();
+}
+
+/** Canvas-pixel point under a pointer event on the downscaled preview. */
+function previewPoint(e) {
+  const pv = $('preview');
+  const r = pv.getBoundingClientRect();
+  return {
+    x: ((e.clientX - r.left) * (pv.width / r.width)) / previewScale,
+    y: ((e.clientY - r.top) * (pv.height / r.height)) / previewScale,
+  };
+}
+
+// A LABEL AND A STAIR MARKER ARE BOTH DRAGGABLE, and they keep their position
+// in different places: a label has x/y, a staircase has position.x/y. These two
+// helpers are the only spot that has to know, so the drag code below reads the
+// same for either.
+function movableById(id) {
+  return labelById(id) || (project.staircases || []).find((st) => st.id === id) || null;
+}
+const posOf = (m) => (m && m.position ? m.position : m);
+
+function hitLabel(pt) {
+  // Topmost first, so an overlapping pair picks the one drawn last.
+  return [...currentCanvas.labelBoxes].reverse()
+    .find((b) => pt.x >= b.x && pt.x <= b.x + b.w && pt.y >= b.y && pt.y <= b.y + b.h);
+}
+
+$('preview').addEventListener('pointermove', (e) => {
+  if (!canPlaceLabels()) return;
+  if (labelDrag) {
+    const pt = previewPoint(e);
+    const place = currentCanvas.planPlacement;
+    // 1:1 with the pointer, keeping the offset from where it was grabbed.
+    const at = posOf(movableById(labelDrag.id));
+    if (!at) return;
+    // The pointer is on the picture; the store keeps the wireframe's frame.
+    const back = fromShown({
+      x: (pt.x - labelDrag.dx - place.x) / place.w,
+      y: (pt.y - labelDrag.dy - place.y) / place.h,
+    });
+    at.x = Math.min(1, Math.max(0, back.x));
+    at.y = Math.min(1, Math.max(0, back.y));
+    compose();
+    return;
+  }
+  $('preview').classList.toggle('grabbable', Boolean(hitLabel(previewPoint(e))));
+});
+
+$('preview').addEventListener('pointerdown', (e) => {
+  if (!canPlaceLabels()) return;
+  const pt = previewPoint(e);
+  const box = hitLabel(pt);
+  // A stair marker is dragged but never opens the ROOM LABEL panel: it has no
+  // name, no dimension and no text size, and showing an empty panel for it
+  // would read as the panel being broken.
+  selectLabel(box && box.kind !== 'stair' ? box.id : null);
+  if (!box) return;
+  const place = currentCanvas.planPlacement;
+  const at = posOf(movableById(box.id));
+  if (!at) return;
+  const shown = toShown(at);
+  labelDrag = {
+    id: box.id,
+    dx: pt.x - (place.x + shown.x * place.w),
+    dy: pt.y - (place.y + shown.y * place.h),
+  };
+  $('preview').setPointerCapture(e.pointerId);
+  $('preview').classList.add('grabbing');
+});
+
+$('preview').addEventListener('pointerup', () => {
+  if (!labelDrag) return;
+  const { id } = labelDrag;
+  labelDrag = null;
+  $('preview').classList.remove('grabbing');
+  // Moving a label IS looking at it, so it needs no separate confirmation.
+  markChecked(id);
+  compose();
+});
+
+// The preview is about 48% of the export's size, so dragging alone is too
+// coarse for the last few pixels.
+window.addEventListener('keydown', (e) => {
+  if (!selectedLabelId || !canPlaceLabels()) return;
+  if (/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement?.tagName || '')) return;
+  const step = (e.shiftKey ? 5 : 1) / 1000;
+  const move = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] }[e.key];
+  if (!move) return;
+  e.preventDefault();
+  const l = labelById(selectedLabelId);
+  l.x = Math.min(1, Math.max(0, l.x + move[0]));
+  l.y = Math.min(1, Math.max(0, l.y + move[1]));
+  markChecked(l.id);
+  compose();
+});
+
+function selectLabel(id) {
+  selectedLabelId = id;
+  const l = id ? labelById(id) : null;
+  $('labelTool').classList.toggle('open', Boolean(l));
+  if (!l) { compose(); return; }
+  $('labelToolHead').textContent = l.kind === 'equipment' ? 'Equipment' : 'Room label';
+  $('labelToolName').textContent = l.name;
+  showLabelSize(l);
+  compose();
+}
+
+// WHAT THE PLAN IS ACTUALLY SETTING ITS LABELS AT, in the units the slider
+// speaks — the same layout the export uses, asked at the reference width.
+//
+// The control used to fall back to the constant 26 for a label with no size of
+// its own. But 26 is only the ceiling: one tight room pulls the shared size
+// down for the whole plan, so a label "matching the others" could be printing
+// at 16 while the slider sat at 26 and the number said so. Pressing + once then
+// jumped it from 16 to 27, which is what Saman saw as the control being
+// imprecise. It was not imprecise; it was reading a different number from the
+// one on the page.
+let plannedKey = null, plannedSet = null;
+function plannedSizes() {
+  const family = $('fontSel')?.value || 'Inter';
+  const key = family + '|' + (project.labels || [])
+    .map((l) => `${l.id}:${l.size ?? ''}:${l.hidden ? 1 : 0}:${l.fitWidth ?? ''}:${l.name || ''}`)
+    .join('|');
+  if (key === plannedKey) return plannedSet;
+  const c = document.createElement('canvas').getContext('2d');
+  plannedSet = layoutLabels(project.labels || [], {
+    scale: 1,
+    planW: LABEL_REF_WIDTH,
+    fontFamily: family,
+    measure: (text, size, weight) => {
+      c.font = `${weight} ${size}px "${family}", sans-serif`;
+      return c.measureText(text).width;
+    },
+  });
+  plannedKey = key;
+  return plannedSet;
+}
+
+/** The size this label will actually print at: stored value, held to the floor. */
+function effectiveSize(l) {
+  const equip = l.kind === 'equipment';
+  const min = equip ? 8 : 14, max = 44;
+  const raw = l.size ?? plannedSizes().get(l.id)?.size ?? (equip ? 15 : 26);
+  return Math.min(max, Math.max(min, raw));
+}
+
+function showLabelSize(l) {
+  const auto = l.size == null;
+  const equip = l.kind === 'equipment';
+  const slider = $('labelSize');
+  slider.min = equip ? 8 : 14;
+  // THE SLIDER, THE NUMBER AND THE STEPPERS ALL READ THE SAME VALUE.
+  //
+  // They did not. A size can arrive below the floor — the extraction measures
+  // it off the drawing's own pixels and hands back things like 8.0003 for a
+  // room — and the slider clamped to 14 while the number printed the raw 8.0003
+  // and the steppers worked from the slider. So + jumped from 8 to 15, and
+  // coming back down stopped at 14 and never returned to where it started.
+  //
+  // Everything now uses the size that will actually print, and the number is
+  // rounded because a label is set in whole points, not in fifteen decimals.
+  const eff = effectiveSize(l);
+  slider.value = eff;
+  // The number is shown either way. "Matching the others" said nothing about
+  // what that size WAS, so there was no way to tell from the panel that the
+  // plan had settled on 16 rather than the 26 the slider was showing.
+  $('labelSizeVal').textContent = auto
+    ? `matching the others — ${Math.round(eff)}`
+    : String(Math.round(eff));
+
+  // Hitting the floor with no explanation is what made this look broken: the
+  // slider simply stopped and the label was still too big for its closet.
+  const atFloor = !auto && eff <= Number(slider.min);
+  const note = $('labelSizeNote');
+  note.hidden = !(atFloor && !equip);
+  if (!note.hidden) {
+    note.innerHTML = 'Smallest size a room name can print at. If this is an '
+      + 'appliance rather than a room, mark it as equipment in '
+      + `<a href="${floorHref('review.html', floorCtx?.project.id, floorCtx?.floor.id)}">Review</a>`
+      + '. Equipment codes go down to 8.';
+  }
+}
+
+function setLabelSize(value) {
+  const l = labelById(selectedLabelId);
+  if (!l) return;
+  const slider = $('labelSize');
+  // The floor is a legibility limit, not a preference: 14 for room names, 8 for
+  // equipment codes that have to fit a fridge recess.
+  l.size = Math.min(Number(slider.max), Math.max(Number(slider.min), value));
+  showLabelSize(l);
+  markChecked(l.id);
+  compose();
+}
+
+$('labelSize').addEventListener('input', () => setLabelSize(Number($('labelSize').value)));
+// Steppers work from the label's own size, not the slider's, so one press moves
+// one point from where the label actually is.
+const stepLabelSize = (by) => {
+  const l = labelById(selectedLabelId);
+  if (l) setLabelSize(Math.round(effectiveSize(l)) + by);
+};
+$('labelSizeDown').onclick = () => stepLabelSize(-1);
+$('labelSizeUp').onclick = () => stepLabelSize(1);
+$('labelSizeAuto').onclick = () => {
+  const l = labelById(selectedLabelId);
+  if (!l) return;
+  l.size = null;
+  showLabelSize(l);
+  markChecked(l.id);
+  compose();
+};
+// REMOVE MEANS "DO NOT PRINT IT". See the note on the button: what counts as a
+// space belongs to Review, and the space count is one of the four checks. This
+// sets the same `hidden` flag the house style already uses, so the space is
+// still counted, the verification report is unchanged, and it can be brought
+// back — from the panel, because a label that is not drawn cannot be clicked.
+$('labelHide').onclick = () => {
+  const l = labelById(selectedLabelId);
+  if (!l) return;
+  l.hidden = true;
+  persistLabelGeometry();
+  selectLabel(null);
+  renderHiddenLabels();
+};
+
+function renderHiddenLabels() {
+  const box = $('hiddenLabels');
+  if (!box) return;
+  const gone = (project.labels || []).filter((l) => l.hidden && (l.name || l.dim));
+  box.hidden = gone.length === 0;
+  if (!gone.length) return;
+  box.innerHTML = `${gone.length} not printed: `
+    + gone.map((l) => `<button class="linkbtn" data-back="${l.id}">`
+      + `${(l.name || l.dim).replace(/</g, '&lt;')}</button>`).join(', ')
+    + ' — click to bring one back.';
+  for (const b of box.querySelectorAll('[data-back]')) {
+    b.onclick = () => {
+      const l = labelById(b.dataset.back);
+      if (!l) return;
+      l.hidden = false;
+      persistLabelGeometry();
+      renderHiddenLabels();
+      compose();
+    };
+  }
+}
+
+$('labelReset').onclick = () => {
+  const l = labelById(selectedLabelId);
+  if (!l || !l.anchor0) return;
+  l.x = l.anchor0.x; l.y = l.anchor0.y;
+  markChecked(l.id);
+  compose();
+};
+// Closing the panel IS the confirmation, and it also covers the label that
+// landed well and needs no move — otherwise the only way to clear its marker
+// would be to nudge a correct label out of place.
+//
+// There used to be a separate "Looks right" that marked and closed, next to a
+// "Done" that only closed. The distinction was not one anyone could act on:
+// having opened the label and looked at it, the honest record is that it was
+// checked. Deselecting by clicking the plan still closes without marking, which
+// is the one case where the user did not choose to finish.
+$('labelDone').onclick = () => {
+  if (selectedLabelId) markChecked(selectedLabelId);
+  selectLabel(null);
+};
+
+// Written through on every change. The delivery pack in projects.html composes
+// from `verified.labels`, which Studio never used to touch — so without this a
+// corrected position would show in the preview and be missing from the download.
+function persistLabelGeometry() {
+  if (!floorCtx) return;
+  store.updateFloorLabelGeometry(floorCtx.project.id, floorCtx.floor.id,
+    project.labels, project.staircases);
+}
+
+// ---- BRAND FIELDS: EDITED HERE, STORED ON THE KIT.
+//
+// These three write through to the active brand kit rather than to this floor,
+// which is the product's own model — one kit per client, its logo and name on
+// every image — and it is what the user actually wants when they notice a typo
+// in their company name on a plan they are looking at.
+//
+// Because that reach is wider than the screen implies, it is stated in the
+// panel and confirmed after each save. A silent global rebrand from a screen
+// that looks like it edits one image is the failure this is written to avoid.
+//
+// Saved on `change` rather than `input`: a save per keystroke would write the
+// kit — and, once signed in, schedule a cloud sync — for every letter typed.
+// Compose still runs on `input`, so the preview keeps up with the typing.
+const kitFieldSaved = () => {
+  $('bSaved').textContent = 'Saved to brand kit';
+  clearTimeout(kitFieldSaved.t);
+  kitFieldSaved.t = setTimeout(() => { $('bSaved').textContent = ''; }, 2200);
+};
+
+function saveBrandField(patch) {
+  if (!kit) return;
+  Object.assign(kit, patch);
+  store.saveKit(kit);
+  kitFieldSaved();
+}
+
+$('bCompany').addEventListener('input', compose);
+$('bTagline').addEventListener('input', compose);
+// The font is a kit field too and was read on load but never written back, so
+// choosing one here survived until the next reload and then silently reverted.
+$('fontSel').addEventListener('change', () => saveBrandField({ font: $('fontSel').value }));
+$('bCompany').addEventListener('change', () => saveBrandField({ companyName: $('bCompany').value.trim() }));
+$('bTagline').addEventListener('change', () => saveBrandField({ tagline: $('bTagline').value.trim() }));
+
+function showBrandLogo(dataUrl) {
+  $('bLogoPreview').hidden = !dataUrl;
+  $('bLogoClear').hidden = !dataUrl;
+  if (dataUrl) $('bLogoPreview').src = dataUrl;
+}
+
+$('bLogo').addEventListener('change', () => {
+  const f = $('bLogo').files[0];
+  if (!f) return;
+  const fr = new FileReader();
+  fr.onload = async () => {
+    // The decoded image is what the compositor draws, so it is replaced before
+    // the recompose rather than after — otherwise the first frame shows the old
+    // logo at the new one's reserved width.
+    kitLogo = await loadImg(fr.result).catch(() => null);
+    showBrandLogo(fr.result);
+    saveBrandField({ logoDataUrl: fr.result });
+    compose();
+  };
+  fr.readAsDataURL(f);
+});
+$('bLogoClear').addEventListener('click', () => {
+  kitLogo = null;
+  $('bLogo').value = '';
+  showBrandLogo(null);
+  saveBrandField({ logoDataUrl: null });
+  compose();
+});
+
+// The panel opens showing what the kit actually holds, so it is never a set of
+// empty boxes over a footer that plainly has a name in it.
+if (kit) {
+  $('bCompany').value = kit.companyName || '';
+  $('bTagline').value = kit.tagline || '';
+  showBrandLogo(kit.logoDataUrl || null);
+  $('kitScope').textContent = `Applies to every plan using “${kit.name}”`;
+}
+
+/**
+ * What the folded section is holding, said on its own summary.
+ *
+ * Folding something away is only safe if its state can still be read. The
+ * disclaimer is the case that matters: it defaults ON because red line 7 makes
+ * it load-bearing, and a user who switches it off and collapses the section
+ * would otherwise have no way to notice the line is gone from every export.
+ * Nothing is reported while both are at their defaults — a badge that is always
+ * there is a badge nobody reads.
+ */
+function showPlanMoreSummary() {
+  // Only DEVIATIONS from the default are reported. A first version flagged
+  // "title set", which is true on arrival — the field is pre-filled — so the
+  // badge was permanently lit and therefore invisible. What a user needs told
+  // while the section is folded is the opposite: the title that will NOT print,
+  // and the disclaimer that has been switched off.
+  const bits = [];
+  if (!$('discOn').checked) bits.push('<span class="flag">disclaimer off</span>');
+  if (!$('titleTxt').value.trim()) bits.push('<span class="flag">no title</span>');
+  $('planMoreLabel').innerHTML = 'Plan title and disclaimer'
+    + (bits.length ? ` · ${bits.join(' · ')}` : '');
+}
+for (const id of ['discOn', 'titleTxt']) $(id).addEventListener('input', showPlanMoreSummary);
+showPlanMoreSummary();
+
+// instant compositing controls
+for (const id of ['labelsOn', 'fontSel', 'titleTxt', 'discOn', 'discTxt'])
+  $(id).addEventListener('input', compose);
+$('fmtTabs').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-fmt]');
+  if (!b) return;
+  format = b.dataset.fmt;
+  for (const x of $('fmtTabs').querySelectorAll('button[data-fmt]')) x.classList.toggle('active', x === b);
+  compose();
+});
+
+// ---- EXPORT FILENAMES
+//
+// `plan-square.jpg` told a builder nothing. These files leave the product and
+// land in a folder beside a dozen others from a dozen models, get emailed to a
+// board, and get opened again months later — the name is the only label they
+// will ever carry, so it has to say which home, which floor, and which of the
+// three deliverables this is:
+//
+//   The Geena (Dark Main Floor - Square).jpg
+//   The Geena (Light Main Floor - No Branding - Square).png
+//   The Geena (Wireframe Main Floor).png
+//
+// The canvas size is included even though it was not asked for, because the
+// MLS-safe button writes all three at once: without it the browser would take
+// three identically-named files and silently rename two of them "(1)" and
+// "(2)", which is worse than a slightly longer name. The wireframe has no
+// canvas size, so it carries none.
+//
+// Names come from what the customer typed, so they are cleaned rather than
+// trusted: the characters below are illegal in a Windows filename and would
+// make the download fail or land somewhere unintended.
+const fileSafe = (s) => String(s || '')
+  .replace(/[\\/:*?"<>|]/g, ' ')     // illegal on Windows
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+
+/**
+ * @param {string[]} parts  qualifiers inside the brackets, in reading order
+ * @param {string} ext      without the dot
+ */
+function exportName(parts, ext) {
+  // The fallback is applied AFTER cleaning, not before: a name of nothing but
+  // spaces survives `||` and then cleans down to empty, which produced
+  // " (Light Main Floor - Square).jpg" — a file whose name begins with a space.
+  const home = fileSafe(floorCtx?.project?.name || project?.meta?.title) || 'Floor plan';
+  const inner = parts.map(fileSafe).filter(Boolean).join(' - ');
+  return `${home}${inner ? ` (${inner})` : ''}.${ext}`;
+}
+
+// "Dark Main Floor" reads as one phrase, which is why the theme leads and the
+// floor follows it rather than the two being separated by a dash.
+const floorName = () => fileSafe(floorCtx?.floor?.name || '').trim();
+
+// The title arrives already filled in from what the customer gave us at
+// upload: their project name and their floor name, as "The Avi - Main". Both
+// halves are their own words, which is what makes filling it in safe; see
+// planTitleOf, the one place that decision lives.
+//
+// It is still a plain editable field. What they type is saved on the floor, so
+// the 3D view shows the same words and a later visit does not start over. Until
+// today it was saved nowhere at all and a refresh lost it.
+if (!$('titleTxt').value.trim() && floorCtx) {
+  $('titleTxt').value = planTitleOf(floorCtx.project, floorCtx.floor);
+}
+if (floorCtx) {
+  $('titleTxt').addEventListener('change', () => {
+    // On change rather than on input: this writes to storage, and a write per
+    // keystroke buys nothing. Leaving the field or pressing enter is enough,
+    // and following a link out of Studio blurs it first.
+    store.setFloorTitle(floorCtx.project.id, floorCtx.floor.id, $('titleTxt').value);
+  });
+}
+const themeFloor = () => [themeName(), floorName()].filter(Boolean).join(' ');
+
+async function download(blobP, name) {
+  const blob = await blobP;
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; a.click();
+  URL.revokeObjectURL(a.href);
+}
+const brandedName = (ext) => exportName([themeFloor(), cap(format)], ext);
+/**
+ * WHAT LEAVES, RECOMPOSED — never the canvas on screen.
+ *
+ * The preview draws placeholder brand words when the kit is empty, and a
+ * download must not carry them (see drawIdentity in src/footer.js: this is the
+ * spot where a fallback once printed another firm's identity on a customer's
+ * image). So every export composes again from the same input without the
+ * preview flag — the same function on the same data, so the picture is
+ * identical in every other respect.
+ *
+ * One function for all three formats rather than three call sites: the first
+ * version fixed PNG and left JPG and PDF reading the preview canvas, which is
+ * the same bug shipped twice.
+ */
+const exportCanvas = () => (lastComposeInput
+  ? composeFormat({ ...lastComposeInput, formatId: format })
+  : null);
+$('dlPng').onclick = () => { const c = exportCanvas(); if (c) download(toPngBlob(c), brandedName('png')); };
+$('dlJpg').onclick = () => { const c = exportCanvas(); if (c) download(toWebJpgBlob(c), brandedName('jpg')); };
+$('dlPdf').onclick = () => { const c = exportCanvas(); if (c) download(canvasToPdfBlob(c), brandedName('pdf')); };
+
+/**
+ * The plan and its labels, at the plan's own shape, and nothing else.
+ *
+ * ONE FILE, NOT THREE. This wrote square, landscape and portrait — the same
+ * drawing three times, each with a different band of empty background beside
+ * it. Those bands earn their keep on the branded exports, where a title sits
+ * above and a footer below and the canvas is the deliverable. Here the canvas
+ * is not the deliverable: this file exists to be dropped into somebody else's
+ * layout, so background we add is background they have to crop off, and three
+ * aspect ratios is three files to choose between for no gain.
+ *
+ * The 'fit' format takes its proportions from the drawing's content box, so the
+ * plan lands edge to edge with no margin. See fitFormat.
+ *
+ * Still the SAME compose path as the branded export, so the labels, dimensions,
+ * stair markers and erased areas are identical — only the footer, the title
+ * band and now the canvas shape are dropped.
+ */
+$('dlBare').onclick = async () => {
+  if (!styledCanvas) return;
+  const btn = $('dlBare');
+  btn.disabled = true;
+  const was = btn.textContent;
+  btn.textContent = 'Preparing…';
+  try {
+    const cv = composeFormat({ ...lastComposeInput, formatId: 'fit', bare: true });
+    // No canvas size in the name any more: there is one file, so there is
+    // nothing for the browser to collide with and nothing to tell apart.
+    await download(toPngBlob(cv), exportName([themeFloor(), 'No Branding'], 'png'));
+  } finally {
+    btn.textContent = was;
+    btn.disabled = false;
+  }
+};
+
+/**
+ * The plain wireframe, exactly as it was confirmed in Review.
+ *
+ * TRIMMED to its drawing, by the same `planContentBox` the branded export has
+ * used since the compositor was built. The wireframe comes back from the image
+ * model inside a fixed frame with a band of empty background around it, and
+ * that band is not small: measured across the corpus it took 13% of the width
+ * on two plans and 29% on a third. Shipping the raw frame meant the plan was
+ * needlessly small and its detail hard to read, which is the whole reason
+ * anyone downloads this file.
+ *
+ * Nothing is cut out of the drawing. The box only excludes rows and columns
+ * that contain no linework at all, and PAD in plan-trim.js keeps a margin
+ * around what is left.
+ *
+ * Upscaled 4x with smoothing OFF, which is a deliberate choice and not a
+ * quality claim: nearest-neighbour adds no detail, it only stops the browser
+ * and the printer from blurring hard black linework into grey. That is why the
+ * button no longer advertises "4x" — the number described the pixel count, and
+ * a customer reads it as resolution.
+ *
+ * Not gated on `rendered` like the other four buttons: this is the input to
+ * styling, not an output of it, so it is available the moment a wireframe
+ * exists — including for someone who has decided not to spend a credit at all.
+ */
+$('dlWire').onclick = async () => {
+  if (!project.wireframeUrl) return;
+  const btn = $('dlWire');
+  btn.disabled = true;
+  try {
+    const src = await loadImg(project.wireframeUrl);
+    // Apply the reviewer's corrections FIRST, at native size, so the trim below
+    // measures the drawing they actually confirmed. Shipped without this once:
+    // the customer erased an invented door, and the wireframe they downloaded
+    // still had it — the correction reached the styled render and nothing else.
+    const img = applyErases(src, project.erases);
+    const iw = img.naturalWidth || img.width, ih = img.naturalHeight || img.height;
+    // null means the image is already tight, or the ink test found too little
+    // to trust — either way, ship it whole rather than guess.
+    const b = planContentBox(img) || { x: 0, y: 0, w: 1, h: 1 };
+    const sx = b.x * iw, sy = b.y * ih, sw = b.w * iw, sh = b.h * ih;
+    const c = document.createElement('canvas');
+    c.width = Math.round(sw * 4); c.height = Math.round(sh * 4);
+    const cx = c.getContext('2d');
+    // The wireframe is line art on white, so the band being trimmed away is
+    // white — and so is anything the rounding leaves uncovered at the edge.
+    cx.fillStyle = '#ffffff';
+    cx.fillRect(0, 0, c.width, c.height);
+    cx.imageSmoothingEnabled = false;
+    cx.drawImage(img, sx, sy, sw, sh, 0, 0, c.width, c.height);
+
+    // THE REVIEWER'S LABELS, NOT THE MODEL'S.
+    //
+    // Until this existed the downloaded wireframe carried the image model's own
+    // typeset room names, in whatever font that run chose — so someone who
+    // corrected a name in Review got a file still showing the old one. Review
+    // looks right because its chips are a DOM overlay; the image underneath is
+    // untouched, and this is where that overlay gets painted in.
+    //
+    // Drawn AFTER the upscale so the text is crisp at export size rather than
+    // interpolated up from the wireframe's own resolution.
+    //
+    // The work lives in src/review/stamp.js so the check page that verifies it
+    // runs the SAME code. It was briefly duplicated, which is the shape of
+    // every drift bug this project has had.
+    // A brand of its own, built here rather than borrowed. `brand` in this file
+    // is local to the compose path, and reaching for it compiled fine and threw
+    // at runtime — caught only by actually pressing the button, which is why
+    // that is now part of finishing a change here.
+    //
+    // Only two fields matter for a bare wireframe: the font the customer chose,
+    // and black ink. No canvas colour, no footer, no logo — this is the record,
+    // not the branded render.
+    const wireBrand = { font: $('fontSel').value, labelInk: '#000000' };
+    // How many labels sit somewhere other than where the tracing drew them.
+    // `anchor0` is recorded at boot, so this counts real moves — and it is the
+    // fastest way to see whether Studio is holding the reviewer's current work
+    // or a stale copy, a question that cost three sessions to answer by
+    // reasoning.
+    const moved = (project.labels || []).filter((l) => l.anchor0
+      && (Math.abs(l.x - l.anchor0.x) > 0.002 || Math.abs(l.y - l.anchor0.y) > 0.002)).length;
+    const { printed, keptFromTracing } = stampLabels(
+      cx, b, project.labels || [], wireBrand, drawLabels, makeRecorder(), isPrintable,
+      // Text found in THIS wireframe, measured rather than matched. See the
+      // note in stamp.js for why the matcher's boxes are not trusted here.
+      textBoxes(img),
+      // And the LETTERS to paint over, from the same function the render and
+      // Review use. The download used to mask with the run boxes above, which
+      // took the drawing between the letters with them, and it asked for them
+      // without the rotated pass — so DISH WASHER and REF., written sideways
+      // inside the appliances, went out on the customer's copy.
+      wireLetters(img),
+    );
+    $('wireNote').textContent = stampNote(printed, keptFromTracing)
+      + (moved ? ` ${moved} label${moved > 1 ? 's are' : ' is'} where you moved ${moved > 1 ? 'them' : 'it'}.`
+        : ' None have been moved from where the tracing drew them.');
+
+    // No canvas size here: the wireframe is the drawing itself, not a laid-out
+    // canvas, so there is only ever one of it.
+    await download(toPngBlob(c), exportName([['Wireframe', floorName()].filter(Boolean).join(' ')], 'png'));
+  } catch (e) {
+    // A BUTTON THAT DOES NOTHING IS THE WORST ANSWER. This was try/finally with
+    // no catch, so a throw anywhere above left the page exactly as it was and
+    // the only thing to report was "I press it and nothing happens" — which is
+    // how it was reported. The console line is for us; the note is for the
+    // person holding the mouse.
+    console.error('wireframe download failed:', e);
+    $('wireNote').textContent = 'The wireframe could not be prepared. '
+      + 'Nothing was downloaded, and nothing on this floor has changed.';
+  } finally {
+    btn.disabled = false;
+  }
+};
+// THE WIREFRAME DOWNLOAD IS WITHDRAWN, and this constant is the whole switch.
+//
+// It offers itself as "a record of the plan exactly as you confirmed it", and
+// it was not one. Our labels are painted over the tracing's own wording, and
+// where the cover misses, both show: LAUNDRY over the tracing's DRY, a rule
+// left under BEDROOM-2, a line struck through REF. A record with two names on
+// one room is not merely untidy, it is misleading — and this is the one file
+// that goes to a customer claiming to be the truth.
+//
+// WITHDRAWN RATHER THAN FIXED, on Saman's call, and the distinction matters.
+// The residue is still there: it is the same residue handed to the image model,
+// which is why a render is sometimes refused for text. Taking this file away
+// stops it reaching a customer; it does not close the gap. The measurements are
+// in test/cover.test.mjs and the note above MASK_MIN_GLYPHS.
+//
+// Everything behind it is intact — the handler, src/review/stamp.js, its tests,
+// and test/wire-download.html which checks it. Set this true and the panel
+// comes back exactly as it was.
+const WIREFRAME_DOWNLOAD = false;
+$('wireBlock').hidden = !WIREFRAME_DOWNLOAD;
+
+// Disabled states say WHY, the same way "Download all" does on the projects
+// list. A greyed button with no reason is a dead end the user cannot act on.
+if (!project.wireframeUrl) {
+  $('dlWire').disabled = true;
+  $('dlWire').title = 'Available once this floor has a plan uploaded and reviewed.';
+}
+
+// The placeholder is the shipped default, imported rather than retyped so it
+// cannot go stale the way the hard-coded copy did.
+$('discTxt').placeholder = DEFAULT_DISCLAIMER;
+paletteToInputs();
+toneToInputs();
+// Labels taken off the image on an earlier visit: listed on load, or the only
+// way back would be to remember which one it was.
+renderHiddenLabels();
+// What the other floors are rendered in, said on the control that spends the
+// credit rather than at the embed three steps later.
+await surveyProject();
+paintLook();
+await document.fonts.ready;
+restyle();
+</script>
+</body>
+</html>

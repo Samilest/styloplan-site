@@ -1,0 +1,3472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>3D view · StyloPlan</title>
+<!-- INTER WAS FETCHED AND NEVER USED. Measured on this page: of 113 elements,
+     90 resolve to Lato, 8 to Roboto and none to Inter — the stylesheet was a
+     render-blocking request to a third party for a family nothing here asks
+     for. It matters more here than anywhere else in the app, because this page
+     is pasted into somebody else's website and every request it makes is one
+     their page waits on. The preconnects stay: ui.css still pulls Lato and
+     Roboto, and warming that connection early is what makes them arrive sooner. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="./src/ui.css?v=58">
+<script>try{var t=localStorage.getItem("pr-theme");if(t==="dark"||t==="light")document.documentElement.dataset.theme=t}catch(e){}</script>
+<!-- EMBED MODE IS DECIDED HERE, DURING PARSE, and it has to be.
+     A module script is deferred — it runs after the document has been laid out
+     and painted. So a page opened inside an embed drew the builder's full
+     workspace (header, sidebar, panels) and only then hid it, which a visitor
+     saw as our app flashing up on the seller's website every time they switched
+     floors, because switching floors is a navigation. Nothing above this line
+     paints; setting the class here means the embedded layout is the first and
+     only one rendered. Same reason and same shape as the theme line above it. -->
+<!-- `debug` is set the same way and for a related reason: the embed hides the
+     diagnostics panel, which is right for a visitor and wrong for us — it made
+     the one page we needed to compare against the only page that could not
+     report on itself. The class lets the CSS keep hiding it from everyone
+     except a URL that asked. -->
+<script>try{var p=new URLSearchParams(location.search);var r=document.documentElement;if(p.get("embed")==="1")r.classList.add("embedded");if(p.get("share")==="1")r.classList.add("shared");if(p.get("debug")==="1")r.classList.add("debug")}catch(e){}</script>
+
+<!-- SHARE MODE HAS ITS OWN SOCIAL CARD, and it is deliberately generic.
+     A link like this gets pasted into WhatsApp, iMessage and email, and a
+     paste with no card looks like a broken or unsafe link. A card naming THIS
+     plan would be better and is not possible here: the page is static and the
+     plan is resolved by script from ?p=&f=, while every crawler that builds
+     these cards reads the HTML without running any. So the card says what the
+     product is, and the page itself says which plan. Nothing here names a
+     customer's plan, which also keeps the crawler out of .gitignore rule 1. -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="A floor plan you can walk through">
+<meta property="og:description" content="Open on a phone or a laptop. Drag to turn it, scroll to zoom. Nothing to install.">
+<meta property="og:image" content="https://samilest.github.io/styloplan-site/assets/app-studio.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A floor plan you can walk through">
+<meta name="twitter:description" content="Open on a phone or a laptop. Drag to turn it, scroll to zoom. Nothing to install.">
+<!-- OrbitControls imports the bare specifier `three`. An import map resolves it
+     in the browser, which is how this project stays without a build step. -->
+<script type="importmap">
+{ "imports": { "three": "./src/vendor/three.module.js" } }
+</script>
+<style>
+  /* a work surface: a model canvas beside a control column. */
+  body { --page-max: 1600px; }
+  /* The same two-column shape as Studio: controls on the left, the thing you
+     are making on the right. A customer arriving from Studio should not have to
+     learn a second layout to do the last step. */
+  main { display: grid; grid-template-columns: 320px 1fr; gap: 24px;
+         padding-block: var(--s-2) var(--s-6); align-items: start; }
+  /* Grid children default to min-width:auto, so any wide child becomes a floor
+     the column cannot shrink under. Both of these hold content that can be
+     wide: the stage, and an embed code box full of one unbreakable URL. */
+  main > * { min-width: 0; }
+  #embed { max-width: 100%; }
+  .panel + .panel { margin-top: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+
+  /* The stage keeps its own dark or light ground, so it is a bordered surface
+     inside the page rather than the page itself. */
+  #stageWrap { position: relative; border: 1px solid var(--line);
+               border-radius: var(--r-panel, 10px); overflow: hidden;
+               background: var(--surface); }
+  #stage { height: min(76vh, 820px); }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  /* Clear of BOTH bottom corners — the zoom pair on the right and Reset view on
+     the left. Debug-only, but a diagnostic printed under a button is a
+     diagnostic misread. 64px is the taller of the two buttons (44px under a
+     coarse pointer) plus its 14px inset and a little air. */
+  #overlay { position: absolute; left: 14px; bottom: 64px; right: 66px;
+             pointer-events: none; font-size: 11.5px; line-height: 1.5; }
+  #overlay .item { margin-top: 4px; }
+  #overlay .warn { color: var(--warn); }
+  #lookWarn, #modelNote { color: var(--warn); }
+  #lookWarn .item + .item { margin-top: 8px; }
+  body[data-view="dark"] #overlay { color: #93a0b0; }
+  body[data-view="light"] #overlay { color: var(--ink-2); }
+  /* FOUR CORNERS, AND EACH ONE ALWAYS HOLDS THE SAME THING.
+       top left      the plan's name
+       top right     which floor, and the room names
+       bottom left   Reset view
+       bottom right  zoom
+     The title and the top controls share ONE flex row, and that is what stops
+     the title moving. Two JS versions of this measured the caption against the
+     buttons and moved the CAPTION when they collided — so on a phone the plan's
+     name ended up underneath the controls, twice, which is not where a title
+     goes. A wrapping flex row answers it without measuring anything: while both
+     fit they sit on one line, and when they do not it is the CONTROLS that drop
+     to the next line, because the title comes first in the source. The name of
+     the plan never moves. */
+  /* THE PANEL READS AS THREE THINGS, NOT ONE COLUMN OF CONTROLS.
+       is it on?  ·  here is the code  ·  options
+     Saman missed the Update button completely, and the screenshot says why: it
+     had wrapped onto a line of its own where, being `btn--quiet`, it was larger
+     and heavier than the status text above it and read as a HEADING. Meanwhile
+     two switches of identical weight sat in one column doing entirely different
+     jobs — one decides whether strangers can see the home, the other picks how
+     many floors travel.
+     So the state gets a recessed block of its own (`--surface-2` is the design
+     system's inset token) and the action inside it gets a real border. Nothing
+     new was invented; the tokens were already there. */
+  #pubState:not(:empty) { background: var(--surface-2); border: 1px solid var(--line);
+                          border-radius: 10px; padding: 11px 12px; }
+  #pubState .pub-name { font-weight: 600; }
+  /* Full width under the switch rather than beside it: at sidebar width the
+     sentence and the button cannot share a line, and a button that wraps to the
+     end of a paragraph is the thing that went unnoticed. */
+  #pubState .pub-act { margin-top: 9px; }
+
+  #viewTop { position: absolute; top: 12px; left: 14px; right: 14px;
+             display: flex; flex-wrap: wrap; gap: 8px 10px;
+             align-items: flex-start; justify-content: space-between;
+             /* The row spans the stage, so it would otherwise swallow every
+                drag that began near the top of the model. Only the controls
+                themselves take the pointer back. */
+             pointer-events: none; }
+  #planCaption { min-width: 0; max-width: 100%;
+                 font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+  body[data-view="dark"] #planCaption { color: #e6e9ee; }
+  body[data-view="light"] #planCaption { color: #211e19; }
+  /* Bottom left: the one control that undoes everything the other three do. */
+  #viewFoot { position: absolute; left: 14px; bottom: 14px; display: flex; gap: 8px; }
+
+  /* ZOOM, WHERE EVERY MAP PUTS IT.
+     Bottom right, a joined pair, a hairline between them — the shape people
+     already know, so it needs no label and no instruction line.
+     It earns its place most in the EMBED, where one finger and a plain wheel
+     were deliberately handed back to the host page: without these two buttons a
+     phone visitor's only way to zoom is a pinch nobody told them about. In the
+     app it is the same control for the same reason, because one control with
+     two treatments is the thing that was just fixed above.
+     The material comes from the `#viewTools > *` rule below, which these join,
+     so the chips stay one family in both looks. */
+  #zoomTools { position: absolute; right: 14px; bottom: 14px; display: flex;
+               flex-direction: column; border-radius: 10px; overflow: hidden; }
+  #zoomTools button { width: 38px; height: 38px; padding: 0; border: 0;
+                      border-radius: 0; font-size: 17px; line-height: 1;
+                      display: grid; place-items: center; }
+  /* An inset line rather than a border, so the two halves stay one pill and the
+     divider cannot add a pixel to the height. */
+  #zoomTools button + button { box-shadow: inset 0 1px 0 rgba(128,128,128,.3); }
+  /* AT THE LIMIT IT SAYS SO. A button that keeps accepting presses and does
+     nothing reads as broken — the same reason the All-floors switch tells you
+     before it is flipped. */
+  #zoomTools button[disabled] { opacity: .42; cursor: default; }
+  /* The 44px rule, from the same place as everywhere else in this file. */
+  @media (pointer: coarse) { #zoomTools button { width: 44px; height: 44px; } }
+
+  /* A flex CHILD of #viewTop now, not an absolute box of its own. `margin-left:
+  /* ONE ROW OF CONTROLS, AND IT DOES NOT WRAP. The wrapping belongs to #viewTop
+     — the group either shares the title's line or takes the next one, whole.
+     BOTH PROPERTIES HERE ARE LOAD-BEARING, and each was measured after getting
+     it wrong. Without `flex-shrink: 0` the group is squeezed to its narrowest
+     content — the floor picker alone — and Labels drops to a second line with
+     1167px of empty row beside it, which is what Saman photographed. And with
+     `flex-wrap: wrap` still on, it drops anyway: a wrapping flex box nested in
+     another one sizes itself from the select's intrinsic width rather than its
+     capped width, so the box came out 231px while its children needed 258px and
+     wrapped inside it. `nowrap` removes the question instead of tuning it. */
+  /* NO `margin-left: auto`, AND THAT IS WHAT ALIGNS THE WRAPPED ROW.
+     #viewTop is `space-between`, which puts the group hard right while it
+     shares the title's line and hard LEFT the moment it has a line to itself —
+     so on a phone the controls sit directly under the title, on the same margin
+     as the title and as Reset view below them. Pinning it right with an auto
+     margin kept it right after wrapping too, which left a hole under the title
+     and is what "still not tidy" looked like. */
+  #viewTools { display: flex; gap: 8px; flex-wrap: nowrap; flex-shrink: 0;
+               justify-content: flex-end; pointer-events: none; }
+  #viewTools button { font-size: 12px; }
+  /* Centred over the model, out of the way of the tools in the corner. */
+  /* VISIBILITY, NOT `hidden`. The first version toggled the attribute, which
+     needed a double rAF to animate out of display:none — and a hint shown while
+     the previous one was still fading got hidden 200ms later by the OLD timer.
+     `visibility` transitions honestly, keeps the element out of the
+     accessibility tree while it is away, and leaves one timer to cancel. */
+  #gestureHint {
+    position: absolute; inset: auto 0 0 0; margin: 0 auto 18px; width: max-content;
+    max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 999px;
+    background: rgba(20,24,30,.82); color: #fff; font-size: 13px; text-align: center;
+    pointer-events: none; opacity: 0; visibility: hidden;
+    transition: opacity .18s ease, visibility 0s linear .18s;
+  }
+  #gestureHint.show { opacity: 1; visibility: visible; transition: opacity .18s ease; }
+
+  /* Centred on the stage, over whatever is or is not there yet. It carries its
+     own dark plate rather than a token background: it has to read on the empty
+     stage before the scene exists AND over the model, in both looks. */
+  #loading {
+    position: absolute; inset: 0; display: grid; place-content: center; gap: 10px;
+    justify-items: center; background: color-mix(in srgb, var(--bg) 72%, transparent);
+    /* --ink, NOT --fg. `--fg` is not a token this design system has, so
+       the loading caption and the bar below it were painted with an undefined
+       value and fell back to whatever they inherited. Caught by smoke.html's
+       "every token resolves" check, which had been red on this page. */
+    color: var(--ink); font-size: 13px; letter-spacing: .01em;
+    opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s;
+    z-index: 3;
+    /* IT NEVER TAKES A CLICK. It covers the whole stage, so without this it
+       swallows every drag aimed at the model underneath — and it did: on the
+       deployed embed the fade-out stalled part way, leaving a half-lit veil
+       that could not be dismissed and a model that could not be turned. That
+       is what "the embed does not update" looked like from outside. */
+    pointer-events: none;
+  }
+  #loading.show { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+  /* An INDETERMINATE bar, because we cannot honestly report progress: the trace
+     is one synchronous pass with no midpoint to publish. A bar that pretends to
+     know how far along it is would be a lie told sixty times a second. */
+  #loading i { display: block; width: 148px; height: 3px; border-radius: 3px;
+               background: color-mix(in srgb, var(--ink) 18%, transparent); overflow: hidden; }
+  #loading i::after {
+    content: ''; display: block; width: 40%; height: 100%; border-radius: 3px;
+    background: var(--ink); opacity: .75; animation: loadSlide 1.15s ease-in-out infinite;
+  }
+  @keyframes loadSlide { 0% { transform: translateX(-110%); } 100% { transform: translateX(360%); } }
+  @media (prefers-reduced-motion: reduce) {
+    #loading { transition: none; }
+    #loading i::after { animation: none; width: 100%; opacity: .35; }
+  }
+  @media (prefers-reduced-motion: reduce) { #gestureHint { transition: none; } }
+  #viewTools select { font-size: 12px; min-width: 0; }
+
+  /* STACKED, THE MODEL COMES FIRST. Below 900px ui.css collapses this page to
+     one column, and the source order put three panels of controls above the
+     thing the page exists to show. Someone opening their own plan should see
+     the plan, then the controls, not scroll past the controls to find it. */
+  @media (max-width: 900px) {
+    main > section { order: -1; }
+  }
+  /* On a phone the controls take the line under the title rather than squeezing
+     onto it: one row of their own, tighter, the floor name truncating instead of
+     wrapping the strip onto a third line. The positioning that used to be here
+     is gone — #viewTop owns where this sits now, and having two rules place one
+     element is what let the title move. */
+  @media (max-width: 600px) {
+    /* ONE INSET FOR ALL FOUR CORNERS. The top row moved to 10px on a phone and
+       the bottom two stayed at 14px, so the title and Reset view — one directly
+       above the other — sat on two different margins. */
+    #viewTop { left: 10px; right: 10px; top: 10px; }
+    #viewFoot { left: 10px; bottom: 10px; }
+    #zoomTools { right: 10px; bottom: 10px; }
+    #overlay { left: 10px; right: 62px; }
+    /* Sized by its contents, not stretched across the frame: the group is a
+       toolbar under the title, not a bar the width of the plan. */
+    #viewTools { gap: 6px; flex-wrap: nowrap; }
+    #viewTools select { text-overflow: ellipsis; min-width: 0; }
+    #viewTools button { flex: 0 0 auto; white-space: nowrap; }
+  }
+
+  /* Each look is a row that states whether it exists and what to do if not.
+     The point of this page is that the 3D follows the 2D, so the two are shown
+     together rather than the 3D pretending to have looks of its own. */
+  .looks { border: 1px solid var(--line); border-radius: var(--r-ctl);
+           overflow: hidden; background: var(--surface); margin-top: 12px; }
+  .looks > div { display: flex; align-items: center; gap: 12px; padding: 8px 11px; }
+  .looks > div + div { border-top: 1px solid var(--line); }
+  .looks .name { flex: 1; font-size: 13px; font-weight: 600; }
+  .looks .state { font-size: 12px; color: var(--ink-2); }
+  .looks button.pick { flex: none; }
+  .looks .swatch { width: 14px; height: 14px; border-radius: 3px; flex: none;
+                   border: 1px solid var(--line-strong); }
+  .looks > div.on { background: var(--accent-soft); }
+  .looks > div.off .name { color: var(--ink-2); font-weight: 500; }
+
+  #embed { width: 100%; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+           resize: vertical; min-height: 92px; }
+
+  #err { position: fixed; inset: 0; z-index: 30; display: none; place-items: center;
+         background: var(--bg); padding: 24px; }
+  #err .box { max-width: 520px; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    #stage { height: 56vh; }
+  }
+
+  /* Embedded on someone else's site: the model, and the controls a visitor
+     needs to explore it. It fills the iframe, so the height is theirs to set
+     rather than ours to guess. */
+  .embedded .app-header, .embedded .page-head, .embedded aside { display: none; }
+  /* Wall counts and window confidence are notes to the builder about our own
+     reading of their plan. On a home buyer's screen they are noise at best and
+     a confession at worst, so the embed does not carry them.
+     `:not(.debug)` so `?debug=1` still reaches it: an embed that cannot be
+     asked what it is drawing cannot be compared with the panel, which is
+     exactly the comparison a look bug needs. */
+  html.embedded:not(.debug) #overlay { display: none; }
+  /* NO VIEWPORT UNITS INSIDE AN IFRAME. This is the whole fix for a model whose
+     bottom — Reset view and half the zoom pill — sat below the frame on a phone
+     while every desktop looked right.
+     `100vh` inside an iframe is the iframe's height in desktop Chrome, which is
+     why it measured clean here for two rounds of probing, and is NOT reliably
+     that on a mobile browser: the dynamic viewport makes `vh` resolve against
+     the device instead, so the stage grew taller than the frame holding it and
+     the host clipped the difference. Both Apple and Google say the same thing
+     for embedded content — size to the frame, never to the viewport.
+     A percentage chain says exactly that. An iframe always has a definite
+     viewport height, so `height: 100%` resolves at every link and lands on the
+     host's own box, whatever the host decided it should be. */
+  .embedded main, .shared main { display: block; padding: 0; max-width: none; height: 100%; }
+  .embedded main > section, .shared main > section { height: 100%; }
+  .embedded #stageWrap { border: 0; border-radius: 0; height: 100%; }
+  .embedded #stage { height: 100%; }
+
+  /* ── SHARE MODE ──────────────────────────────────────────────────────────
+     A THIRD MODE, because there were two and neither fits a link.
+     Plain view3d.html shows the builder's workspace — the app header with
+     "Sign in", the controls aside — to a home buyer who has no account and no
+     business seeing either. `?embed=1` strips those but is shaped for an
+     iframe: it sizes to `height: 100%` of a box the host page decides, and
+     hides the caption and hint because the host provides the page around it.
+     A link opened from WhatsApp has no host and no frame, so it needs the
+     stripping of the embed AND a page of its own.
+
+     DVH HERE, PERCENT THERE, and the reason is the comment above this one.
+     `100%` is right in an iframe because an iframe always has a definite
+     height. Standalone on a phone it resolves against the layout viewport,
+     which does not move when the browser's own chrome slides away — so the
+     model's bottom controls end up under the URL bar, which is the same defect
+     that comment describes, arrived at from the other direction. `dvh` is the
+     unit that follows the chrome. The `@supports` fallback keeps a browser
+     without it on the old behaviour rather than on nothing. */
+  html.shared, html.shared body { margin: 0; height: 100dvh; overflow: hidden; }
+  @supports not (height: 100dvh) {
+    html.shared, html.shared body { height: 100vh; }
+  }
+  .shared .app-header, .shared .page-head, .shared aside { display: none; }
+  .shared #overlay { display: none; }
+  .shared main > section { display: flex; flex-direction: column; }
+  /* `min-height: 0` or the flex item refuses to shrink below its content and
+     the bar is pushed off the bottom of the screen. */
+  .shared #stageWrap { border: 0; border-radius: 0; flex: 1 1 auto; min-height: 0; }
+  .shared #stage { height: 100%; }
+  .shared #stageHint, .shared #modelNote { display: none; }
+  /* THE ONE STRIP A VISITOR GETS. It names the plan, because a link arriving
+     with no context is the whole problem this mode exists for, and it credits
+     the tool quietly. Not a header: no navigation, no sign-in, nothing to
+     click except the one mark. */
+  .share-bar { display: none; }
+  .shared .share-bar {
+    display: flex; align-items: center; gap: 12px; flex: 0 0 auto;
+    padding: 10px max(14px, env(safe-area-inset-left)) 10px max(14px, env(safe-area-inset-right));
+    border-bottom: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .share-bar .t { font-weight: 600; font-size: var(--t-14); min-width: 0;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-bar .by { margin-left: auto; flex: 0 0 auto; font-size: var(--t-12);
+                   color: var(--ink-3); text-decoration: none; }
+  .share-bar .by:hover { color: var(--accent); }
+  /* NOTHING BELOW THE MODEL, so nothing to scroll to.
+     The instruction line under the stage stayed in the embed, which put a
+     scrollbar down the side of a frame sized to hold exactly the model — and
+     it described gestures the embed no longer has (a plain scroll moves the
+     page now, it does not zoom). Wrong words and an ugly frame from one line.
+     The overflow rules are the belt to that braces: an iframe is sized by the
+     host page and must never grow its own scrollbar. */
+  .embedded #stageHint, .embedded #modelNote { display: none; }
+  html.embedded, html.embedded body { margin: 0; height: 100%; overflow: hidden; }
+  /* Over the model, translucent, so the strip reads as a layer above the
+     drawing rather than a bar cut out of it. Same material as the app header. */
+  /* Material only, no layout. This block used to re-specify flex-wrap and a
+     72vw cap, which outranked the phone rule below by carrying a class as well
+     as an id, and quietly forced the strip back onto two rows on exactly the
+     screens the phone rule was written for. Layout lives in one place now. */
+  /* THE CHIPS BELONG TO THE MODEL, NOT TO THE PAGE — everywhere, not only in
+     an embed. These rules were `.embedded` only, so the same three buttons
+     were dark chips in the app (which follows the UI theme) and light chips in
+     the embed (which follows the plan's look). One control, two treatments,
+     and Saman saw them side by side.
+     The look wins because that is what the buttons sit ON: a dark chip on a
+     light plan is as wrong in the app as it would be on a seller's website,
+     and the app's own theme is not visible from inside the stage anyway. */
+  #viewTools > *, #viewFoot > *, #zoomTools > * {
+    background: rgba(255,255,255,.86); color: #211e19; border-color: transparent;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    pointer-events: auto;
+  }
+  body[data-view="dark"] #viewTools > *,
+  body[data-view="dark"] #viewFoot > *,
+  body[data-view="dark"] #zoomTools > * { background: rgba(30,36,46,.86); color: #e6e9ee; }
+  .embedded #viewTools select { font-size: 12px; }
+  /* ONE CAP, EVERY WIDTH. A floor picker is sized by the longest floor name,
+     not by the room around it. Lifting the cap under 600px let it eat 422px of
+     a 589px strip — a control for choosing between two words, given most of the
+     plan's width. Nothing else about the row changes with the viewport, and
+     this should not either. 190px holds "Lower Level Basement" and stops. */
+  #viewTools select { max-width: 190px; }
+  @media (prefers-reduced-transparency: reduce) {
+    #viewTools > *, #viewFoot > *, #zoomTools > * { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+</style>
+</head>
+<body>
+<header class="app-header"></header>
+<div class="page-head">
+  <h1 id="hTitle">3D view</h1>
+  <span class="sub">A walkable version of the plan you confirmed. It is built from your 2D render, so it shows the same looks you have paid for.</span>
+</div>
+
+<main>
+  <aside>
+    <section class="panel">
+      <h3>Floor</h3>
+      <div class="subtle" style="margin:-2px 0 8px">Only floors with a render can be shown here.</div>
+      <select id="bFloor" class="grow" aria-label="Floor" autocomplete="off"></select>
+    </section>
+
+    <section class="panel">
+      <h3>Look</h3>
+      <div class="subtle" style="margin:-2px 0 0">The 3D stands on your 2D render, so a look is available here once you have rendered it in Studio.</div>
+      <div class="looks" id="looks"></div>
+      <div class="subtle" id="lookNote" style="margin-top:12px"></div>
+      <div class="subtle warn" id="lookWarn" hidden style="margin-top:8px"></div>
+    </section>
+
+    <!-- THE NAME IS NOT EDITED HERE, on purpose.
+         It is one fact with one home. Studio is where the customer types it,
+         beside the sheet it prints on, and a second field here would be a
+         second place to change it and the start of the next drift bug.
+         What IS decided here is whether it appears over the MODEL, because
+         that is a fact about this view and about the code they paste into
+         their website. So: the words, read only, with the way back to Studio,
+         and a switch for showing them. -->
+    <section class="panel">
+      <h3>Plan title</h3>
+      <div id="titleShow" style="font-weight:600;margin:-2px 0 2px"></div>
+      <div class="subtle" id="titleFrom" style="margin-bottom:8px"></div>
+      <button id="bCaption" class="on btn btn--secondary btn--sm">Show on model</button>
+    </section>
+
+    <section class="panel">
+      <h3>Embed</h3>
+
+      <!-- ONE SWITCH, AND IT NAMES THE OUTCOME.
+           This was two buttons of equal weight — "Publish" and "Withdraw" —
+           plus a third, "Publish again", that was always on screen. Every one
+           of those words describes our mechanism rather than the builder's
+           decision, and the decision is a single yes or no: is this plan on my
+           website or not. So it is a switch, the same `.switch` the All-floors
+           row uses, and it says what a visitor gets rather than what we do.
+           The sentence that used to sit here ("Paste this on your website…")
+           went with them: the switch's own status line says it, and saying it
+           twice in one panel was half the clutter.
+           IT SAID "Show this on my website" UNTIL THE LINK EXISTED. One
+           publish now serves two routes -- an iframe for a builder who has a
+           site and a link for the ones who do not -- so a label naming only the
+           website told half of them the switch was not for them. "Share this
+           plan" is the decision either way. The visitor's own message when a
+           floor is not shared quotes this label, so it moved with it: a
+           message telling someone to look for a switch by a name it no longer
+           has is worse than no message. -->
+      <div id="pubState" style="margin-bottom:10px"></div>
+      <div id="embedReady">
+        <textarea id="embed" readonly spellcheck="false"></textarea>
+        <!-- TWO WAYS OUT OF ONE PANEL, because there are two ways a plan
+             reaches a buyer and only one of them needs a website. The code goes
+             on a builder's own site; the link goes in an email, a text or a
+             WhatsApp message, which is where a customer actually is. Both point
+             at the same published floor -- publishing once serves both -- so
+             this is a second button, not a second feature.
+             "Copy link" is secondary only because the panel is called Embed;
+             it is the one more builders will use. -->
+        <div class="row"><button id="copyEmbed" class="btn btn--primary btn--sm">Copy code</button>
+          <button id="copyLink" class="btn btn--sm">Copy link</button>
+          <span class="subtle" id="embedNote"></span></div>
+        <p class="subtle" id="linkNote" style="margin:8px 0 0"></p>
+
+        <!-- THE SETTINGS SIT UNDER THE CODE, not above it. Most people publish,
+             copy and leave; two controls between them and the box made that
+             path read as a form to fill in. Down here they are there for the
+             one who wants them.
+             A real switch, `.switch` from ui.css — the design system has had
+             one all along and nothing was using it. I built a button with an
+             `on` class instead, which is not the same control and does not look
+             like one. -->
+        <!-- THE THIRD PART OF THE PANEL, and it needed saying which it was.
+             Two switches of identical weight sat one under the other doing
+             entirely different jobs — one decides whether strangers can see the
+             home at all, the other picks how much of it travels. The state above
+             is a recessed block now and this is a captioned group, so neither
+             reads as the other's peer. -->
+        <div id="embedOptions" style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <div class="subtle" style="margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em;font-size:11px">What travels</div>
+          <div class="row" id="embedScope" hidden style="gap:10px;align-items:center;margin-bottom:10px">
+            <button id="bAllFloors" class="switch" role="switch" aria-checked="false"
+                    aria-label="Show every floor"></button>
+            <span id="scopeLabel">All floors</span>
+          </div>
+          <!-- THE SHAPE PICKER WAS HERE, AND THE HOST IS A BETTER PLACE FOR IT.
+               The frame now takes whatever height the page gives it, and every
+               site builder gives it one — so four shape options decided nothing
+               on the sites they were built for, and the one place they still
+               applied (a page that sets no height) is the one place the plan's
+               own shape is obviously right.
+               It is also what the embeds people already know do. Apple Music and
+               Apple Podcasts ship a single code with one height and no picker;
+               YouTube's Share → Embed offers no size control either. Google Maps
+               does offer sizes — and a map is the exception that proves it, being
+               content with no natural shape of its own. A floor plan has one.
+               So: one code, the plan's own ratio as the fallback, and the size
+               set where the page is designed. -->
+          <div class="subtle" id="embedCan"></div>
+        </div>
+      </div>
+      <div class="subtle" id="embedBlock" hidden></div>
+    </section>
+  </aside>
+
+  <section>
+    <!-- Rendered in every mode and shown only in share mode, so the model's
+         own box is the same element in all three and cannot drift apart. -->
+    <div class="share-bar">
+      <span class="t" id="shareTitle"></span>
+      <a class="by" href="index.html" target="_blank" rel="noopener">Made with StyloPlan</a>
+    </div>
+    <div id="stageWrap">
+      <div id="stage"></div>
+      <!-- WHAT TO DO INSTEAD, said only when the visitor has just tried the
+           thing we took away. A model embedded in a gallery must give the page
+           back its scroll, which means one finger and a plain wheel are no
+           longer ours — and a control that silently ignores you reads as
+           broken. Google Maps solved this the same way, for the same reason. -->
+      <div id="gestureHint" aria-live="polite"></div>
+      <!-- SWITCHING A FLOOR IS A NAVIGATION, so the model cannot cross-fade: the
+           page goes away and a new one builds. About a second of that is real
+           work (the render is traced to find the walls) and no amount of tuning
+           takes it to zero. What it must never be is SILENT — a visitor who
+           picks a floor and sees nothing change assumes the control is broken
+           and picks it again. So the wait is stated, and it is stated on the
+           OLD page the instant they choose, not after the new one paints. -->
+      <div id="loading" class="show" aria-live="polite"><span id="loadingText">Loading…</span><i></i></div>
+      <!-- VIEW CONTROLS LIVE ON THE MODEL, in every mode and at every width.
+           They were in the sidebar, which looked fine on a wide screen and was
+           wrong everywhere else: under 900px the columns stack, the sidebar
+           goes above the stage, and the button for turning room names off ends
+           up scrolled off the top of the thing it acts on. Saman's report was
+           simply "I cannot see it on the plan", and he was right at his window
+           size.
+           The split is by what a control acts on. These three change how you
+           are LOOKING at the model, so they sit on it. Floor, Look and Embed
+           change WHICH model or what you take away, so they stay in the
+           sidebar. -->
+      <!-- THE TITLE IS FIRST IN THE SOURCE, and that is the whole fix for a
+           caption that kept ending up under the buttons on a phone. The two
+           share one wrapping row, so whatever does not fit is what moves, and
+           the title cannot be it. -->
+      <div id="viewTop">
+        <div id="planCaption" hidden></div>
+        <!-- ORDER, TOP RIGHT: which floor, then what is drawn on it, then how it
+             looks, then what you take away. The floor picker is put at the front
+             of this list when the embed adopts it, so a visitor reads the same
+             order a builder does. -->
+        <div id="viewTools">
+          <button id="bLabels" class="on btn btn--secondary btn--sm">Labels</button>
+          <button id="bTheme" class="btn btn--secondary btn--sm"></button>
+          <!-- The whole product is images, and until now the one view a customer
+               could not get an image OF was this one. -->
+          <button id="bShot" class="btn btn--secondary btn--sm">Save image</button>
+        </div>
+      </div>
+      <!-- BOTTOM LEFT. It undoes what the other three corners do, so it belongs
+           to none of them; and out of the top row it stops pushing the title
+           around on a narrow frame. -->
+      <div id="viewFoot">
+        <button id="bReset" class="btn btn--secondary btn--sm">Reset view</button>
+      </div>
+      <!-- Symbols, not words, and an aria-label carrying the words: at 38px
+           there is no room for a label and no need for one. The minus is U+2212,
+           not a hyphen — a hyphen next to a plus reads as a dash. -->
+      <div id="zoomTools">
+        <button id="bZoomIn" class="btn btn--secondary btn--sm" aria-label="Zoom in" title="Zoom in">+</button>
+        <button id="bZoomOut" class="btn btn--secondary btn--sm" aria-label="Zoom out" title="Zoom out">&#8722;</button>
+      </div>
+      <div id="overlay"></div>
+    </div>
+    <!-- Says what the three gestures do, because two of them are new and a
+         control nobody knows about is a control nobody has. Short enough to be
+         read once and then ignored. -->
+    <div class="subtle" id="modelNote" hidden style="margin-top:8px"></div>
+    <div class="subtle" id="stageHint" style="margin-top:8px">It turns on its own until you take hold of it. Drag to turn, scroll to zoom, Shift-drag to move. Reset view puts it back.</div>
+  </section>
+</main>
+
+<div id="err"><div class="box panel">
+  <h3>This plan cannot be shown in 3D</h3>
+  <div id="errBody" class="subtle"></div>
+</div></div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from './src/vendor/OrbitControls.js';
+import { buildExtruded, THEMES } from './src/model3d/engine.js';
+import { extrudeWalls } from './src/model3d/extrude.js';
+import { fetchHealth } from './src/l1-client.js';
+import { lookOfTone, lookOfImage } from './src/model3d/theme3d.js';
+import { readFloorContext, floorStage, floorHref, planTitleOf } from './src/floor-context.js';
+import { setFloorGeoLook } from './src/store.js';
+import { getArtifact, getArtifactUrl, hasArtifact, scopeFor, styledKind, resolveStyled } from './src/artifacts.js';
+import { renderChrome } from './src/chrome.js';
+import { isPrintable } from './src/compositor.js';
+import { labelsOnRender } from './src/label-frame.js';
+import { askConfirm } from './src/ask.js';
+import { floorPayload, homePayload, publishState } from './src/publish.js';
+import { publishedState, staleFloors, publishFloors, withdrawFloors } from './src/cloud-publish.js';
+import { readPublishedHome } from './src/published-read.js';
+await renderChrome();
+
+// The wall height the sample renders at. Approved by eye; see EMBED-3D-WIP.md
+// for why no real number is needed or wanted here. It moved into geometry.js
+// because the publisher needs the same number — see the note there.
+import {
+  framing, fitToBox, extentOf, windowsFromRecord, windowsOnWall, DEFAULT_WIDTH_FT,
+} from './src/model3d/geometry.js';
+import {
+  wallSegments, collinearGaps, classifyPlan, buildingExtent, ftPerPx, glazedOpenings,
+  exteriorGaps, medianWallThickness,
+} from './src/model3d/openings.js';
+import { findDoors } from './src/model3d/doors.js';
+import { roomGraph } from './src/model3d/rooms.js';
+
+const $ = (id) => document.getElementById(id);
+
+/**
+ * Say the one thing left to say, and stop. Without an uncaught error.
+ *
+ * Five states on this page are HANDLED, not failures: no floor was named, the
+ * floor is not confirmed, it has no render, no walls could be found. Each one
+ * showed its message correctly and then threw from module top level, because
+ * that is how a top-level script halts — and each one put an uncaught error in
+ * the console beside a page that was behaving exactly as designed.
+ *
+ * A console with expected errors in it is a console nobody reads, and this
+ * project has already lost a Report button to an error nobody could see. The
+ * smoke suite's first rule is that no page logs one.
+ *
+ * The promise never settles, which is the honest shape of "there is nothing
+ * after this": the page has drawn its terminal state and the rest of the
+ * pipeline must not run.
+ */
+/**
+ * The wait, stated. `null` hides it.
+ *
+ * THE ATTRIBUTE, NOT ONLY THE CLASS. Hiding used to be a class removal and a
+ * CSS transition, and on the deployed embed that transition stalled at opacity
+ * 0.6 — the model was built and rendering behind a grey veil that never
+ * cleared. A fade is a nicety; being gone is the requirement, so the class does
+ * the fade and `hidden` does the hiding, a beat later. ui.css gives [hidden] a
+ * display:none that no author rule can lose to.
+ */
+let hideLoadingAt = null;
+function showLoading(what) {
+  const el = document.getElementById('loading');
+  if (!el) return;
+  clearTimeout(hideLoadingAt);
+  if (what === null) {
+    el.classList.remove('show');
+    hideLoadingAt = setTimeout(() => { el.hidden = true; }, 250);
+    return;
+  }
+  el.hidden = false;
+  document.getElementById('loadingText').textContent = what;
+  el.classList.add('show');
+}
+
+const stopWith = (msg) => {
+  showLoading(null);   // the message IS the answer; a spinner over it is noise
+  $('err').style.display = 'grid';
+  $('errBody').textContent = msg;
+  return new Promise(() => {});
+};
+const q = new URLSearchParams(location.search);
+
+// EMBED MODE: the same page with everything but the model taken away.
+//
+// One page rather than two, so what a builder pastes on their site is the thing
+// their customer was just looking at. A second, simplified page would be a
+// second place for the model to be built and a second place for it to drift.
+// The CLASS is set in <head> during parse — a module runs too late, and a
+// visitor saw the builder's workspace flash up on the seller's site. This only
+// reads the same fact for the code below.
+const embedded = q.get('embed') === '1';
+
+/** `?doors=1` — draw the door symbols the reader finds, over the plan. */
+const showDoors = q.get('doors') === '1';
+
+// The demo path is EXPLICIT. Nothing here ever falls back to sample data on its
+// own — that is how the delivery pack once shipped placeholder plans unnoticed.
+const demo = q.get('demo');
+
+// LOCAL FIRST, PUBLISHED SECOND — and that order is the design, not a
+// preference. A builder looking at their own model keeps working entirely
+// offline and always sees their latest work; only a reader whose browser holds
+// nothing falls through to the published copy. Which is every visitor to a
+// seller's website: they have never opened StyloPlan, and until this branch
+// existed the embed told them so in our workshop's words.
+let ctx = demo ? null : readFloorContext();
+/** Set when this page is reading a published home rather than local work. */
+let visiting = null;
+if (!demo && !ctx) {
+  visiting = await readPublishedHome(q.get('p'), q.get('f'));
+  if (visiting) ctx = visiting.ctx;
+}
+if (!demo && !ctx) {
+  // Two audiences, one message, and it has to serve the weaker one. A visitor
+  // cannot open anything in Studio; what they need to know is that there is
+  // nothing here, and whose problem it is.
+  await stopWith(q.get('p')
+    ? 'This floor plan is not being shared. If it is yours, open it in StyloPlan and turn on “Share this plan”; otherwise ask whoever sent you this page.'
+    : 'No floor was named. Open this from a confirmed floor in Studio.');
+}
+
+// A floor's own confirmed record. `verified` is written by Review and holds the
+// labels, staircases and specs the customer signed off; the images live in the
+// artifact store beside it.
+// Takes the FLOOR, not its ids: a published floor arrives already carrying its
+// confirmed labels and there is no local record to look up. One reader for both
+// sources rather than a second one for visitors.
+async function recordFor(floor) {
+  const v = floor?.verified;
+  if (!v) return null;
+  return {
+    // THE SAME RULE THE IMAGE USES. This took every label in the record, so a
+    // name the house style hides — or one Studio took off the image, like the
+    // stray PORCH The Sky prints in its own margin — still stood up in the 3D
+    // model. Four views of one plan and this was the fourth deciding for itself
+    // what gets printed.
+    confirmedLabels: (v.labels || []).filter(isPrintable),
+    // READ AND NOT USED, deliberately and now visibly. buildExtruded does not
+    // raise staircases (see its own note); the ones on this model are the flat
+    // ones the styled render already draws. Kept because it is the confirmed
+    // record's own field and the moment the builder grows a stair block this is
+    // what it takes, but a reader should not assume it is wired.
+    confirmedStairs: v.staircases || [],
+    // Sets ONLY the proportion of wall height to footprint — it is never shown
+    // and never claimed. A plan carries no scale bar, and the 3D is a marketing
+    // illustration whose printed dimensions all come from the confirmed record,
+    // so a fixed value here is a look, not a measurement.
+    buildingWidthFt: DEFAULT_WIDTH_FT,
+    name: floor.name,
+  };
+}
+
+// THE DEMO PATH IS LOOPBACK-ONLY, and now says so instead of crashing.
+// test/fixtures/ is deliberately not deployed, so on the live site this fetch
+// 404s and r.json() threw a SyntaxError with nothing on screen to explain it.
+// The paths were also absolute, which broke them a second way: a project site
+// is a subdirectory, so a leading slash asks the domain root.
+const rec = demo
+  ? await fetch(`test/fixtures/${demo}-geometry.json`)
+      .then((r) => (r.ok ? r.json() : null))
+      .catch(() => null)
+  : await recordFor(ctx.floor);
+if (demo && !rec) {
+  await stopWith(`No fixture for “${demo}”. The demo plans ship with the source, `
+    + 'not with the deployed site. Run it from a local checkout.');
+}
+if (!rec) {
+  await stopWith('This floor has not been confirmed in Review yet.');
+}
+const loadImg = (u) => new Promise((ok, no) => {
+  const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error(u)); i.src = u;
+});
+
+// ---- THE PIPELINE.
+//
+// The walls come from the confirmed 2D render itself, so there is no geometry
+// to validate, no dimensions to fit and no AI call. Everything that is not a
+// wall — fixtures, door arcs, stair treads — rides on the floor as the drawing
+// it already is. Names, staircases and the garage come from the record.
+//
+// One number cannot be read off a drawing: how wide the building is. A plan
+// carries no scale bar. It is a single scalar, so it scales the model uniformly
+// and cannot distort it.
+const WIDTH_FT = rec.buildingWidthFt;
+
+// DECLARED BEFORE THE FETCH THAT READS IT, and that ordering is the whole point.
+//
+// This sat below the `render` block with a comment explaining that reading a
+// `let` declared later is a runtime error — and the line above it did exactly
+// that. `startTheme` is only the seed: `styledUrlFor` overwrites it with the
+// theme it actually found, so the scene aligns to the render rather than the
+// other way round.
+//
+// It threw on every real floor and nobody saw it, because until the 3D step
+// appeared in the pipeline nav this page was only ever opened with `?demo=`,
+// and the demo branch never touches this path. A comment describing a hazard is
+// not a guard against it.
+// The embed pins its look in the URL, so a page embedded today keeps the look
+// it was embedded with. Anywhere else this is only a starting point, and
+// whichever render actually exists wins over it below.
+let startTheme = q.get('look') === 'light' ? 'light' : 'dark';
+
+// Null when the render is stored under the old untagged kind, in which case
+// its look is measured off the image once the geometry pass has read the floor.
+let resolvedLook = null;
+
+async function styledUrlFor(want) {
+  // A VISITOR HAS NO ARTIFACT STORE. The published home carries one look — the
+  // builder's choice, pinned when they published — so `want` is honoured when
+  // it matches and quietly ignored when it does not, rather than failing.
+  if (visiting) {
+    const url = await visiting.renderUrl(want) || await visiting.renderUrl(visiting.look);
+    if (!url) throw new Error('this floor has no published render');
+    resolvedLook = visiting.look;
+    startTheme = visiting.look;
+    return url;
+  }
+  // This page had the order right and the other two did not, which is why the
+  // rule now lives in one place. See resolveStyled.
+  const hit = await resolveStyled(ctx.scope, want);
+  if (!hit) throw new Error('this floor has no render yet');
+  resolvedLook = hit.theme;
+  if (hit.theme) startTheme = hit.theme;
+  return hit.url;
+}
+
+/**
+ * The render for exactly this theme, or null when it was never paid for.
+ *
+ * ONE URL PER THEME, KEPT. `getArtifactUrl` mints a NEW object URL every call,
+ * so asking twice for the same stored image produced two different strings —
+ * which quietly defeated the "don't trace the same picture twice" check in
+ * `frameFor` (the strings never matched, so the tracer ran again for 746ms) and
+ * leaked an object URL each time. The promise is cached, not the value, so two
+ * callers racing for the same theme still make one trip.
+ */
+const themeUrls = new Map();
+function exactUrlFor(t) {
+  if (!themeUrls.has(t)) {
+    themeUrls.set(t, (async () => {
+      if (visiting) return t === visiting.look ? visiting.renderUrl(t) : null;
+      if (await getArtifact(ctx.scope, styledKind(t))) return getArtifactUrl(ctx.scope, styledKind(t));
+      return null;
+    })());
+  }
+  return themeUrls.get(t);
+}
+
+// ONE SET OF WALLS, TWO FLOORS.
+//
+// The walls are traced from ONE render for every theme, and the floor picture
+// comes from the theme's own. That split is the whole design, and both halves
+// were learned the hard way.
+//
+// WHY NOT TRACE EACH THEME. It was tried today and produced a list of defects
+// that existed only in Light: walls broken into half again as many boxes,
+// porch posts standing in one theme and lying flat in the other, fixture
+// linework extruded as little walls. Measured on The Avi, the same building
+// traces to 80 rectangles and 4.80% coverage on the dark render and 118 and
+// 6.27% on the light one. Five separate fixes were measured and every one of
+// them removed real walls somewhere. The dark render is simply the cleaner
+// thing to read — bright walls on a dark ground, against dark walls carrying a
+// soft blurred drop shadow — and there is no reason to read the plan twice.
+//
+// WHY NOT USE THE DARK PICTURE TOO, which is what the demo did before this. It
+// stands a light-themed model on a dark plan, and that was a reported defect in
+// its own right. The floor is the customer's render; the walls are only how it
+// is read.
+//
+// WHY THIS IS SAFE. The two renders are separate model outputs and do NOT frame
+// the plan identically — on The Avi the light one draws the building 4.7%
+// smaller and shifted about 1.4%. What matters is that they draw the same
+// SHAPE, and they do: the building's aspect agrees to 0.02%, a hundred times
+// inside the four-point check's own 2% tolerance. A pure scale-and-shift is
+// removed by mapping each render through its OWN wall bounds, which is what
+// `extrudeWalls` already returns as `trim` and `floorRect`.
+//
+// So a mismatch here would show up as an aspect difference, and that is worth
+// checking rather than assuming: `say()` warns when the two disagree by more
+// than the same 2%.
+const frames = new Map();
+
+// THE WALLS COME FROM WHICHEVER RENDER READS CLEANEST, not from a fixed theme.
+//
+// This preferred the dark render, on the measurement that The Avi traced to 80
+// rectangles dark and 118 light. That reasoning was wrong, and the experiment
+// that showed it cost one credit: a FRESH light render of the same plan traces
+// to 88, and frames the building at 0.910 of the canvas where the rough one sat
+// at 0.864 and dark sits at 0.907.
+//
+// So the bad trace was one generation, not one theme. The prompt is the same
+// for both looks and only the palette differs, but the two images are separate
+// generations and the model does not redraw geometry to the pixel. An outlier
+// can land on either look, so preferring dark protects against nothing.
+//
+// FRAGMENTATION IS THE SYMPTOM AND ALSO THE TEST. A render that drew the plan
+// cleanly decomposes into few rectangles per wall; a smeared one shatters into
+// many. Both are already in memory, so the honest rule is to trace both and
+// keep the tidier reading. It costs one extra trace at load and nothing at all
+// on a floor with a single render.
+/**
+ * The scene's ground colour as [r,g,b], so the sheet can dissolve into it.
+ *
+ * Declared up here rather than beside its other caller, because the geometry
+ * pass below reads it. That ordering has now bitten this file three times in
+ * one day — `startTheme`, then `ownRender`, then this — each time as a `let` or
+ * `const` read a few lines above its own declaration, and each time the code
+ * looked fine. Anything the setup pass touches belongs before the setup pass.
+ */
+const bgRgb = (t) => {
+  const n = THEMES[t === 'light' ? 'light' : 'dark'].bg;
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+/**
+ * Every render this floor could be read from, each tagged with the look it is.
+ *
+ * The look travels because the winner gets REMEMBERED — see `geoLook` in
+ * store.js. `null` is the untagged legacy `styled` slot and the demo fixture:
+ * both are the only candidate there is, so there is nothing to pin.
+ */
+async function candidateRenders() {
+  if (demo) return [{ look: null, url: `test/fixtures/${demo}-styled-dark.jpg` }];
+  const out = [];
+  for (const t of ['dark', 'light']) {
+    const u = await exactUrlFor(t);
+    if (u) out.push({ look: t, url: u });
+  }
+  if (!out.length && await getArtifact(ctx.scope, 'styled')) {
+    out.push({ look: null, url: await getArtifactUrl(ctx.scope, 'styled') });
+  }
+  return out;
+}
+
+/** Rectangles per long wall. Lower is a tidier reading of the same building. */
+const fragmentation = (ex) => {
+  const long = ex.walls.filter((w) =>
+    Math.max(w.x1 - w.x0, w.z1 - w.z0) > (ex.extent ? ex.extent.x1 * 0.09 : 4)).length;
+  return long ? ex.rects / long : Infinity;
+};
+
+const candidates = await candidateRenders();
+if (!candidates.length) {
+  await stopWith('This floor has no render yet. Style it in Studio first.');
+}
+
+// THE CONTEST IS DECIDED ONCE PER FLOOR, NOT ONCE PER LOAD.
+//
+// Keeping the tidiest reading is a good rule with one bad property: it is
+// re-run over whatever renders exist at that moment. So rendering the second
+// look could hand the contest to a different image and rebuild a building the
+// customer had already seen — measured on one plan, 102 rectangles and a
+// 52.88 ft plan becoming 72 and 52.18 ft, same floor, same look. That is the
+// unpredictability this page is supposed not to have.
+//
+// So the floor remembers which look it was read from, and a later load traces
+// that one alone. A pin naming a render this floor no longer has is ignored
+// rather than obeyed — re-rendering into a different look leaves the pin
+// pointing at nothing, and a floor that cannot build is worse than a floor
+// whose model moved.
+//
+// VISITORS AND DEMOS DO NOT PIN. A visitor has one published render and no
+// floor record to write to; the demo fixture is the only candidate there is.
+const pinnedLook = (!demo && !visiting) ? (ctx.floor?.geoLook || null) : null;
+const pinned = pinnedLook ? candidates.filter((c) => c.look === pinnedLook) : [];
+const contest = pinned.length ? pinned : candidates;
+let geoUrl = null, geoImg = null, geo = null;
+// THE LOOK THIS TRACE WAS TONED FOR, kept because `startTheme` does not stay
+// still. The correction below reads the render's own look off the floor and
+// moves `startTheme` to it, which is right — but it happens AFTER this pass,
+// and the sheet has already been faded toward the ground colour of the look
+// that was asked for. Anything downstream that asks "was this traced for my
+// theme?" has to ask this, not `startTheme`.
+const geoTheme = startTheme;
+// A VISITOR'S PLAN HAS USUALLY ALREADY BEEN READ, on the machine that published
+// it — see `readingOf` in cloud-publish.js. It is offered only to a published
+// render, because that is the only picture the record was made from: the
+// builder's own panel holds local renders that no record describes, and a
+// reading of one plan must never be handed to another.
+//
+// `extrudeWalls` is what decides whether to use it. It checks the version and
+// the mask's dimensions and falls through to a full trace when either is wrong,
+// so an old published floor, a changed extruder or a re-rendered plan all end
+// up exactly where they were before this existed.
+const shippedGeometry = visiting?.geometry || null;
+let geoLook = null;
+for (const c of contest) {
+  const img = await loadImg(c.url);
+  const ex = extrudeWalls(img, WIDTH_FT, {
+    sheetBg: bgRgb(geoTheme),
+    geometry: visiting ? shippedGeometry : null,
+  });
+  if (!ex.extent) continue;
+  if (!geo || fragmentation(ex) < fragmentation(geo)) {
+    geo = ex; geoImg = img; geoUrl = c.url; geoLook = c.look;
+  }
+}
+if (!geo) {
+  await stopWith('No walls could be found in this render.');
+}
+
+// WRITTEN AFTER A BUILDING WAS ACTUALLY FOUND, not when the contest was
+// entered. A render that traces to nothing is skipped above, and pinning a
+// floor to it would pin it to a failure.
+//
+// This also RE-pins a floor whose stored look no longer has a render: `contest`
+// fell back to the full list, so what is written here is the new winner.
+if (geoLook && !demo && !visiting && ctx.floor?.geoLook !== geoLook) {
+  setFloorGeoLook(ctx.project.id, ctx.floor.id, geoLook);
+  ctx.floor.geoLook = geoLook;
+}
+
+// A RENDER THIS MODEL IS STANDING ON IS A RENDER THIS FLOOR HAS.
+//
+// `exactUrlFor` asks for a kind that names a look. A floor rendered before the
+// two looks became separate kinds is stored under a plain `styled`, so both
+// answers came back false while the model was built from that very image: the
+// panel announced "this floor has no dark render" under a dark model, and
+// offered to render both looks when one was already paid for. Two false claims
+// out of one missing label.
+//
+// The look is not lost, only unlabelled, and it is visible in the image: the
+// floor of a dark render is dark. So it is read off the floor tone the geometry
+// pass has just measured. This has to happen HERE and not beside `ownRender`
+// further down, because `startTheme` decides the scene's ground colour and by
+// then the scene is already built: the panel would agree with the render while
+// the ground still did not.
+if (!demo && !resolvedLook) {
+  resolvedLook = lookOfTone(geo.floorTone || [0, 0, 0]);
+  startTheme = resolvedLook;
+}
+
+// BOTH LOOKS ARE ALWAYS AVAILABLE, from whatever the customer actually bought.
+//
+// A floor styled in one theme still gets a dark AND a light 3D view: the model's
+// palette is a property of THIS page, not of the render, and refusing to show it
+// would make a paid render half a deliverable.
+//
+// The floor picture uses that theme's own render when there is one, and falls
+// back to the single render that exists when there is not. That fallback is
+// visible and it is the honest trade: the alternative is hiding a whole look.
+async function frameFor(t) {
+  if (frames.has(t)) return frames.get(t);
+  const url = demo ? `test/fixtures/${demo}-styled-dark.jpg`
+    : (await exactUrlFor(t)) || geoUrl;
+  if (!url) return null;
+
+  // THE SAME PICTURE IS NOT TRACED TWICE.
+  //
+  // `geo` was traced from one of these very URLs a moment ago, with this same
+  // ground colour when the theme is the one the page opened in. Tracing it
+  // again produced a byte-identical result and cost 1084ms of the 2644ms a
+  // floor took to appear — measured, not guessed, and paid on every floor
+  // switch because a switch is a navigation.
+  //
+  // The reuse is deliberately narrow: same URL AND same theme. A different
+  // theme needs its own `sheetBg`, which is the `borrowed` path below and stays
+  // exactly as it was.
+  //
+  // AND IT IS `geoTheme`, NOT `startTheme`. This read `startTheme`, and that is
+  // the white halo Saman photographed. Opening a floor with `look=light` when
+  // only a dark render exists traced the dark picture with the LIGHT ground
+  // colour, so its sheet faded out toward near-white; the correction below then
+  // moved `startTheme` to dark, this test saw dark === dark, and the reuse
+  // handed the dark scene a floor that dissolves into white. Every other
+  // reading was innocent — one candidate, nothing borrowed, aspect delta zero —
+  // because nothing was wrong with the geometry. The floor was toned for a look
+  // the page had already stopped showing.
+  const reuse = url === geoUrl && t === geoTheme;
+  const img = reuse ? geoImg : await loadImg(url);
+  // Its own trace, used ONLY for its floor picture and where that picture sits.
+  // Everything structural below comes from `geo`.
+  // `sheetBg` is this theme's own ground. The texture is per theme already, so
+  // each look dissolves into the scene it is actually shown in.
+  // The published reading applies here too: same picture, different ground
+  // colour. Only the texture is rebuilt; the plan was read once.
+  const own = reuse ? geo
+    : extrudeWalls(img, WIDTH_FT, { sheetBg: bgRgb(t), geometry: visiting ? shippedGeometry : null });
+  const delta = own.extent && geo.extent
+    ? Math.abs(own.extent.z1 / geo.extent.z1 - 1) : 0;
+  // THE FLOOR PICTURE IS ONLY USED WHEN IT AGREES WITH THE WALLS.
+  //
+  // Walls come from one render and the floor from another, and they line up
+  // because each is mapped through its OWN building bounds. That holds while
+  // both renders bound the same building — and they do not always. Measured on
+  // The Avi Top: the dark render's building spans y 0.244 to 0.790 and the
+  // light one's 0.107 to 0.790, because the covered deck's hatching is dark
+  // enough to be read as wall on a light sheet and not bright enough on a dark
+  // one. Twenty percent apart in shape, and no size filter separates the deck
+  // from the building.
+  //
+  // The result was walls standing in a frame a fifth larger than the drawing
+  // beneath them. So past the same 2% the four-point check uses, the geometry
+  // render's own floor is used instead: one plan that fits its walls, and the
+  // panel says which look it is showing and why.
+  const agrees = delta <= 0.02;
+  // A BORROWED FLOOR IS RE-TRACED FOR THE LOOK IT WILL BE SHOWN IN. `geo` was
+  // built with the starting theme's ground colour, so lending its floor to the
+  // other theme put a dark sheet fading out over a light scene: a black halo
+  // around the plan. Same picture, sized for the room it hangs in.
+  const borrowed = agrees ? null
+    : (t === geoTheme ? geo
+      : extrudeWalls(geoImg, WIDTH_FT, { sheetBg: bgRgb(t), geometry: visiting ? shippedGeometry : null }));
+  const f = {
+    theme: t, render: img, aspectDelta: delta, borrowedFloor: !agrees,
+    ex: agrees ? { ...geo, floor: own.floor, floorRect: own.floorRect }
+      : { ...geo, floor: borrowed.floor, floorRect: borrowed.floorRect },
+  };
+  frames.set(t, f);
+  return f;
+}
+
+let view = await frameFor(startTheme) || await frameFor(startTheme === 'dark' ? 'light' : 'dark');
+if (!view) {
+  view = { theme: startTheme, render: geoImg, ex: geo, aspectDelta: 0 };
+  frames.set(startTheme, view);
+}
+startTheme = view.theme;
+const render = view.render;
+const ex = view.ex;
+if (!ex.extent) {
+  await stopWith('No walls could be found in this render.');
+}
+
+// ---- windows, read off the STYLED RENDER - the same image the walls come from.
+//
+// This was the first thing found today and then walked past for a whole day.
+// The styled render draws a window as a THIN LINE, and wallMask's morphological
+// opening (OPEN_RADIUS = 1) exists to delete strokes thinner than its brush -
+// so it was eating them. That looked like "the render carries no window
+// information", and the search moved to the wireframe.
+//
+// The wireframe does carry windows crisply, but it pays for that in weight: it
+// draws walls as LINES where the styled render draws them as MASS. Measured
+// across four plans the render's walls are 2-5x thicker (Jordan 9px -> 28px,
+// Madison 3 -> 14). Coverage, density and the arc radius all need thickness to
+// work in, and a 2px band leaves nothing to measure - Geena found 3 windows on
+// its wireframe and 6 on its render.
+//
+// So: read the render, with no morphology at all. And note what else this buys.
+// Walls and windows now come from ONE image, which removes the disagreement
+// between two separate AI redraws that caused several defects by itself.
+// TAKES THE IMAGE, NOT A FIXTURE NAME.
+//
+// It used to re-fetch `test/fixtures/${name}-styled-dark.jpg`, which on a real
+// floor asked for `null-styled-dark.jpg`, 404'd, and returned "no render for
+// this floor" — about a floor whose render was already decoded and sitting in
+// memory. The failure was caught, so nothing broke visibly; window detection
+// just silently found nothing on every real plan while working on the demo.
+//
+// For a demo this is the identical image the fixture path loaded, so nothing
+// about that case changes.
+async function windowsFromWireframe(img, ex) {
+  if (!img) return { windows: [], note: 'no render for this floor' };
+  const w = img.naturalWidth, h = img.naturalHeight;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const cx = c.getContext('2d', { willReadFrequently: true });
+  cx.drawImage(img, 0, 0);
+  const d = cx.getImageData(0, 0, w, h).data;
+
+  // Polarity is MEASURED, never assumed. On a dark render the walls are the
+  // bright minority; reading it the other way returns the negative of the plan,
+  // which still looks like a floor plan and is entirely wrong.
+  const lum = new Float32Array(w * h);
+  let total = 0;
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    lum[p] = (d[i] + d[i + 1] + d[i + 2]) / 3;
+    total += lum[p];
+  }
+  const inverted = total / (w * h) < 128;
+  const ink = new Uint8Array(w * h);
+  for (let p = 0; p < w * h; p++) ink[p] = (inverted ? lum[p] > 150 : lum[p] < 105) ? 1 : 0;
+
+  // openings.js carries the measured defaults; overriding them here is what
+  // made this page disagree with every sweep run against it.
+  const opts = {};
+  const seg = wallSegments(ink, w, h, opts);
+  const ext = buildingExtent(seg);
+  const scale = ftPerPx(seg, WIDTH_FT);
+  if (!ext || !scale) return { windows: [], note: 'no walls found in the wireframe' };
+
+  const gaps = [
+    ...collinearGaps(seg.horizontal, true, { minGap: 20, maxGap: 400 }),
+    ...collinearGaps(seg.vertical, false, { minGap: 20, maxGap: 400 }),
+  ];
+  // WHICH READING OF THE GAPS, and why this one.
+  //
+  // `classifyPlan` decides by glazing density inside the opening. It works, and
+  // it agreed with an independent reader on two plans, but scored 0.53 to 0.60
+  // recall on the corpus with exact truth: it finds some of the windows.
+  //
+  // `glazedOpenings` decides by the symbol itself — the lines running along the
+  // opening that every symbol chart draws — and scores recall 1.00 across seven
+  // drawing styles on that same corpus, including the two that defeated earlier
+  // work: a mullion's centre break, and a single-line window. Precision runs
+  // 0.82 to 1.00 except on hatched walls.
+  //
+  // classifyPlan is still called, for the glazing band it measures off this
+  // plan, which is what the note reports.
+  const { band } = classifyPlan(ink, w, h, gaps, scale, opts);
+  const glazed = glazedOpenings({ w }, { mask: ink, low: null }, gaps);
+
+  // THE EXTERIOR TEST, FINALLY WIRED UP.
+  //
+  // The wall is taken away across an opening and NOTHING is put back — read the
+  // note in engine.js for why. So an opening detected where there is none is a
+  // hole in the customer's building, and the only guard against that is this:
+  // a window is on an outside wall, an opening between two rooms is not.
+  //
+  // exteriorGaps has been in the repository, tested, and never once called from
+  // the page. What ran instead was a size filter and a bounding-box test, and a
+  // partition wall is inside the bounding box like everything else. Saman
+  // circled a five-foot slit through an interior wall; that is what it was.
+  //
+  // TWO THINGS HAD TO BE MEASURED BEFORE IT COULD BE TURNED ON, and both were
+  // wrong at first.
+  //
+  // The seal. The flood decides what is outside, and every opening it can walk
+  // through must be bridged first. `gaps` stops at 400px, and a two-car garage
+  // door is 820 on a 2048px sheet — so the flood strolled in. Measured as the
+  // share of the building's inside that the flood reached, Plan A went from
+  // 51.9% to 0.0% once the bridging list stopped capping the width. The
+  // CANDIDATE list keeps its 400px cap: widening that would invent windows.
+  //
+  // The depth. `faceDepth` was 3 pixels, calibrated against 200px test masks
+  // whose walls are 4px thick. On a 2048px render the wall is 10-19px and
+  // carries a soft shadow, so three pixels past the face is still inside the
+  // wall's own edge and the outside never registers. Measured across eight
+  // renders, as the share of candidates sitting ON the building outline that
+  // survive against the interior ones that do:
+  //
+  //     depth        on the outline      interior
+  //     0.5x wall        28/35            17/43
+  //     1x               33/35            17/43
+  //     2x               35/35            18/43
+  //     3x               35/35            19/43
+  //     (no test)        35/35            43/43
+  //
+  // Two wall thicknesses keeps every opening on the building's outline and
+  // removes 25 of the 43 interior ones. Across ten renders that is 67 openings
+  // cut today against 44 with the test.
+  //
+  // IT IS NOT A CURE. Eighteen interior candidates still pass, and on the
+  // corpus copy of The Sky it removes none of that plan's five — its walls are
+  // 17px, so two thicknesses is 34px, far enough to see daylight through a
+  // doorway further along. No depth both keeps every outside window and drops
+  // that one. This is a measured improvement, not a fix.
+  const bridge = [
+    ...collinearGaps(seg.horizontal, true, { minGap: 20, maxGap: 4000 }),
+    ...collinearGaps(seg.vertical, false, { minGap: 20, maxGap: 4000 }),
+  ];
+  const wallPx = medianWallThickness(ink, w, h) || Math.round(w / 100);
+  const winGaps = exteriorGaps(ink, w, h, seg, glazed, {
+    bridge,
+    faceDepth: Math.max(3, Math.round(wallPx * 2)),
+  });
+  const interior = glazed.length - winGaps.length;
+
+  // MAP THROUGH THE MODEL'S OWN BOX, not through one measured again here.
+  //
+  // This used to scale from `buildingExtent(seg)`, on the reasoning that both
+  // frames are anchored on the building's bounding box so a straight scale is
+  // enough. They are not the same box. `buildingExtent` reads the wall segments
+  // found in full-resolution ink and takes in whatever they reach — on The Avi
+  // Top that includes the covered deck, and it measures the building at 40 x
+  // 48.2ft where the extruder's own bounds say 40 x 34.1ft.
+  //
+  // A 41% error in depth puts a window near the far wall fourteen feet past the
+  // model's edge, which is why windowsOnWall was dropping 26 of 30 candidates
+  // across the six test plans and three of them came back with none at all.
+  //
+  // `ex.trim` is the building's box as the EXTRUDER sees it, normalised over
+  // the whole image, and `ex.extent` is that box in feet. Going through the two
+  // of them means the detector and the model cannot disagree about where the
+  // building is, because only one of them is measuring it.
+  const tw = ex.trim.x1 - ex.trim.x0, th = ex.trim.y1 - ex.trim.y0;
+  const X = (px) => ex.extent.x0 + ((px / w - ex.trim.x0) / tw) * (ex.extent.x1 - ex.extent.x0);
+  const Z = (py) => ex.extent.z0 + ((py / h - ex.trim.y0) / th) * (ex.extent.z1 - ex.extent.z0);
+  const toModel = (g) => ({
+    x0: X(g.x0), x1: X(g.x1), z0: Z(g.y0), z1: Z(g.y1), horizontal: g.horizontal,
+    // Carried through, because the model draws glazing only where the window
+    // SYMBOL was actually read — see glazedOpenings. Dropping it here is how a
+    // door ends up with glass across it.
+    byLines: g.byLines,
+  });
+
+  // THE ENVELOPE, NOT `windowsOnWall`. Two guards were tried here and the file's
+  // original note turns out to have been right about both.
+  //
+  // It said a window read off the drawing lands in a GAP between traced walls
+  // by construction, so asking "does it sit on wall pixels" asks the wrong
+  // question of it. I applied it anyway, because on The Avi Top it kept exactly
+  // one opening and dropped the six that were standing out on the deck. That
+  // looked like the guard working. It was not: the mapping above was stretching
+  // every window 41% deeper, and under that error a real front-wall window
+  // happened to land on some other wall while the rest scattered. With the
+  // mapping fixed, windowsOnWall drops all seven, including the ones that are
+  // plainly windows.
+  //
+  // The deck was never a detection problem either. Those six sit at z 31.7 to
+  // 33.9 in a building 34.1ft deep — the front wall, where the windows are. The
+  // old mapping threw them out to 45-48ft, which is what put frames on the
+  // porch.
+  //
+  // What is left to reject is the genuinely off-building candidate, and the
+  // model's own extent already says where the building ends. One of avitop's
+  // seven maps to z 39.7, five feet past the back wall. A foot of slack, since
+  // an opening on the envelope legitimately touches it.
+  //
+  // KNOWN CASUALTY, and it is the right trade. A BAY window is drawn as "three
+  // segments at 45 or 30 degree angles projecting outward" and a BOW window as
+  // "several narrow segments that curve outward" — both sit OUTSIDE the
+  // envelope by definition, so this rejects them. A bay window missing is a
+  // plainer model; a deck full of window frames is a wrong one, and that is
+  // what this guard was added for.
+  // THE EXTERIOR TEST, and why it is back after being written off.
+  //
+  // It was recorded here as tried and abandoned: adding it took Geena to ZERO
+  // and Madison to 5, and three explanations for that were each disproved.
+  // The cause was none of them. `exteriorGaps` takes what to SEAL the flood
+  // with and what to TEST, and it was being given the same list for both —
+  // the windows. Bridge only the windows and every doorway stays open, the
+  // flood walks inside, the whole interior reads as outside, and then both
+  // sides of every window agree and none of them qualifies.
+  //
+  // Measured 2026-08-19, same plans, same code, only the bridging list changed:
+  //
+  //     bridged windows only    geena 0/11   avitop 2/13   jordan 2/9
+  //     bridged every opening   geena 11/11  avitop 11/13  jordan 7/9
+  //
+  // A window is on an exterior wall. An interior opening between two rooms is
+  // not, and that is exactly the false positive this removes: avitop 13 -> 11,
+  // madison 13 -> 6, which is the same 6 an independent reader found there.
+  // AND NOTHING UNDER A FOOT AND A HALF IS A WINDOW. Checked across the six
+  // test plans, the kept set carried a tail of 0.5, 0.6, 0.6, 0.7, 0.9, 1.0 and
+  // 1.2ft openings — a hand's width of glazing, which is a fixture line or a
+  // jamb read as a span, not something anybody puts in a wall. The smallest
+  // real window on any of these plans is 2.4ft.
+  //
+  // It costs avimain everything: all three of its candidates are under a foot,
+  // so that plan honestly finds no windows rather than dishonestly finding
+  // three.
+  const SLACK_FT = 1;
+  const MIN_WINDOW_FT = 1.5;
+  const E = ex.extent;
+  const candidates = winGaps.map(toModel);
+  const kept = candidates.filter((r) => {
+    const span = r.horizontal ? r.x1 - r.x0 : r.z1 - r.z0;
+    if (span < MIN_WINDOW_FT) return false;
+    return r.x0 >= E.x0 - SLACK_FT && r.x1 <= E.x1 + SLACK_FT
+      && r.z0 >= E.z0 - SLACK_FT && r.z1 <= E.z1 + SLACK_FT;
+  });
+  const dropped = candidates.length - kept.length;
+
+  // ---- DOORS, read off the same ink, and only when asked for.
+  //
+  // `?doors=1` draws what src/model3d/doors.js reads, flat on the floor, over
+  // the drawing it read it from. It is a check rather than a feature: the
+  // question "is this right on a plan nobody has checked" can only be answered
+  // by looking at a plan nobody has checked, and the only place Saman can do
+  // that is the deployed site on his own projects. Off by default, so it costs
+  // a customer nothing — the search is a few hundred milliseconds.
+  let doors = [];
+  let doorNote = '';
+  if (showDoors) {
+    const read = findDoors(ink, w, h, seg, { ftPerPx: scale, gaps });
+    // WHAT THE DOORS CONNECT, which is how a reading is judged on a plan
+    // nobody has checked. `sameRoomBothSides` is the signal that survived
+    // measurement: zero on every plan whose doors were confirmed by hand, four
+    // on the one plan whose count looks impossible. The other three counts the
+    // graph produces — rooms with no door, doors leading nowhere, repeated
+    // pairs — all fire on the verified plan too, so they are shown but not
+    // trusted. See docs/brief-door-detection.md.
+    const g = roomGraph({ mask: ink, W: w, H: h, segments: seg, gaps, doors: read });
+    const r = g.report;
+    const gapsOfDoorWidth = gaps.filter((x) => {
+      const ft = (x.horizontal ? x.x1 - x.x0 : x.y1 - x.y0) * scale;
+      return ft >= 2 && ft <= 4.2;
+    }).length;
+    doorNote = `${read.length} doors read · ${r.rooms} rooms · ${r.joinTwoRooms} join two rooms`
+      + ` · ${r.toOutside} to outside`
+      + (r.sameRoomBothSides ? ` · ${r.sameRoomBothSides} SUSPECT (same room both sides)` : '')
+      + ` · ${gapsOfDoorWidth} door-width openings`
+      + (read.length > gapsOfDoorWidth ? ' · more doors than openings' : '');
+    doors = read
+      .map((d) => ({
+        // Mapped through the model's own box, exactly like the windows above:
+        // one measurement of where the building is, not two.
+        x: X(d.x),
+        z: Z(d.y),
+        // The radius is a length, so it scales with the building rather than
+        // mapping as a position.
+        r: (d.radius / w) / tw * (ex.extent.x1 - ex.extent.x0),
+        deg: d.deg,
+        along: d.along,
+        into: d.into,
+        score: d.score,
+      }));
+  }
+
+  return {
+    windows: kept,
+    doors,
+    doorNote,
+    dropped,
+    note: `${kept.length} window(s) read off the render`
+      + (interior ? ` · ${interior} on an interior wall, left solid` : '')
+      + (dropped ? ` · ${dropped} set aside as too small or off the building` : '')
+      + ` · glazing ${(band.lo * 100).toFixed(0)}-${(band.hi * 100).toFixed(0)}%`
+      + ` (${band.from})`,
+  };
+}
+
+const detected = await windowsFromWireframe(render, ex);
+
+// ---- windows, from the confirmed record.
+//
+// Not from the pixels: five brightness-based attempts were each disproved by
+// measurement, the last conclusively — the mid-tone bands in the render sit 13
+// to 25 pixels clear of any wall. The record already carries every opening, and
+// the customer signs them off in Review, so this is the same source the names,
+// the staircases and the garage come from.
+//
+// If the record's footprint and the render's disagree in shape, the mapping
+// would put windows in the wrong walls. Rather than do that quietly, they are
+// dropped and the panel says so — on the same 2% the four-point check uses.
+// A second gate behind that one, and the one that actually fires here: a window
+// must really sit in a wall. Jordan's footprints agree to 0.03% and four of its
+// six windows still land 0-19% on any wall, because this fixture's wall array
+// came from an image model rather than the customer. Drawing those would invent
+// features of somebody's house. Nothing is shown unless most of them check out.
+const ASPECT_LIMIT = 0.02;
+const MIN_TRUSTED = 0.8;   // fraction of windows that must land on a wall
+// A floor may have no confirmed rooms at all — the minimal records exist so the
+// pipeline can be previewed on a plan that has only a render and a wireframe.
+// Nothing is inferred to fill the hole; that path simply produces no windows.
+const hasRecord = (rec.rooms || []).length > 0 && (rec.walls || []).length > 0;
+const win = hasRecord
+  ? windowsFromRecord(rec.walls, extentOf(rec.rooms), ex.extent)
+  : { windows: [], aspectError: 0 };
+const onWall = windowsOnWall(win.windows, ex.walls);
+const shapeOk = win.aspectError <= ASPECT_LIMIT;
+const enough = win.windows.length > 0
+  && onWall.keep.length / win.windows.length >= MIN_TRUSTED;
+const windowsOk = shapeOk && enough;
+
+// Placing windows by hand is gone, on purpose. It was built as a fallback while
+// detection did not work, and it was the wrong answer to that problem: the
+// customer should not be dotting windows onto their own plan, and a hand-placed
+// window is indistinguishable in the model from a detected one — which is
+// exactly how a test window ended up in Jordan's garage and stayed there
+// through several screenshots. The system reads the plan or it says it cannot.
+// ONE SOLID PER WALL NETWORK — the default now, with `?outline=0` for the pile
+// of boxes this shipped with. See src/model3d/outline.js.
+//
+// A rectangle is axis-aligned by definition, so the old path cannot express a
+// wall that runs at an angle: it approximates one with a stack of plates, and
+// the seams between those plates are the fault Saman photographed four times.
+// Nothing cleans up after that, because there is nothing wrong to clean up —
+// the model was asked for a diagonal and rectangles are what it has.
+//
+// The flag stayed on for two reasons and both are gone: the outlines skipped
+// the window subtraction (fixed by `ex.reshape`), and a published floor could
+// not reshape at all because it never runs the trace (fixed by publishing the
+// ink the trace runs on — `inkRects` in extrude.js).
+const outlineWalls = q.get('outline') !== '0';
+// Draw-call merging, on unless the URL asks otherwise. The flag exists so the
+// merged drawing can be compared against the unmerged one in the same browser,
+// which is the only honest way to check that an optimisation changed nothing.
+const mergeDraws = q.get('merge') !== '0';
+const buildOpts = () => ({
+  outline: outlineWalls,
+  merge: mergeDraws,
+  // THE LABELS ARE ALWAYS BUILT; only their visibility is toggled.
+  //
+  // This passed an EMPTY array while they were switched off, so a rebuild made
+  // a group with no label sprites in it. Turning them back on then set
+  // `visible = true` on a group that had nothing to show, and the button looked
+  // dead. It only appeared after a theme change, because that is the one thing
+  // that rebuilds — labels off in light, switch to dark, and they never came
+  // back. Two places deciding one fact, again.
+  theme, labels: rec.confirmedLabels,
+  // WINDOWS, AND WHICH READING WINS.
+  //
+  // The confirmed record comes first whenever it has any and passes its own two
+  // gates: the footprints must agree in shape, and most of its windows must
+  // actually land in a wall. It is the customer's own sign-off, which is the
+  // same authority the room names and the staircases carry.
+  //
+  // The wireframe reading is the fallback, and until today it was drawn
+  // nowhere: `windows: []` sat here while detection ran, found windows and
+  // threw them away. Two things had to be true before wiring it up. The symbol
+  // had to be found reliably, which it now is — recall 1.00 across seven
+  // drawing styles on the corpus with exact truth. And interior openings had to
+  // be separable from real windows, which is what the exterior test does now
+  // that it is being called correctly.
+  //
+  // A detected window is a claim about somebody's house that they have not
+  // confirmed, so the panel says which reading is on screen rather than
+  // presenting the two as the same thing.
+  windows: windowsOk ? onWall.keep : detected.windows,
+});
+
+let theme = startTheme;
+let labelsOn = true;
+// WHICH LOOKS THIS FLOOR ACTUALLY HAS A RENDER FOR.
+//
+// Declared HERE, above `say()`, because `say()` reads it and runs during setup.
+// The identical mistake cost a whole debugging pass this morning: `startTheme`
+// was read one line before its own `let`, and a comment warning about exactly
+// that sat beside it. Order is the guard; a comment is not.
+//
+// It does not gate the theme button. Both looks are always offered; this is
+// only what the note reports, so a customer seeing a dark plan under a light
+// model knows why instead of thinking the page is broken.
+// THE LABELS ARE MOVED ONTO THE PICTURE THE MODEL IS BUILT FROM.
+//
+// Stored positions are a fraction of the WIREFRAME, and `ex.trim` was measured
+// on the render — two different framings of one drawing. Studio maps between
+// them for the 2D export and this view never did, which is why the names sat a
+// little off the rooms. See src/label-frame.js.
+//
+// A visiting reader is already mapped: publishing does it on the builder's
+// machine, because a buyer's browser has no wireframe and never will.
+if (!demo && !visiting && rec.confirmedLabels?.length) {
+  const wire = await getArtifactUrl(ctx.scope, 'wireframe').catch(() => null);
+  const wireImg = wire ? await loadImg(wire).catch(() => null) : null;
+  rec.confirmedLabels = labelsOnRender(rec.confirmedLabels, wireImg, geoImg);
+}
+
+const ownRender = {};
+for (const t of ['light', 'dark']) ownRender[t] = Boolean(demo) || Boolean(await exactUrlFor(t));
+// The look measured off an untagged render counts as owned: the customer paid
+// for that image, whatever kind it happens to be filed under.
+if (resolvedLook) ownRender[resolvedLook] = true;
+
+
+// ---- THE DOOR SYMBOLS, LAID ON THE FLOOR (`?doors=1`).
+//
+// Drawn where the reader says the door is, in the model's own coordinates, on
+// the plane the render is lying on. So the green sits directly over the symbol
+// it was read from: if it lands on the drawing's own door, the reading is
+// right, and if it lands on a worktop it is not. That is the check, and it is
+// one look rather than a number.
+//
+// It is also the first thing to stand a door in 3D would need — the hinge, the
+// angle and the width, in model space — so this doubles as the proof that half
+// of it is correct before any geometry is built on it.
+function drawDoorMarks(doors) {
+  const group = new THREE.Group();
+  if (!doors?.length) return group;
+  const mat = new THREE.LineBasicMaterial({ color: 0x39d98a, depthTest: false });
+  const at = (x, z, y = 0.06) => new THREE.Vector3(x, y, z);
+  for (const d of doors) {
+    const t = d.deg * Math.PI / 180;
+    const dx = d.along[0] * Math.cos(t) + d.into[0] * Math.sin(t);
+    const dz = d.along[1] * Math.cos(t) + d.into[1] * Math.sin(t);
+    // the panel
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+      at(d.x, d.z), at(d.x + dx * d.r, d.z + dz * d.r),
+    ]), mat));
+    // the sweep, as far as the panel stands and no further
+    const arc = [];
+    for (let i = 0; i <= 24; i++) {
+      const a = t * (i / 24);
+      arc.push(at(
+        d.x + (d.along[0] * Math.cos(a) + d.into[0] * Math.sin(a)) * d.r,
+        d.z + (d.along[1] * Math.cos(a) + d.into[1] * Math.sin(a)) * d.r,
+      ));
+    }
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(arc), mat));
+    // the hinge
+    const ring = [];
+    for (let i = 0; i <= 16; i++) {
+      const a = (i / 16) * Math.PI * 2;
+      ring.push(at(d.x + Math.cos(a) * d.r * 0.06, d.z + Math.sin(a) * d.r * 0.06));
+    }
+    group.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), mat));
+  }
+  group.renderOrder = 998;
+  return group;
+}
+
+const built = buildExtruded(ex, buildOpts());
+// `current` is what is IN the scene right now. Declared here, above the camera
+// fit, because the fit measures it — see fitFrame.
+let current = built;
+
+// ---- what the run decided, said out loud
+// TWO KINDS OF MESSAGE WERE STACKED ON THE MODEL, and only one of them was
+// ever anybody's business but ours.
+//
+// "42 wall rectangles from the confirmed render, 0 windows from the confirmed
+// record" is us talking to us. It is a measurement of how well our tracer read
+// the plan, and it was printed over the picture a builder shows to home buyers.
+// Saman's question was the right one: what is a customer meant to do with that?
+// Nothing. It is now behind ?debug=1, where it is still every bit as useful to
+// me and invisible to everyone else.
+//
+// The other kind IS the customer's business: this floor has no dark render so
+// you are looking at the light one, or the two renders disagree too much to
+// share walls. Those say what they are seeing and what to do about it, so they
+// move to the Look panel, where the conversation about looks already happens.
+// They were only ever on the model because that is where the counts were.
+const debugOn = q.get('debug') === '1';
+// A DEBUG PAGE THAT CANNOT BE INSPECTED IS HARD TO WORK ON. Everything on this
+// page lives in module scope, so the only way to ask the RUNNING model a
+// question was to rebuild a copy beside it and hope the copy matched. That cost
+// an hour of chasing glazing which turned out to be built correctly all along.
+// Behind ?debug=1, so it is never reachable on a customer's page.
+if (debugOn) window.__model = () => ({ current, ex, windows: buildOpts().windows });
+
+/** Ours: counts and confidence. Hidden unless ?debug=1. */
+// WHICH BUILD IS ANSWERING. Three rounds of "nothing changed" turned out to be
+// a page built before the change, and the only way to tell was a console line
+// nobody had reason to type. A debug overlay that cannot say which code drew it
+// is asking every reader to trust that the deploy landed.
+let buildId = '';
+fetchHealth().then((h) => { buildId = (h?.build || '').slice(0, 7); say(); }).catch(() => {});
+
+/**
+ * A cheap identity for a picture: its pixel size and a hash of a 64px thumbnail.
+ *
+ * WHY. The panel and the embed run the same file over what is meant to be the
+ * same image, and disagree about how the floor looks. Every measurement the page
+ * could already take says they should match, and a local run of both modes over
+ * one fixture matched to within a pixel — so the remaining possibility is that
+ * the two pages are not holding the same picture. Nothing on screen could say
+ * so, because nothing ever named the picture.
+ *
+ * The thumbnail is what makes it cheap and what makes it fair: it costs a 64x64
+ * draw, and two encodings of the same render still hash alike, so a difference
+ * printed here is a difference in the drawing rather than in the file format.
+ * Memoised per image because `say()` runs on every interaction.
+ */
+const prints = new WeakMap();
+function fingerprint(img) {
+  if (!img) return 'none';
+  if (prints.has(img)) return prints.get(img);
+  let out;
+  try {
+    const c = document.createElement('canvas');
+    c.width = 64; c.height = 64;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0, 64, 64);
+    const d = x.getImageData(0, 0, 64, 64).data;
+    let h = 0x811c9dc5;
+    for (let i = 0; i < d.length; i += 4) {
+      for (let k = 0; k < 3; k++) { h ^= d[i + k]; h = Math.imul(h, 16777619); }
+    }
+    const w = img.naturalWidth || img.width, ht = img.naturalHeight || img.height;
+    out = `${w}x${ht}#${(h >>> 0).toString(16).padStart(8, '0')}`;
+  } catch (e) {
+    // A cross-origin picture taints the canvas. The published render is fetched
+    // as bytes and served from a blob: URL precisely so it does not, so this
+    // reading is itself worth seeing.
+    out = `unreadable (${e.name})`;
+  }
+  prints.set(img, out);
+  return out;
+}
+
+function say(extra) {
+  if (!debugOn) { $('overlay').innerHTML = ''; return; }
+  const lines = [];
+  if (buildId) lines.push(`<span class="subtle">build ${buildId}</span>`);
+  // WHICH PICTURE THE FLOOR IS AND WHAT IT WAS TONED FOR.
+  //
+  // The same floor, the same look and the same file draws a bright halo around
+  // the model in the app and nothing in the embed. Four hypotheses have been
+  // offered and none survived — the render, the camera angle, the local copy
+  // versus the published one, all ruled out by measurement. What has never been
+  // reported is what the floor plane is actually made of, so it is reported
+  // now: which look the page thinks it is showing, which look the texture was
+  // toned for, whether the floor was borrowed from the other render, and how
+  // far apart the two renders measured. If any of those differ between the two
+  // pages, that is the bug, and this line says so without another guess.
+  // `geoTheme`, not `startTheme`. Reporting the live value made this line say
+  // "traced as dark" about a floor that had been toned for light, which is the
+  // one fact that would have ended the search on the first reading. A
+  // diagnostic that re-reads a variable the code has since corrected reports
+  // the correction, not the history.
+  lines.push(`<span class="subtle">floor: showing ${theme} · traced as ${geoTheme}`
+    + (geoTheme === startTheme ? '' : ` (asked ${geoTheme}, render is ${startTheme})`)
+    + ` · borrowed ${view.borrowedFloor ? 'YES' : 'no'}`
+    + ` · aspect Δ ${((view.aspectDelta || 0) * 100).toFixed(2)}%`
+    + ` · sheetBg [${bgRgb(theme).join(',')}]`
+    + ` · floorTone [${(ex.floorTone || []).map((n) => Math.round(n)).join(',') || '?'}]`
+    + ` · embed ${embedded ? 'yes' : 'no'}</span>`);
+  lines.push(`<span class="subtle">picture: ${candidates.length} candidate(s)`
+    + ` · walls traced from ${fingerprint(geoImg)}`
+    + ` · floor drawn from ${fingerprint(view.render)}`
+    // WHICH PATH READ THE PLAN. A published floor should say "published"; if it
+    // says "traced here" the record was refused, and the two reasons it can be
+    // refused — a version that moved, a picture that changed — are worth being
+    // able to tell apart from the outside.
+    + ` · plan ${ex.fromPublished ? 'from the published reading' : 'traced here'}`
+    + (visiting && !ex.fromPublished && shippedGeometry
+      ? ` (record v${shippedGeometry.version} refused)` : '')
+    + `</span>`);
+  lines.push(...current.notes);
+  if (detected.note) lines.push(detected.note);
+  if (!windowsOk) {
+    // THREE REASONS, AND THEY ARE NOT THE SAME PROBLEM. This printed "0 of 0
+    // did not sit in a wall" on Plan A, where the record simply carries no
+    // window openings — a sentence that describes a placement failure for a
+    // plan that never reached placement, and it sent a diagnosis down the wrong
+    // road. The empty case now says what is actually missing.
+    const why = win.windows.length === 0
+      ? 'your confirmed record carries no window openings, so nothing was placed from it.'
+      : !shapeOk
+        ? `the record and the render differ by ${(win.aspectError * 100).toFixed(1)}% in shape.`
+        : `${onWall.dropped} of ${win.windows.length} did not sit in a wall.`;
+    lines.push(`<span class="warn">No confirmed window positions on this plan: ${why}</span>`);
+  }
+  if (extra) lines.push(`<span class="warn">${extra}</span>`);
+  $('overlay').innerHTML = lines.map((n) => `<div class="item">${n}</div>`).join('');
+}
+
+/** Theirs: which render they are actually looking at, and what to do. */
+function sayLook() {
+  const lines = [];
+  // The two renders must draw the same building, or walls traced from one will
+  // not sit on the plan drawn by the other. Same 2% the four-point check uses.
+  if (view.borrowedFloor) {
+    lines.push('The two renders of this floor are too different in shape to share '
+      + 'one set of walls, so the plan you are seeing is the other look. '
+      + 'Rendering this one again in Studio usually fixes it.');
+  }
+  if (!ownRender[theme]) {
+    lines.push(`This floor has no ${theme} render, so the plan you are seeing is your `
+      + `${theme === 'dark' ? 'light' : 'dark'} one. Render it in ${theme} in Studio to match.`);
+  }
+  // The windows notice used to be here, and it was in the wrong panel and said
+  // the wrong thing. See sayWindows(): this box is about which LOOK is on
+  // screen, and a window is not a look.
+  const el = $('lookWarn');
+  el.innerHTML = lines.map((t) => `<div class="item">${t}</div>`).join('');
+  el.hidden = lines.length === 0;
+}
+/**
+ * WHERE THE WINDOWS IN THIS MODEL CAME FROM — for us, not for the customer.
+ *
+ * This was a standing yellow line on the page: the windows are our reading of
+ * the render rather than anything the builder signed off. True, and it went
+ * through three homes and two rewrites while Saman asked twice what it was
+ * for. That is the answer: nothing. There is no window step in Review, so it
+ * names no action; the 3D view claims nowhere that windows are confirmed, so
+ * it corrects no impression; and it appears on every floor forever, so it
+ * carries no news. A caution that cannot be acted on is decoration in the
+ * colour of a warning.
+ *
+ * It stays under `?debug=1` with the other provenance notes, where the
+ * question "where did this come from" is actually being asked. What the
+ * customer sees about windows is what they can act on — the wall-shape and
+ * placement warnings in `say()` — and nothing else.
+ */
+function sayWindows() {
+  const el = $('modelNote');
+  if (el) el.hidden = true;
+}
+sayWindows();
+
+// A real floor is named by its record; only a demo is named by its fixture key.
+// This read `demo.charAt(0)` unconditionally and threw on every real project —
+// the second hazard in a row that survived because the page had only ever been
+// opened with `?demo=`. `rec.name` is what the pipeline nav and Studio already
+// show for this floor, so the two agree.
+$('hTitle').textContent = demo
+  ? demo.charAt(0).toUpperCase() + demo.slice(1)
+  : (rec.name || 'Floor');
+
+// ---- scene
+document.body.dataset.view = theme;
+const scene = new THREE.Scene();
+
+// ---- click to inspect (?probe=1)
+//
+// Added because a defect was visible on screen and could not be located by
+// reasoning: three rounds of hypotheses were disproved, and the coordinates
+// guessed off a screenshot were never accurate enough to crop the right piece
+// of the render. Clicking the thing itself removes the guessing — it reports
+// exactly what the ray hit, and where in the plan image that lands.
+if (new URLSearchParams(location.search).get('probe')) {
+  addEventListener('click', (e) => {
+    const rc = new THREE.Raycaster();
+    const r = renderer.domElement.getBoundingClientRect();
+    rc.setFromCamera(new THREE.Vector2(
+      ((e.clientX - r.left) / r.width) * 2 - 1,
+      -(((e.clientY - r.top) / r.height) * 2 - 1),
+    ), camera);
+    const hit = rc.intersectObjects(scene.children, true).filter((h) => h.object.isMesh)[0];
+    if (!hit) { console.log('probe: nothing hit'); return; }
+    const s2 = new THREE.Box3().setFromObject(hit.object).getSize(new THREE.Vector3());
+    const px = hit.uv ? [Math.round(hit.uv.x * 1696), Math.round((1 - hit.uv.y) * 2528)] : null;
+    const out = {
+      geometry: hit.object.geometry.type,
+      sizeFt: [s2.x, s2.y, s2.z].map((v) => +v.toFixed(2)),
+      world: [hit.point.x, hit.point.y, hit.point.z].map((v) => +v.toFixed(2)),
+      planImagePx: px,
+    };
+    console.log('probe:', JSON.stringify(out));
+    window.__probe = out;
+  });
+}
+scene.background = new THREE.Color(THEMES[theme].bg);
+scene.add(built.group);
+// Added once, to the SCENE rather than to the model group, so a look change
+// rebuilds the house without disturbing or duplicating the marks. They are
+// measured off the render's pixels, which a theme switch does not change.
+if (showDoors) {
+  scene.add(drawDoorMarks(detected.doors));
+  // Said on the page, not in the console: the numbers are the point of the
+  // flag, and a check nobody can see is a check nobody runs.
+  const line = document.createElement('div');
+  line.className = 'subtle warn';
+  line.style.marginTop = '8px';
+  line.textContent = detected.doorNote;
+  $('stageHint').after(line);
+}
+
+// Fitted to the BOX of everything drawn, not to the floor's diagonal. The old
+// framing measured the floor rectangle with the target on y = 0, so the walls
+// standing above that plane hung off the bottom of the viewport — worst on a
+// tall window, where the horizontal angle is the tighter one.
+// MEASURES WHAT IS IN THE SCENE, not what was built at load.
+//
+// This read `built.group` — the first build, captured once. `rebuild()` removes
+// that group and calls `dispose()` on its geometries, so every later fit was
+// measuring a disposed object: `setFromObject` returned an empty/invalid box,
+// `fitToBox` divided by it, and the camera position became NaN. A NaN camera
+// renders nothing at all, which is why switching theme made the model vanish —
+// and why switching back did not bring it back, since the camera stayed NaN.
+//
+// It needed a second trigger to fire: `measureHome()` runs on resize and when
+// the idle drift starts, so the model would go blank a moment after the switch
+// rather than at it.
+// FRAMES THE BUILDING, NOT THE SHEET IT IS DRAWN ON.
+//
+// This measured the whole group, which was right while the ground stopped at
+// the walls. The ground is now the render's full page, so measuring the group
+// framed a mostly empty rectangle and the model overflowed the viewport.
+//
+// The building's own extent is the thing to hold. Wall height is added because
+// the plan is flat and the walls are not; without it the camera sits too close
+// and clips the tops at a low orbit angle.
+const fitFrame = () => {
+  const e = view.ex.extent;
+  const box = new THREE.Box3().setFromObject(current.group);
+  const top = Math.max(box.max.y, 0.1);
+  return fitToBox(
+    { min: { x: e.x0, y: 0, z: e.z0 },
+      max: { x: e.x1, y: top, z: e.z1 } },
+    40, stageSize().w / stageSize().h,
+    // 1.02, not the 1.15 default. A sphere fit is conservative by nature — it
+    // holds the box's 3D DIAGONAL, which for a flat wide plan is far more than
+    // the shape ever projects to. At 1.15 the model sat small in a large empty
+    // frame, which was the other half of the original complaint. The sphere
+    // still guarantees nothing clips at any orbit angle; this just stops
+    // paying for that guarantee twice.
+    1.02,
+  );
+};
+let frame = fitFrame();
+// THE STAGE IS A PANEL NOW, not the whole window, so every place that used to
+// read innerWidth reads the element instead. Left as innerWidth it framed the
+// model for a viewport twice the width of the box it is drawn in.
+function stageSize() {
+  const el = $('stage');
+  return { w: Math.max(1, el.clientWidth), h: Math.max(1, el.clientHeight) };
+}
+const camera = new THREE.PerspectiveCamera(40, stageSize().w / stageSize().h, 0.5, 4000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// The third argument is updateStyle, and it must stay false.
+  // three.js otherwise writes the pixel size onto the canvas as an inline
+  // style, which beats the `width: 100%` rule in this file. That inline width
+  // then becomes the grid column's min-content, so the column could never
+  // shrink below whatever the canvas last measured: at a 375px viewport the
+  // layout stayed 592px wide and every page scrolled sideways. The drawing
+  // buffer is still sized here; the CSS decides how big it is drawn.
+  renderer.setSize(stageSize().w, stageSize().h, false);
+$('stage').append(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(frame.target.x, frame.target.y, frame.target.z);
+// ZOOM GOES WHERE THE POINTER IS, and this is the fix for the complaint that
+// zooming only ever magnified the middle. With a fixed target, dollying in
+// pushes everything else out of frame and a corner of the plan becomes
+// unreachable: the thing you wanted a closer look at is the first thing to
+// leave. Zooming toward the cursor means the corner under the pointer is what
+// grows, which is how every map and every model viewer behaves.
+controls.zoomToCursor = true;
+// AND PANNING IS ON, because zoom-to-cursor alone cannot recover a view once
+// the model is off frame. Screen-space panning so a drag moves the model
+// parallel to the screen rather than along the ground plane, which is the
+// behaviour that matches the gesture when you are looking at an object rather
+// than standing in a world.
+controls.enablePan = true;
+controls.screenSpacePanning = true;
+controls.panSpeed = 0.8;
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+// Never below the floor and never straight overhead: past 55 degrees the walls
+// hide the rooms, and at 0 it stops being a 3D view and becomes a worse 2D one.
+controls.minPolarAngle = 0.18;
+controls.maxPolarAngle = Math.PI / 180 * 55;
+controls.minDistance = frame.distance * 0.35;
+controls.maxDistance = frame.distance * 2.2;
+
+// ---- INSIDE SOMEBODY ELSE'S PAGE, THE SCROLL IS NOT OURS.
+//
+// On our own page this model is the thing you came for, and it may have every
+// gesture. In a gallery on a builder's website it is one item among the
+// photographs, and a visitor scrolling past it must not be captured by it —
+// which is exactly what happened: a thumb landing on the model while scrolling
+// the page turned the house instead, and a mouse wheel over it zoomed instead
+// of moving the page on. The visitor cannot even name what went wrong; the page
+// just feels broken, on the seller's site, in front of their customer.
+//
+// So in an embed the plain gestures go back to the page and the deliberate ones
+// stay ours: two fingers to turn and pinch, Ctrl (or ⌘) with the wheel to zoom.
+// This is the rule every embedded map settled on, and for the same reason.
+//
+// NOT a smaller version of the model's controls — the same controls, with the
+// two gestures a host page needs handed back.
+if (embedded) {
+  // ONE finger is the page's. `default: state = NONE` in OrbitControls makes a
+  // null entry a no-op rather than an error.
+  controls.touches = { ONE: null, TWO: THREE.TOUCH.DOLLY_ROTATE };
+  // OrbitControls writes `touch-action: none`, which is what takes the scroll
+  // away at the browser level. `pan-y` gives vertical scrolling back to the
+  // page and leaves everything else to us.
+  renderer.domElement.style.touchAction = 'pan-y';
+
+  // THE WHEEL IS INTERCEPTED ON THE PARENT, and it has to be. OrbitControls
+  // registered its own wheel listener on the canvas at construction, and at the
+  // target element listeners fire in registration order regardless of phase —
+  // so a later listener on the canvas could not stop it. A capture listener on
+  // the stage runs before the target phase and can.
+  $('stage').addEventListener('wheel', (e) => {
+    if (e.ctrlKey || e.metaKey) return;   // deliberate: let it zoom
+    e.stopPropagation();                  // ordinary: the page keeps its scroll
+    showGestureHint(coarsePointer()
+      ? 'Use two fingers to turn the model'
+      : 'Hold Ctrl and scroll to zoom');
+  }, { capture: true, passive: true });
+
+  // And the same sentence when a single finger does nothing, so the visitor is
+  // told rather than left to conclude the model is dead.
+  //
+  // ONLY when the finger is alone. A two-finger gesture starts with a
+  // pointerdown too, so the naive version told someone who was ALREADY using
+  // two fingers to use two fingers, over the model they were turning. The hint
+  // waits a moment for a second finger and stands down if one arrives.
+  const down = new Set();
+  let hintSoon = null;
+  renderer.domElement.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    down.add(e.pointerId);
+    if (down.size > 1) { clearTimeout(hintSoon); return; }
+    hintSoon = setTimeout(() => {
+      if (down.size === 1) showGestureHint('Use two fingers to turn the model');
+    }, 120);
+  }, { passive: true });
+  for (const end of ['pointerup', 'pointercancel', 'pointerleave']) {
+    renderer.domElement.addEventListener(end, (e) => down.delete(e.pointerId), { passive: true });
+  }
+}
+
+const coarsePointer = () => matchMedia('(pointer: coarse)').matches;
+
+/** Say what to do instead, briefly, and only after they tried the old way. */
+let hintTimer = null;
+function showGestureHint(text) {
+  const el = $('gestureHint');
+  el.textContent = text;
+  el.classList.add('show');
+  // ONE timer, cancelled on every showing. See the note on #gestureHint: the
+  // version with a second timer for the display flip let an old fade-out hide a
+  // new hint, which is a visitor scrolling twice and being told once.
+  clearTimeout(hintTimer);
+  hintTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// The house view: back and above, at the fitted distance so the whole model is
+// inside the frame from the angle the user actually starts at — a distance that
+// only fits a head-on view is not a fit.
+const homePos = new THREE.Vector3();
+const homeTarget = new THREE.Vector3();
+
+// HOW FAR THE IDLE VIEW HAS TURNED, in radians, kept across everything that
+// re-measures the frame. Without it a resize or a look change would snap the
+// model back to the angle it started at, mid-turn.
+let spin = 0;
+
+function measureHome() {
+  frame = fitFrame();
+  controls.minDistance = frame.distance * 0.35;
+  controls.maxDistance = frame.distance * 2.2;
+  homeTarget.set(frame.target.x, frame.target.y, frame.target.z);
+  placeHome();
+}
+
+/** The resting pose: back and above, turned by however far the idle spin got. */
+function placeHome() {
+  const up = frame.distance * 0.55;
+  const back = frame.distance * 0.72;
+  homePos.set(
+    frame.target.x + Math.sin(spin) * back,
+    frame.target.y + up,
+    frame.target.z + Math.cos(spin) * back,
+  );
+}
+
+function goHome() {
+  measureHome();
+  controls.target.copy(homeTarget);
+  camera.position.copy(homePos);
+  camera.lookAt(controls.target);
+  controls.update();
+}
+goHome();
+
+// ---- drifting back to the house view
+//
+// After the user lets go, the model returns on its own. WHY IT IS NOT A SNAP:
+// a view that jumps back reads as the app overruling you. A slow drift reads as
+// the model settling, and it also answers the question a customer actually has
+// after spinning something — "how do I get back?" — without a button.
+//
+// INTERRUPTIBLE, WHICH IS THE PART THAT MATTERS (apple-design §3). Touching the
+// model at any point during the return cancels it instantly, and the next
+// return is timed from THAT release. The motion also starts from wherever the
+// camera currently is, never from a remembered pose, so grabbing it mid-drift
+// cannot make it jump.
+// ---- WHOEVER ASKED FOR LESS MOTION GETS LESS MOTION.
+//
+// Every operating system has a Reduce Motion switch, and people turn it on for
+// a reason: motion on a screen makes some of them dizzy or sick. It is a real
+// vestibular condition, not a preference about taste.
+//
+// This file had exactly one matchMedia in it and it was (pointer: coarse), so
+// the model turned for everybody -- including somebody who had told their
+// computer, at the operating-system level, that they did not want things to
+// move on their own. The marketing site honours the same switch everywhere
+// else; this was the one screen that did not.
+//
+// WHAT CHANGES AND WHAT DOES NOT. The idle turn stops: that is the perpetual
+// motion. Coming back to the resting pose after a look around does NOT stop --
+// a model left stranded on somebody's corner is the bug Saman found by zooming
+// in and waiting -- it simply happens AT ONCE instead of easing over a second.
+// The capability is untouched: the model still turns, drags and zooms whenever
+// a person moves it. It is no longer done TO them.
+//
+// Read live rather than once: this switch gets flipped while a page is open,
+// usually by somebody who has just started to feel it.
+const lessMotion = matchMedia('(prefers-reduced-motion: reduce)');
+
+const IDLE_MS = 15000;
+// Critically damped: it eases in and settles without overshoot. A bounce here
+// would be motion for its own sake — nothing was thrown, the user simply
+// stopped touching it.
+const EASE = 1.6;
+// ALREADY IDLE AT LOAD, so the turn is the model's default state rather than
+// something that begins fifteen seconds after a visitor has looked away. Any
+// touch resets this to now, and the wait applies from then on.
+let idleSince = performance.now() - IDLE_MS;
+let returning = false;
+
+// EVERYTHING COMES BACK, INCLUDING A ZOOM.
+//
+// This used to treat a pan or a zoom as a deliberate look and hold it until
+// Reset view was pressed — the reasoning being that somebody who zoomed into a
+// room to read it should not have the view pulled out from under them.
+//
+// Saman zoomed in and waited, and the model never came back. The reasoning was
+// sound and the behaviour was still wrong, for a reason the reasoning missed:
+// on a seller's website nobody presses Reset view. There is no Reset view. A
+// visitor zooms, gets distracted, scrolls past, and the next person to look at
+// that page finds a house cropped to somebody else's corner.
+//
+// So the rule is now one rule: fifteen seconds after the last touch, the model
+// returns to its resting pose and takes up the slow turn again. It is long
+// enough to read a room and short enough that the model is never left stranded.
+// Reset view remains the immediate way back for someone who wants it now.
+controls.addEventListener('start', () => { returning = false; });
+controls.addEventListener('end', () => { idleSince = performance.now(); });
+
+function drift(dtSec) {
+  if (!returning) {
+    if (performance.now() - idleSince < IDLE_MS) return;
+    // No turn, and no eased return either: put it back and be still.
+    if (lessMotion.matches) {
+      measureHome();
+      camera.position.copy(homePos);
+      controls.target.copy(homeTarget);
+      camera.lookAt(controls.target);
+      return;
+    }
+    if (camera.position.distanceTo(homePos) < 0.01) { idleTurn(dtSec); return; }
+    // Re-measure at the moment it starts: the frame may have been resized
+    // while the user was looking around.
+    measureHome();
+    if (camera.position.distanceTo(homePos) < 0.01) { idleTurn(dtSec); return; }
+    returning = true;
+  }
+  // Frame-rate independent exponential approach — the same fraction of the
+  // REMAINING distance every second, so it looks identical at 30fps and 120.
+  const k = 1 - Math.exp(-EASE * dtSec);
+  camera.position.lerp(homePos, k);
+  controls.target.lerp(homeTarget, k);
+  if (camera.position.distanceTo(homePos) < 0.02) {
+    camera.position.copy(homePos);
+    controls.target.copy(homeTarget);
+    returning = false;
+  }
+}
+
+// ---- THE MODEL TURNS WHILE NOBODY IS TOUCHING IT.
+//
+// A still 3D model in a gallery reads as a picture, and a picture is what the
+// photographs beside it already are. A slow turn is what tells a buyer this one
+// can be moved — without a badge, an arrow, or a line of instructions. It is
+// also the honest use of the medium: the reason to show a house in 3D is that
+// it has sides.
+//
+// SLOW ENOUGH TO BE FURNITURE, not a carousel: a full revolution takes over a
+// minute, which is movement you notice at the edge of your eye and never have
+// to wait for. Nothing about the model is hidden while it turns, because the
+// view keeps its height and distance and only the angle changes.
+//
+// IT IS NOT AN ANIMATION, IT IS THE RESTING POSE. The turn moves `homePos`, the
+// pose everything else already returns to, so a visitor who grabs the model
+// interrupts it exactly the way they interrupt the drift home — instantly, and
+// with the same code. When they let go it eases back onto the turn rather than
+// jumping to where the turn had got to. One state machine, one destination.
+//
+// A ZOOM PAUSES IT, IT DOES NOT END IT. Any touch resets the idle clock, so
+// somebody reading a room has fifteen uninterrupted seconds and then the model
+// eases back and resumes. The version that held a zoomed view until Reset view
+// was pressed assumed a Reset view button exists where the model is being
+// looked at, and on a seller's website it does not.
+const SPIN_SECONDS_PER_TURN = 75;
+function idleTurn(dtSec) {
+  spin += (Math.PI * 2 / SPIN_SECONDS_PER_TURN) * dtSec;
+  placeHome();
+  camera.position.copy(homePos);
+  camera.lookAt(controls.target);
+}
+
+// ---- ZOOM BUTTONS
+//
+// The wheel and the pinch already zoom, so this is not a new capability — it is
+// the capability made VISIBLE, and in the embed it is close to the only one.
+// There, one finger and a plain wheel are handed back to the host page on
+// purpose (see the `embedded` block above), which leaves a phone visitor with a
+// two-finger pinch nobody has told them about. A pair of buttons is what every
+// map settled on for exactly this bargain.
+//
+// IT MOVES THE CAMERA ALONG ITS OWN SIGHT LINE, toward and away from whatever
+// the controls are already looking at. `zoomToCursor` governs the wheel and is
+// right there — the pointer names a place. A button has no place to name, so
+// the centre of the view is the only honest answer, and it also means the two
+// buttons are exact inverses of each other.
+const ZOOM_STEP = 1.3;
+const ZOOM_EASE = 11;
+
+// The distance being travelled TO, or null when nothing is in flight. Held as a
+// goal rather than applied at the press so a held button accumulates into one
+// smooth move instead of a stack of jumps.
+let zoomGoal = null;
+const camDistance = () => camera.position.distanceTo(controls.target);
+
+function zoomBy(factor) {
+  const from = zoomGoal ?? camDistance();
+  const to = Math.min(controls.maxDistance, Math.max(controls.minDistance, from * factor));
+  zoomGoal = to;
+  // A ZOOM IS A TOUCH. Same rule as the drift home: the idle clock restarts, so
+  // somebody who has just pulled in close gets their fifteen seconds before the
+  // model eases back and takes up its turn. Without this the drift would undo
+  // the press within a frame or two, which is the button reading as broken.
+  idleSince = performance.now();
+  returning = false;
+}
+
+function stepZoom(dtSec) {
+  // Never while the model is on its way home — two things moving one camera on
+  // the same frame is a fight, and the drift is the one with the destination.
+  if (returning) zoomGoal = null;
+  if (zoomGoal == null) return;
+  const dir = camera.position.clone().sub(controls.target);
+  const d = dir.length();
+  if (!(d > 0)) { zoomGoal = null; return; }
+  // Frame-rate independent, the same shape as drift().
+  const next = d + (zoomGoal - d) * (1 - Math.exp(-ZOOM_EASE * dtSec));
+  camera.position.copy(controls.target).addScaledVector(dir.divideScalar(d), next);
+  if (Math.abs(next - zoomGoal) < Math.max(0.001, zoomGoal * 0.002)) zoomGoal = null;
+}
+
+// Disabled state, written only when it CHANGES. This is called every frame and
+// an unconditional DOM write per frame is layout work for nothing.
+let zoomEnds = '';
+function paintZoom() {
+  const d = camDistance();
+  // A hair inside the limit, so a camera resting exactly on it does not flicker
+  // between enabled and disabled as damping settles.
+  const now = `${d <= controls.minDistance * 1.01}|${d >= controls.maxDistance * 0.99}`;
+  if (now === zoomEnds) return;
+  zoomEnds = now;
+  const [atNear, atFar] = now.split('|');
+  $('bZoomIn').disabled = atNear === 'true';
+  $('bZoomOut').disabled = atFar === 'true';
+}
+
+// CLICK FOR THE STEP, HOLD FOR THE REPEAT — and the click is what fires first,
+// so a keyboard press and a tap take exactly the same path. An earlier shape
+// stepped on pointerdown AND on click, which double-stepped every mouse press.
+for (const [id, factor] of [['bZoomIn', 1 / ZOOM_STEP], ['bZoomOut', ZOOM_STEP]]) {
+  const el = $(id);
+  el.addEventListener('click', () => zoomBy(factor));
+  let hold = null, repeat = null;
+  const stop = () => { clearTimeout(hold); clearInterval(repeat); hold = repeat = null; };
+  el.addEventListener('pointerdown', () => {
+    stop();
+    hold = setTimeout(() => {
+      repeat = setInterval(() => {
+        if (el.disabled) { stop(); return; }
+        zoomBy(factor);
+      }, 90);
+    }, 380);
+  });
+  for (const end of ['pointerup', 'pointercancel', 'pointerleave']) {
+    el.addEventListener(end, stop);
+  }
+}
+
+// ---- the floor picker
+//
+// SWITCHING A FLOOR KEEPS THE CAMERA ANGLE and only re-fits the distance and
+// target. The whole point of two floors is COMPARING them — the customer wants
+// the ground floor from this angle, then the floor above from the SAME angle —
+// and a view that jumps makes that impossible (apple-design §7).
+//
+// A floor that has not been confirmed in Review is LISTED AND DISABLED with the
+// reason, never hidden. A floor missing from the list reads as a bug in our
+// software; a disabled one reads as a step the customer has not taken yet.
+// Returns how many floors are actually viewable, which is what decides whether
+// an embedded visitor gets a floor switcher at all.
+async function buildFloorPicker() {
+  if (!ctx) { $('bFloor').closest('.panel').hidden = true; return 0; }
+  const floors = ctx.project.floors || [];
+  const sel = $('bFloor');
+  let ready = 0;
+  for (const f of floors) {
+    // A PUBLISHED FLOOR IS READY BY DEFINITION — it exists because a render was
+    // uploaded with it. `floorStage` reads the artifact store, which a visitor
+    // does not have; asking it here would report every floor of a published
+    // home as unrendered and leave the switcher with one entry.
+    const isReady = visiting ? true : (await floorStage(ctx.project.id, f.id)) === 'styled';
+    if (isReady) ready++;
+    // A visitor on the builder's website is not the person who can fix an
+    // unrendered floor, and "confirm it in Review first" is our workshop
+    // talking. In an embed those floors are simply not there.
+    if (embedded && !isReady) continue;
+    const opt = document.createElement('option');
+    opt.value = f.id;
+    opt.textContent = isReady ? f.name : `${f.name} (confirm it in Review first)`;
+    opt.disabled = !isReady;
+    opt.selected = f.id === ctx.floor.id;
+    sel.append(opt);
+  }
+  sel.disabled = sel.options.length < 2;
+  sel.onchange = () => {
+    // NOTHING TO DO IF IT ALREADY AGREES WITH THE URL.
+    //
+    // The floor shown is decided by the URL; the select only reports it. So a
+    // change event that does not actually change the floor has no business
+    // navigating, and this line makes every spurious one a no-op.
+    //
+    // It is here because of something I saw once and could not reproduce: an
+    // embed loaded on Main Floor came back showing Basement, URL and all,
+    // without being touched. Four probes failed to make it happen again (plain
+    // reload, two viewport resizes, and a back-button restore all kept the two
+    // in agreement), so I have no diagnosis and am not writing one down. What
+    // is certain is that browsers restore form control state on their own
+    // schedule, and a restored value that reaches this handler would navigate a
+    // visitor to a floor nobody picked. `autocomplete="off"` on the select asks
+    // them not to; this guard means it does not matter if they do anyway.
+    if (sel.value === ctx.floor.id) return;
+    // A floor is a separate model with its own record and its own render, so
+    // this is a navigation rather than a swap, the same rule the rest of the
+    // pipeline follows, and it keeps one floor's data from leaking into
+    // another's.
+    //
+    // Rebuilt from the CURRENT url rather than from scratch: inside an embed
+    // this navigates the iframe, and dropping look= or embed=1 would drop a
+    // visitor out of the builder's page and into our app, wearing the wrong
+    // look. That is the whole embed broken by one missing parameter.
+    // Named, and on THIS page: the browser does not paint the next one for a
+    // moment, and an unacknowledged click is how a control gets pressed twice.
+    const picked = [...sel.options].find((o) => o.value === sel.value)?.textContent;
+    showLoading(picked ? `Loading ${picked}…` : 'Loading…');
+    const next = new URLSearchParams(location.search);
+    next.set('p', ctx.project.id);
+    next.set('f', sel.value);
+    next.set('look', theme);
+    location.search = `?${next}`;
+  };
+  return ready;
+}
+const readyFloors = await buildFloorPicker();
+
+// ---- WHAT EVERY FLOOR OF THIS PROJECT ACTUALLY HAS.
+//
+// The floor picker only needed to know about THIS floor. The embed needs the
+// whole project, because an embed that switches floors must not switch looks
+// with them: a visitor moving from the main floor to the basement and finding
+// the plan has gone from light to dark reads as a broken page, and the person
+// who could fix it is not the one looking at it.
+//
+// So the survey is per floor AND per look, and the gate below refuses to hand
+// over an all-floors embed until one look covers every floor. That makes the
+// mixed state impossible rather than explained, which is the only version of
+// this a customer never sees.
+/**
+ * The look of a floor's untagged render, by measuring the image.
+ *
+ * Whole-image average rather than the floor tone the geometry pass finds: this
+ * runs for every legacy floor in the project and only has to separate light
+ * from dark, which an average does at a fraction of the cost. A dark render
+ * averages around 40, a light one past 200.
+ */
+async function lookOfStored(fScope) {
+  try {
+    const url = await getArtifactUrl(fScope, 'styled');
+    return url ? lookOfImage(await loadImg(url)) : null;
+  } catch {
+    return null;   // an unreadable render is not a look; the gate stays closed
+  }
+}
+
+// THE SURVEY IS THE BUILDER'S, and it reads the artifact store floor by floor.
+// A visitor has neither the store nor a use for the answer: everything it feeds
+// — the embed gate, the look rows, the publish panel — belongs to the person
+// who owns the plan, and all of it is hidden below when someone is visiting.
+const survey = [];
+if (ctx && !visiting) {
+  for (const f of ctx.project.floors || []) {
+    const fScope = scopeFor(ctx.project.id, f.id);
+    survey.push({
+      id: f.id,
+      name: f.name || 'Floor',
+      // 'empty' | 'uploaded' | 'confirmed' | 'styled'. A floor that has not
+      // reached 'confirmed' cannot be rendered at all, and telling its owner to
+      // render it would be telling them to do something the app will not let
+      // them do yet. That state gets its own sentence.
+      stage: await floorStage(ctx.project.id, f.id),
+      light: await hasArtifact(fScope, styledKind('light')),
+      dark: await hasArtifact(fScope, styledKind('dark')),
+    });
+    // AND THE LOOK OF AN UNTAGGED RENDER, READ OFF IT.
+    //
+    // The two lines above ask for a kind that names a look, so a floor rendered
+    // before the looks were separate kinds counted as having neither, and the
+    // embed gate said "Main Floor has no dark render yet" about a floor holding
+    // one. Same false claim the look panel was making, from the same cause.
+    // Measured only where the label is missing, so nothing is decoded for a
+    // floor that already says what it is.
+    const last = survey[survey.length - 1];
+    if (!last.light && !last.dark && await hasArtifact(fScope, 'styled')) {
+      last[await lookOfStored(fScope)] = true;
+    }
+  }
+}
+
+/** Floors of this project with no render of `look`, split by what they need. */
+function gapsFor(look) {
+  const missing = survey.filter((f) => !f[look]);
+  return {
+    ok: missing.length === 0,
+    // Ready to render, just not rendered in this look.
+    render: missing.filter((f) => f.stage === 'confirmed' || f.stage === 'styled'),
+    // Not through Review yet, so rendering is not yet on the table.
+    review: missing.filter((f) => f.stage !== 'confirmed' && f.stage !== 'styled'),
+  };
+}
+
+/** Plain-English list: "Basement", "Basement and Upper", "A, B and C". */
+function nameList(floors) {
+  const n = floors.map((f) => f.name);
+  if (n.length <= 1) return n[0] || '';
+  return `${n.slice(0, -1).join(', ')} and ${n[n.length - 1]}`;
+}
+
+// ---- WHICH LOOKS THIS FLOOR HAS, and what to do about the one it does not.
+//
+// The 3D stands on the 2D render, so its looks are not its own to offer. That
+// used to be hidden: the theme button either appeared or did not, and a floor
+// with one render showed a light model on a dark plan with no explanation.
+// Stating the dependency is both the honest answer and the simplest one.
+const LOOKS = [
+  { id: 'light', name: 'Light', swatch: '#EDEAE3' },
+  { id: 'dark', name: 'Dark', swatch: '#3A3D40' },
+];
+
+function studioHref() {
+  return ctx ? floorHref('studio.html', ctx.project.id, ctx.floor.id) : 'studio.html';
+}
+
+function paintLooks() {
+  const host = $('looks');
+  // A VISITOR OWNS NONE OF THIS. The look was pinned by the builder when they
+  // published; "Render light in Studio" is our workshop talking to someone who
+  // has never heard of Studio and could not act on it if they had.
+  if (visiting) { host.closest('.panel').hidden = true; return; }
+  host.innerHTML = '';
+  for (const L of LOOKS) {
+    const has = ownRender[L.id];
+    const active = theme === L.id;
+    const row = document.createElement('div');
+    row.className = has ? (active ? 'on' : '') : 'off';
+    const sw = document.createElement('span');
+    sw.className = 'swatch'; sw.style.background = L.swatch;
+    const name = document.createElement('span');
+    name.className = 'name'; name.textContent = L.name;
+    row.append(sw, name);
+    if (has) {
+      if (active) {
+        const st = document.createElement('span');
+        st.className = 'state'; st.textContent = 'showing';
+        row.append(st);
+      } else {
+        const b = document.createElement('button');
+        b.className = 'btn btn--secondary btn--sm pick'; b.textContent = 'Show';
+        b.onclick = () => switchTo(L.id);
+        row.append(b);
+      }
+    } else {
+      const a = document.createElement('a');
+      a.className = 'state'; a.href = studioHref();
+      a.textContent = `Render ${L.name.toLowerCase()} in Studio`;
+      row.append(a);
+    }
+    host.append(row);
+  }
+  const missing = LOOKS.filter((L) => !ownRender[L.id]);
+  $('lookNote').textContent = missing.length
+    ? `Your ${LOOKS.find((L) => ownRender[L.id])?.name.toLowerCase() ?? 'current'} render is the one this model stands on. Render the other look in Studio and it appears here too.`
+    : 'Both looks are rendered, so both are available here. Switching costs nothing.';
+}
+
+// ---- THE PLAN TITLE, inherited rather than owned.
+//
+// Studio holds the field; this page reads what it saved and falls back to the
+// same default Studio does, so the words over the model and the words on the
+// sheet are the same words by construction rather than by agreement.
+//
+// The caption's on/off is NOT stored. It is a property of the embed the builder
+// is building, and it travels in the code they paste, which is the durable
+// thing here. Storing it too would make the page and the pasted code two
+// records of one choice, able to disagree.
+const planTitle = demo
+  ? (demo.charAt(0).toUpperCase() + demo.slice(1))
+  : planTitleOf(ctx.project, ctx.floor);
+let captionOn = q.get('title') !== '0';
+
+function paintCaption() {
+  // The caption itself stays — it is the builder's title over their model, and
+  // the reason it is published. Only the EDITING panel around it is theirs.
+  if (visiting) $('titleShow').closest('.panel').hidden = true;
+  const el = $('planCaption');
+  el.textContent = planTitle;
+  el.hidden = !captionOn || !planTitle;
+  // SHARE MODE PUTS THE TITLE IN THE BAR, NOT OVER THE MODEL. A link arrives
+  // with no page around it, so the visitor needs to be told what they are
+  // looking at before anything else; over the drawing it competes with the
+  // drawing. The caption over the model is switched off in this mode for the
+  // same reason: two copies of one title on a phone screen is one too many.
+  // The document title matters here too — it is the tab, and it is what a
+  // browser offers when the visitor bookmarks or re-shares the link.
+  if (document.documentElement.classList.contains('shared')) {
+    $('shareTitle').textContent = planTitle || 'Floor plan';
+    el.hidden = true;
+    document.title = planTitle ? `${planTitle} · StyloPlan` : '3D view · StyloPlan';
+  }
+  const btn = $('bCaption');
+  btn.classList.toggle('on', captionOn);
+  btn.title = captionOn ? 'Hide the title over the model' : 'Show the title over the model';
+  $('titleShow').textContent = planTitle || 'Not set';
+  $('titleFrom').innerHTML = ctx
+    ? `Set in <a href="${studioHref()}">Studio</a>, where it also prints on your image.`
+    : 'From this demo plan.';
+}
+$('bCaption').onclick = () => { captionOn = !captionOn; paintCaption(); paintEmbed(); };
+paintCaption();
+
+// ---- controls
+const toggle = (btn, on) => btn.classList.toggle('on', on);
+function paintLabelsButton() {
+  // A CONTROL THAT CANNOT DO ANYTHING MUST NOT LOOK LIVE. Saman reported the
+  // labels button as broken; it was not, the plan he had open carries no
+  // confirmed labels at all, so pressing it turned nothing off. The button
+  // changed colour and the model did not move, which is exactly what broken
+  // looks like. Room names come from the confirmed record, so a floor nobody
+  // has named has none to hide.
+  const any = (rec.confirmedLabels || []).length > 0;
+  $('bLabels').disabled = !any;
+  if (!any) {
+    $('bLabels').title = 'This floor has no room names yet. Name them in Review.';
+    toggle($('bLabels'), false);
+    return;
+  }
+  toggle($('bLabels'), labelsOn);
+  // The word stays put and the STATE moves, which is what `toggle` paints. A
+  // caption that rewrites itself on every press ("Room names on" becoming "Room
+  // names off") reads as a label one moment and a command the next, and it was
+  // long enough to push the strip onto two rows on a phone.
+  $('bLabels').title = labelsOn ? 'Hide the room names' : 'Show the room names';
+}
+paintLabelsButton();
+$('bLabels').onclick = () => {
+  labelsOn = !labelsOn;
+  // `current`, never `built`. `built` is the group made on load; every theme
+  // change replaces it, so touching it here silently stopped working the
+  // moment anyone pressed Theme — which is the only way to reach light mode,
+  // so the button appeared broken there and nowhere else.
+  current.labelGroup.visible = labelsOn;
+  paintLabelsButton();
+};
+
+// SWITCHING THEME SWAPS THE RENDER, not just the palette. The other theme's
+// image is loaded, its own walls traced out of it, and the scene rebuilt on
+// that — then cached, so coming back is instant and free.
+//
+// A floor styled in only one theme says so instead of half-switching. That is
+// the honest answer: the missing look has not been rendered, and pretending
+// otherwise by tinting the one we have is what produced a light model standing
+// on a dark plan.
+// THE BUTTON IS NAMED AFTER WHAT IT DOES, not after what it belongs to.
+//
+// It said "Theme", which names the setting and leaves the outcome to be
+// guessed. On a light plan it now reads "Dark mode" and on a dark one "Light
+// mode", so the label states the view you get by pressing it. Same rule as
+// every other action on this page.
+//
+// AND IT IS HIDDEN WHEN THERE IS ONLY ONE RENDER. A floor styled in one look
+// has nothing to switch to: the model stands on that render and the other view
+// does not exist. Offering the swap and then refusing it makes the customer
+// press a button to be told no; the floor picker beside it already follows the
+// same rule and disappears on a single-floor plan.
+//
+// Checked by asking the artifact store, not by loading and tracing the other
+// image, so a page with one render does no extra work at all.
+const otherTheme = () => (theme === 'dark' ? 'light' : 'dark');
+function paintThemeButton() {
+  const next = otherTheme();
+  const btn = $('bTheme');
+  // Only offered over the stage when the other look actually exists. The panel
+  // on the left is where a missing look is explained; a dead button here would
+  // say nothing.
+  btn.hidden = !ownRender[next];
+  btn.textContent = next === 'dark' ? 'Dark mode' : 'Light mode';
+  btn.title = `Show this plan in ${next} mode`;
+}
+paintThemeButton();
+
+
+/** Show a look. Used by the Look rows and by the button over the stage. */
+async function switchTo(next) {
+  if (next === theme) return;
+  const btn = $('bTheme');
+  btn.disabled = true;
+  // The first switch to a look traces that render, which is the same second the
+  // floor switch spends. Afterwards `frames` has it and this is instant — so
+  // the notice is only ever on screen when there is actually a wait.
+  if (!frames.has(next)) showLoading(`Loading ${next} view…`);
+  try {
+    const f = await frameFor(next);
+    if (!f) return;
+    view = f;
+    theme = next;
+    rebuild();
+  } finally {
+    btn.disabled = false;
+    showLoading(null);
+  }
+}
+$('bTheme').onclick = () => switchTo(otherTheme());
+// Clears the hold too, so Reset view is the one way back from a panned or
+// zoomed view and rotation starts settling on its own again.
+$('bReset').onclick = () => {
+  // RESET PUTS BACK THE RESTING STATE, AND THE RESTING STATE TURNS. Setting
+  // idleSince to now would have left the model frozen for another fifteen
+  // seconds after an explicit "put it back", which reads as the button only
+  // half working. Reset is not a period of quiet — it is the answer to "how do
+  // I get back", and back includes the slow turn.
+  goHome();
+  idleSince = performance.now() - IDLE_MS;
+  returning = false;
+};
+
+// ---- save the model as an image
+//
+// The product's whole deliverable is pictures, and this was the one view a
+// customer could not get a picture of. An estate agent wants the 3D beside the
+// photos in a listing; without this the model can only be looked at.
+//
+// TWO THINGS MAKE IT MORE THAN canvas.toDataURL().
+//
+// The context is created without `preserveDrawingBuffer`, which is the right
+// default — keeping the buffer costs memory on every frame for a feature used
+// once. The consequence is that after a frame is presented the buffer is
+// undefined, and reading it returns transparent black. That is not theoretical:
+// it silently produced identical byte counts for three different camera
+// positions while I was measuring something else. So the capture RENDERS and
+// READS in the same turn, with nothing between them.
+//
+// And it renders at 2x. On screen the canvas is about 865px, which is small
+// beside a listing photo. The renderer is resized, drawn, read and restored, so
+// what the customer downloads is not what happens to fit their window.
+// Same rule Studio uses for its own downloads: strip what Windows refuses in a
+// filename, then collapse whitespace. Duplicated rather than imported because
+// studio.html is a page, not a module, and one small function is a smaller
+// price than the seam that sharing it would need.
+const fileSafe = (s) => String(s || '')
+  .replace(/[\\/:*?"<>|]/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim();
+
+const SHOT_SCALE = 2;
+const shotBlob = () => new Promise((ok) => {
+  const w = stageSize().w, h = stageSize().h;
+  renderer.setSize(w * SHOT_SCALE, h * SHOT_SCALE, false);
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.render(scene, camera);
+  renderer.domElement.toBlob((b) => {
+    // Restored before the promise settles, so a caller cannot see the stage at
+    // the wrong size even for one frame.
+    renderer.setSize(w, h, false);
+    camera.updateProjectionMatrix();
+    renderer.render(scene, camera);
+    ok(b);
+  }, 'image/png');
+});
+
+$('bShot').onclick = async () => {
+  const btn = $('bShot');
+  btn.disabled = true;
+  const was = btn.textContent;
+  try {
+    const blob = await shotBlob();
+    if (!blob) { btn.textContent = 'Could not save'; return; }
+    // Named the way Studio names its exports, so a folder of one plan's files
+    // sorts together instead of one of them being called "download.png".
+    const home = fileSafe(ctx?.project?.name || rec?.name) || 'Floor plan';
+    const parts = [rec?.name, theme === 'light' ? 'Light' : 'Dark', '3D']
+      .map(fileSafe).filter(Boolean).join(' - ');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${home} (${parts}).png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+  } finally {
+    setTimeout(() => { btn.disabled = false; btn.textContent = was; }, 400);
+  }
+};
+
+// A theme or fixture change rebuilds rather than mutating materials in place:
+// the group owns its geometries and disposes them, so rebuilding is the honest
+// way to change what it contains without leaking the old ones.
+function rebuild() {
+  scene.remove(current.group);
+  current.dispose();
+  current = buildExtruded(view.ex, buildOpts());
+  // Carried across the rebuild, because `labelsOn` is the only thing that knows.
+  current.labelGroup.visible = labelsOn;
+  scene.add(current.group);
+  scene.background.set(THEMES[theme].bg);
+  document.body.dataset.view = theme;
+  paintThemeButton();
+  paintLooks();
+  paintEmbed();
+  // The published state is per LOOK — a home published in light is not
+  // published in dark — so switching looks changes the answer. Reached only by
+  // a user pressing a look, which is long after the state below is set up.
+  paintPublish();
+  // The new group is a different size — the light and dark renders trace
+  // slightly different footprints — so the fit limits are refreshed against it.
+  // Only the LIMITS: moving the camera would throw away the angle the customer
+  // chose, and comparing two looks from the same angle is the point of a toggle.
+  measureHome();
+  say();
+  sayLook();
+}
+say();
+sayLook();
+paintLooks();
+
+// ---- THE EMBED, which is what this page is FOR.
+//
+// An iframe rather than a script tag: the builder pastes one line, nothing on
+// their site can reach into ours and nothing of ours can reach into theirs, and
+// it works in every site builder that allows raw HTML.
+//
+// The look is pinned into the URL. A page embedded today should not change
+// character because a second render was bought next month, and a builder who
+// wants both puts two embeds on the page.
+// TWO SCOPES, and the gate applies to only one of them.
+//
+// 'one' is a single floor and is always available: one floor wearing one look
+// cannot contradict itself. 'all' carries the floor switcher, and is gated.
+//
+// The scopes exist so the gate never bills anyone for a floor they did not want
+// published. A builder with three floors who only wants the main one on their
+// website should not have to buy two more renders to get a working embed.
+/**
+ * The URL a visitor opens, in one of the two modes that have one.
+ *
+ * FACTORED OUT BECAUSE THERE ARE TWO CONSUMERS NOW and they must not drift: the
+ * iframe a builder pastes on their own site, and the link they send a customer.
+ * They differ in exactly one parameter. When this was inlined in embedCode the
+ * link would have been a second copy of the same six-part string, and the first
+ * time one of them gained a parameter the other would have been wrong on
+ * somebody else's website with no way for us to fix it.
+ *
+ * The base is resolved against THIS PAGE, not the domain root: on GitHub Pages
+ * the site lives in a subdirectory, so `location.origin + 'view3d.html'` names
+ * a page that does not exist. `new URL(..., location.href)` is right at a root
+ * and right in a subdirectory, and stays right if the site moves again.
+ *
+ * @param {boolean} all   carry the floor switcher
+ * @param {'embed'|'share'} mode
+ */
+function viewUrl(all, mode) {
+  return new URL('view3d.html', location.href).href
+    + `?p=${encodeURIComponent(ctx.project.id)}`
+    + `&f=${encodeURIComponent(ctx.floor.id)}`
+    + `&look=${encodeURIComponent(theme)}&${mode}=1`
+    + (all ? '&floors=all' : '');
+}
+
+function embedCode(scope) {
+  if (!ctx) return '';
+  const all = scope === 'all';
+  if (all && !gapsFor(theme).ok) return '';
+  const name = all ? (ctx.project.name || 'Floor plan') : (rec.name || 'Floor plan');
+  // RESOLVED AGAINST THIS PAGE, NOT AGAINST THE DOMAIN ROOT.
+  //
+  // This was `${location.origin}/view3d.html`, which is the same string right up
+  // until the site stops being at the root of a domain. On GitHub Pages it is a
+  // project site — samilest.github.io/styloplan-site/ — so origin + 'view3d.html'
+  // names a page that does not exist.
+  //
+  // And this string is not ours to fix afterwards. It is pasted into a
+  // builder's own website and stays there; a wrong one is a broken iframe on
+  // somebody else's page, found by their visitors. `new URL(..., location.href)`
+  // is right at a root and right in a subdirectory, and stays right if the site
+  // moves again.
+  const url = viewUrl(all, 'embed')
+    + (captionOn ? '' : '&title=0');
+  const title = name.replace(/"/g, '');
+  // A WRAPPER WITH A SHAPE, AND AN IFRAME THAT FILLS IT.
+  //
+  // `width="100%" height="520"` was the old line, and 520 is a guess about
+  // somebody else's page: too tall in a sidebar, too short across a hero. A
+  // ratio on the wrapper lets the height follow whatever width the site gives
+  // it, on a phone and on a desktop, with no media query on their side and
+  // nothing for them to configure.
+  //
+  // `max-width` is the one thing a builder may want to change and it is left
+  // in plain sight in the code, in pixels, rather than hidden in a menu here.
+  // One template literal with real line breaks, so what is pasted is what is
+  // read here. (An earlier version built it by concatenation with escaped
+  // newlines and one of them landed inside a single-quoted string, which does
+  // not survive a line break — the file would not parse.)
+  // A SHAPE ON A WIDE SCREEN, A FLOOR ON A NARROW ONE.
+  //
+  // A bare aspect-ratio keeps the same shape at every width, and on a phone
+  // that is the wrong answer: 16:9 across a 360px screen is 203px tall and the
+  // model is a stripe. The old fixed `height="520"` was better there by
+  // accident — it stayed 520 however narrow the page got.
+  //
+  // `min-height` gives both: the ratio decides the shape while there is room,
+  // and below that the frame stops shrinking and stays tall enough to be worth
+  // looking at. `max-height` is the same bargain at the other end — a portrait
+  // plan on a wide screen would otherwise make a frame taller than the
+  // visitor's window. No media query, nothing for the builder to configure,
+  // and it works in a site builder that only accepts raw HTML.
+  // `width:100%`, NOT `max-width:100%` ALONE — and this is measured, not
+  // stylistic. A bare max-width leaves the wrapper's width to be worked out from
+  // its contents, and in a FLEX or GRID parent that is what happens: the box
+  // shrink-wraps to the intrinsic width its own `min-height` implies, which for
+  // a 340px floor at 16/9 is 604px, and it sits there however wide the page is.
+  // Site builders lay their sections out with flex and grid, so this is not an
+  // edge case — Saman pasted it into Framer and it never once filled the width.
+  //
+  //   block parent   1035 / 1035     (both fine)
+  //   FLEX parent     604 / 1035     max-width alone / with width
+  //   GRID parent     604 / 1035
+  //
+  // A host container that is itself shrink-wrapped (inline-block, fit-content)
+  // stays 604 whatever we write, because there is no available width to fill.
+  // That one belongs to the host page and is said in the panel instead.
+  //
+  // `max-height` IN PIXELS, not 80vh. This markup usually ends up inside the
+  // builder's own preview frame, where `vh` measures that frame rather than the
+  // visitor's window and the cap means nothing it was written to mean.
+  // `height:100%` BEFORE the aspect-ratio, and this is the second half of the
+  // same lesson as the width.
+  //
+  // A site builder puts an embed in a layer whose height IT decides, and clips
+  // what does not fit. This markup carried an intrinsic height of its own — the
+  // ratio, floored at 340px — and simply ignored the room it was given. Measured
+  // in a 430px slot: the wrapper rendered 760px and was cut by 330, taking Reset
+  // view and the zoom buttons with it. That is what Saman's phone showed while
+  // his desktop, whose slot happened to be tall enough, looked right.
+  //
+  //   host slot 700px -> wrapper 760px, clipped by 60
+  //   host slot 430px -> wrapper 760px, clipped by 330
+  //
+  // `height:100%` resolves against the host's layer when the host has given one,
+  // and resolves to `auto` when it has not — at which point the ratio takes over
+  // exactly as before. One declaration, both hosts, no media query and nothing
+  // for the builder to configure.
+  //
+  // A slot shorter than the 340px floor is still clipped, and deliberately: a
+  // 3D model in a 200px band is not a smaller model, it is a broken one, and
+  // silently shrinking to fit would hide the host's mistake rather than show it.
+  return `<div style="display:block;width:100%;max-width:100%;height:100%;margin:0 auto">
+  <div style="position:relative;display:block;width:100%;height:100%;aspect-ratio:${embedShape()};min-height:340px;max-height:760px;border-radius:12px;overflow:hidden">
+    <iframe src="${url}" title="${title} in 3D"
+      style="position:absolute;inset:0;width:100%;height:100%;border:0"
+      loading="lazy" allowfullscreen></iframe>
+  </div>
+</div>`;
+}
+
+/**
+ * The width and height the pasted iframe carries.
+ *
+ * A NUMBER OR A PERCENTAGE, never both halves guessed. "Fills the space" keeps
+ * the responsive default that works in a gallery column of any width; the
+ * presets are the fixed sizes people expect to be offered; custom is clamped to
+ * something a 3D model can actually be seen in, because a 90px-tall frame is
+ * not a smaller model, it is a broken one.
+ */
+/**
+ * The frame's shape, as a CSS aspect-ratio.
+ *
+ * "Match the plan" measures the render actually on screen, so a tall plan gets
+ * a tall frame and nothing is letterboxed. Rounded to two decimals: the exact
+ * ratio would put a number like 1.2413793103448276 in a customer's HTML.
+ */
+function embedShape() {
+  const w = render?.naturalWidth || 4;
+  const h = render?.naturalHeight || 5;
+  return `${(w / h).toFixed(2)} / 1`;
+}
+
+/** 'all' while the toggle is on, 'one' otherwise. */
+let allFloors = false;
+function embedScope() {
+  return allFloors ? 'all' : 'one';
+}
+
+/**
+ * The scope paintEmbed last drew, so Copy link cannot disagree with the code in
+ * the box beside it. Recomputing it in the handler would have been a second
+ * expression for one fact -- and the handler cannot see `survey`, so the copy
+ * would have been the wrong one on a single-floor project.
+ */
+let currentScope = 'one';
+
+function paintEmbed() {
+  const panel = $('embed').closest('.panel');
+  // Hidden for a visitor for the same reason: it is the builder's code for the
+  // builder's website, and publishing is not a stranger's to offer.
+  if (!ctx || visiting) { panel.hidden = true; return; }
+  panel.hidden = false;
+
+  // The choice is only a choice when there is more than one floor to choose.
+  $('embedScope').hidden = survey.length < 2;
+  const scope = survey.length < 2 ? 'one' : embedScope();
+  currentScope = scope;
+  $('linkNote').textContent = '';
+  // A switch says its state with the knob; the label beside it names the thing
+  // being switched and does not change under it.
+  const sw = $('bAllFloors');
+  sw.setAttribute('aria-checked', scope === 'all' ? 'true' : 'false');
+  // A SWITCH THAT CANNOT BE TURNED ON SAYS SO BEFORE IT IS FLIPPED, rather
+  // than flipping and producing a paragraph about why nothing happened.
+  const gaps = gapsFor(theme);
+  sw.disabled = !gaps.ok && scope !== 'all';
+  sw.style.opacity = sw.disabled ? '.45' : '';
+  // BESIDE THE SWITCH, NOT IN A TOOLTIP. A title attribute is invisible on a
+  // phone and easy to miss anywhere else, and the reason a control is dead is
+  // exactly the thing a customer needs on screen. One clause: which floors, and
+  // what they need.
+  const short = [...gaps.render, ...gaps.review];
+  $('scopeLabel').innerHTML = `All ${survey.length} floors`
+    + (gaps.ok ? '' : ` <span class="subtle">— ${nameList(short)} `
+      + `${short.length > 1 ? 'need' : 'needs'} a ${theme} render</span>`);
+  sw.title = gaps.ok ? '' : `Every floor needs a ${theme} render first`;
+  const code = embedCode(scope);
+
+  $('embedReady').hidden = !code;
+  $('embedBlock').hidden = Boolean(code);
+
+  if (code) {
+    $('embed').value = code;
+    $('embedNote').textContent = `Shows the ${theme} look.`;
+    // What a visitor can do, told to the builder, who cannot see it from here.
+    // The look is deliberately absent: it is theirs, pinned into the code they
+    // paste, and not a visitor's to change on their page.
+    // ONE LINE UNDER THE SETTINGS, not four scattered through the panel. It
+    // says the two things a builder cannot see from here: how the frame will
+    // size itself on their page, and what a visitor will be able to do.
+    // WHAT IT DOES ON THEIR PAGE, in the words of the thing they are about to
+    // paste. It used to promise it "stays tall enough to be usable on a phone",
+    // which stopped being true the moment the frame started taking the host's
+    // height — and that promise is exactly what Saman's phone broke on.
+    $('embedCan').textContent = 'It fills the space your page gives it, and uses '
+      + `this plan's shape when your page sets no height. `
+      + (scope === 'all'
+        ? 'Visitors can turn the model, switch floors, and hide the room names.'
+        : 'Visitors can turn the model and hide the room names.');
+    return;
+  }
+
+  // Blocked. Say which floors, say what each one needs, and leave the way out
+  // in the same breath, because "you cannot have this yet" with no next step is
+  // the message people write to us about.
+  // ONE SENTENCE, AND IT NAMES THE FLOORS AND THE STEP.
+  //
+  // This was three paragraphs explaining the rule, the reason for the rule, and
+  // the way around it. The rule is not complicated — every floor in one look —
+  // and a builder reading three paragraphs to learn that the Basement needs a
+  // dark render is being made to work for their own app.
+  const g = gapsFor(theme);
+  const missing = [...g.render, ...g.review];
+  const many = missing.length > 1;
+  $('embedBlock').textContent = `All floors needs every floor in the same look. `
+    + `${nameList(missing)} ${many ? 'have' : 'has'} no ${theme} render`
+    + `${g.review.length ? ` (${nameList(g.review)} still needs Review first)` : ''}.`;
+}
+// ---- PUBLISHING: the step that makes the code above mean anything.
+//
+// The embed reads the plan out of the browser it is displayed in, and a buyer
+// on a seller's website has never opened StyloPlan — their browser holds
+// nothing. Publishing is what puts the confirmed record and the finished render
+// somewhere a stranger can read them. See docs/design-brief-embed-publishing.md.
+//
+// IT IS A SNAPSHOT, AND THAT WAS A PRODUCT DECISION. Rendering again does not
+// change what is already on a customer's website; the builder publishes again.
+// Safer, and it matches how the rest of the app treats a sign-off — but it is
+// only kind if the app then SAYS a newer render is ready, which is what
+// `stale` below is for. Without that line the builder is left wondering why
+// their site did not change, and the decision becomes a bug.
+
+/** {signedIn, rows, error} — what is published for this home. */
+let published = { signedIn: false, rows: null, error: null };
+/** Floor ids whose published copy is behind the render on this machine. */
+let stale = [];
+
+async function refreshPublished() {
+  if (!ctx) return;
+  published = await publishedState(ctx.project.id);
+  // Checked against the WHOLE home rather than the current embed scope: a floor
+  // is out of date whether or not this radio button happens to include it.
+  const all = ctx.project.floors?.length
+    ? homePayload(ctx.project, theme, (id) => Boolean(survey.find((f) => f.id === id)?.[theme])).ready
+    : [];
+  stale = published.rows ? await staleFloors(all, published.rows) : [];
+}
+
+/** The payload rows the CURRENT embed scope needs published. */
+function scopeRows() {
+  if (!ctx) return [];
+  if (embedScope() === 'all' && survey.length > 1) {
+    return homePayload(ctx.project, theme, (id) => Boolean(survey.find((f) => f.id === id)?.[theme])).ready;
+  }
+  const one = floorPayload(ctx.project, ctx.floor, theme);
+  return one ? [one] : [];
+}
+
+const isLive = (r) => published.rows?.get(r.floorId)?.look === theme;
+
+function paintPublish() {
+  const host = $('pubState');
+  host.innerHTML = '';
+  if (!ctx || visiting) return;
+
+  const rows = scopeRows();
+  const live = rows.filter(isLive);
+  // WHAT TO SAY IS DECIDED IN src/publish.js, and tested there. Everything below
+  // this line only draws it.
+  const st = publishState({
+    signedIn: published.signedIn,
+    readable: Boolean(published.rows),
+    total: rows.length,
+    live: live.length,
+    behind: live.filter((r) => stale.includes(r.floorId)).length,
+  });
+
+  if (st.showSwitch) {
+    const sw = document.createElement('button');
+    sw.className = 'switch';
+    sw.setAttribute('role', 'switch');
+    sw.setAttribute('aria-checked', st.on ? 'true' : 'false');
+    sw.setAttribute('aria-label', 'Share this plan');
+    sw.onclick = () => (st.on ? withdraw() : publishNow());
+    const label = document.createElement('span');
+    label.className = 'pub-name';
+    label.textContent = 'Share this plan';
+    const top = document.createElement('div');
+    top.className = 'row';
+    top.style.cssText = 'gap:10px;align-items:center;margin:0 0 6px';
+    top.append(sw, label);
+    host.append(top);
+  }
+
+  const status = document.createElement('div');
+  const text = document.createElement('div');
+  text.className = st.tone === 'warn' ? 'subtle warn' : 'subtle';
+  text.textContent = st.text;
+  status.append(text);
+
+  // UPDATE IS ALWAYS THERE WHILE IT IS LIVE, and that is not a style choice.
+  // It used to appear only when our own staleness check had fired — so the day
+  // the label positions were fixed, a change to coordinates rather than to the
+  // render, the check said nothing and the advice "press Publish again" pointed
+  // at a button that was not on the screen. Anything the app can only offer
+  // when its own check fires is unreachable exactly when that check is what is
+  // wrong. So it stays, demoted from a primary button to a quiet action: the
+  // STATUS changes, not whether the way out exists.
+  if (st.showUpdate) {
+    // A REAL BORDER. `btn--quiet` is only a colour, and on its own line that
+    // read as a heading rather than something to press — which is exactly what
+    // happened. `btn--secondary` is the design system's outlined control.
+    const up = document.createElement('button');
+    up.className = 'btn btn--secondary btn--sm pub-act';
+    up.textContent = 'Update the version on my website';
+    up.onclick = publishNow;
+    status.append(up);
+  }
+  host.append(status);
+  dimCode(!st.codeWorks);
+}
+
+/**
+ * The code box, greyed while nothing is on the web.
+ *
+ * A code that is correct and does nothing is the worst of both: it copies, it
+ * pastes, and the seller's page stays empty. The switch says why in words; this
+ * says it where the eye already is.
+ */
+function dimCode(off) {
+  const box = $('embed');
+  if (!box) return;
+  box.style.opacity = off ? '.5' : '';
+  $('copyEmbed').disabled = Boolean(off);
+  // The link is the same published floor, so it is dead in exactly the same
+  // cases the code is. Copying a link to a floor that is not shared would hand
+  // a builder something that shows their customer our "not being shared"
+  // message, which is worse than a disabled button.
+  $('copyLink').disabled = Boolean(off);
+}
+
+async function publishNow() {
+  const rows = scopeRows();
+  if (!rows.length) return;
+  const again = rows.every(isLive);
+  // THE DIALOG ASKS THE QUESTION THE SWITCH ASKED, in the same words. It used
+  // to say "Publish" and "Publish again" — our vocabulary, and the two labels
+  // the switch exists to replace. A confirmation that renames the thing you
+  // just pressed makes you wonder whether it is the same thing.
+  const ok = await askConfirm({
+    title: again ? 'Update your website?'
+      : `Show ${rows.length > 1 ? `${rows.length} floors` : 'this plan'} on your website?`,
+    body: again
+      // Naming what changes is the whole reason a snapshot is defensible.
+      ? ['The version on your website is replaced by what you see here.',
+        'Pages that already have the embed code update on their own.']
+      : ['Anyone with the link will be able to see this floor plan and its room names.',
+        'Your original plan, your other projects and your account are not part of it.',
+        'You can turn it off at any time.'],
+    confirm: again ? 'Update' : 'Show it',
+  });
+  if (!ok) return;
+
+  $('pubState').textContent = 'Putting it on your website…';
+  const res = await publishFloors(rows);
+  await refreshPublished();
+  paintPublish();
+  if (res.failed.length) {
+    // One dialog naming the floor and the reason, rather than a silent partial
+    // success — some floors ARE live now and the builder has to know which.
+    await askConfirm({
+      title: res.published ? 'Some floors did not go up' : 'Could not put it on your website',
+      body: res.failed.map((f) => `${f.name}: ${f.why}`)
+        .concat(res.published ? [`${res.published} published successfully.`] : []),
+      confirm: 'Close', cancel: 'Close',
+    });
+  }
+}
+
+async function withdraw() {
+  const floors = [...(published.rows || [])].map(([floorId, r]) => ({ floorId, look: r.look }));
+  if (!floors.length) return;
+  const ok = await askConfirm({
+    title: floors.length > 1
+      ? `Take all ${floors.length} floors off your website?` : 'Take this plan off your website?',
+    // THE HONEST LIMIT, SAID BEFORE IT MATTERS. We cannot reach into a page
+    // that already has the code; what we can do is stop serving it.
+    body: ['It stops being readable straight away, including on websites that already have the code — they will show a "not published" message instead.',
+      'Nothing on this computer is deleted. You can turn it back on whenever you like.'],
+    confirm: 'Take it off', danger: true,
+  });
+  if (!ok) return;
+
+  $('pubState').textContent = 'Taking it off…';
+  const res = await withdrawFloors(floors);
+  await refreshPublished();
+  paintPublish();
+  if (res.error) {
+    await askConfirm({ title: 'Could not take it off', body: [res.error], confirm: 'Close', cancel: 'Close' });
+  }
+}
+
+$('bAllFloors').onclick = () => {
+  allFloors = !allFloors;
+  paintEmbed();
+  paintPublish();
+};
+paintEmbed();
+await refreshPublished();
+paintPublish();
+
+// EMBED MODE MOVES THE CONTROLS ONTO THE MODEL, it does not remove them.
+//
+// The sidebar is the builder's workspace and is hidden on their site, so a
+// visitor was left with a model they could turn and nothing else: no way to see
+// the other floor, no way to put the room names away. Two questions Saman asked
+// that the first version answered with "no".
+//
+// The SAME elements move, rather than a second set being drawn. One floor
+// picker and one labels button means one set of handlers and nothing to drift.
+//
+// The look does NOT move. Which look the model wears is the builder's decision,
+// pinned into the embed URL; a visitor changing it would be changing the
+// builder's branding on the builder's own page.
+if (embedded) {
+  // Labels and Reset are already on the model, so only two things change here:
+  // the look is pinned (it is the builder's branding, not a visitor's to
+  // change) and the floor picker comes across when they asked for an all-floors
+  // embed. It appears because they ASKED, not because the project happens to
+  // have floors: a single-floor embed on their page stays a single floor.
+  $('bTheme').hidden = true;
+  // SAVE IMAGE IS A WORKSHOP TOOL. It exists so a builder can get a picture of
+  // this view for their own materials. A buyer looking at a house has no use
+  // for it, and a button that hands out the builder's render from the
+  // builder's own page is not a courtesy to them.
+  $('bShot').hidden = true;
+  if (q.get('floors') === 'all' && readyFloors > 1) {
+    // FIRST in the group, so a visitor reads the same order a builder does:
+    // which floor, then what is drawn on it.
+    $('viewTools').prepend($('bFloor'));
+  }
+}
+
+$('copyEmbed').onclick = async () => {
+  try {
+    await navigator.clipboard.writeText($('embed').value);
+    $('embedNote').textContent = 'Copied.';
+  } catch {
+    // Clipboard access can be refused, and a button that silently does nothing
+    // reads as broken. Selecting the text leaves the user one keystroke away.
+    $('embed').select();
+    $('embedNote').textContent = 'Press Ctrl+C to copy.';
+  }
+  setTimeout(paintEmbed, 2500);
+};
+
+// SHARE, NOT JUST COPY, WHERE THE PLATFORM HAS IT. On a phone -- which is where
+// a builder standing in a show home actually is -- the native sheet puts
+// WhatsApp, Messages and Mail one tap away, and that is the whole journey this
+// link exists for. Where there is no share sheet it copies, which is the
+// desktop answer anyway. The clipboard can also be refused outright, and a
+// button that silently does nothing reads as broken, so that case says what to
+// do instead.
+$('copyLink').onclick = async () => {
+  const url = viewUrl(currentScope === 'all', 'share');
+  const note = $('linkNote');
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: planTitle || 'Floor plan', url });
+      return;                       // the sheet is its own confirmation
+    }
+    await navigator.clipboard.writeText(url);
+    note.textContent = 'Link copied. Send it in an email or a message.';
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;   // they closed the share sheet
+    note.textContent = url;                     // selectable, so it is not a dead end
+  }
+  setTimeout(paintEmbed, 4000);
+};
+
+// WATCH THE ELEMENT, NOT THE WINDOW.
+//
+// This listened for `resize` on the window, which is only ever a proxy for the
+// question it actually has to answer: has the stage changed size? On our own
+// page the two agree. In a gallery on someone else's website they do not — a
+// carousel revealing the slide, an accordion opening, a sidebar collapsing, a
+// phone rotating a flex layout: all resize the frame without touching the
+// window, and the model stayed at whatever size it was first measured at,
+// stretched or letterboxed for the rest of the visit.
+//
+// A ResizeObserver on the stage answers the real question and covers the window
+// case for free, because the stage resizes with it.
+function fitToStage() {
+  const { w, h } = stageSize();
+  camera.aspect = w / h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+  // The fit depends on the aspect — a frame dragged narrow needs the camera
+  // further back, which is the case the old framing got wrong in the first
+  // place. Only the LIMITS are refreshed; moving the camera under someone who
+  // is mid-orbit would be worse than a slightly loose frame.
+  frame = fitFrame();
+  controls.minDistance = frame.distance * 0.35;
+  controls.maxDistance = frame.distance * 2.2;
+}
+new ResizeObserver(fitToStage).observe($('stage'));
+
+// ---- LABELS: READ IN SCREEN SPACE, RANKED BY DEPTH.
+//
+// Two things are decided here every frame, and NEITHER of them is position. A
+// label sits at the point the customer put it on the plan; Review and Studio
+// both edit that point, and a viewer that moves it is a viewer that lies about
+// which room is which. (A version of this raised colliding labels onto leader
+// lines the way a 3D map declutters. It was reverted the same day: sized in
+// screen space, a distant label's "one line of clearance" is several feet of
+// building, so labels floated up and read as belonging to the room behind.)
+//
+// SIZE. The text is a fixed share of the stage's height, so a name is the same
+// height whether the camera is near or far. Without this a room name came out
+// twelve pixels by six at a normal viewing distance, which is the whole reason
+// the labels could only be read from straight above.
+//
+// DEPTH. What was a collision problem is answered the way the eye already
+// answers it: the labels nearest the viewer are white and fully opaque, and the
+// further back they are the more they fade. Nothing is hidden and nothing
+// moves — the crowd simply sorts itself into foreground and background, and
+// whatever the visitor turns toward or zooms into comes forward on its own.
+// Nearer labels are also drawn last, so where two do overlap the front one is
+// the one you read.
+
+/**
+ * Height of one line of a room name, as a share of the stage's height.
+ *
+ * 0.038 was the first number that fixed the twelve-pixel labels, and it
+ * overshot — Saman: slightly too big on the default view, and not elegant.
+ * 0.030 is about 22px on a 720px stage, which is a comfortable reading size
+ * for a name over a drawing rather than a caption competing with it.
+ */
+const LABEL_VIEW_SHARE = 0.030;
+/**
+ * ...but never smaller than this, in real pixels.
+ *
+ * A share alone is right for a wide embed and wrong for a narrow one: an iframe
+ * 300px tall on a phone would draw a room name at 11px, under the size anything
+ * is comfortably read at.
+ */
+const MIN_LABEL_PX = 13;
+/**
+ * How faint the furthest label goes.
+ *
+ * Set to 0.34 first and Saman asked for more separation: at a third opacity a
+ * distant name is still competing for attention. 0.12 puts it clearly behind
+ * the drawing — present, readable if you look for it, not shouting. The curve
+ * below is eased rather than linear for the same reason: the fade should be
+ * slow among the labels nearest the viewer, where the differences matter, and
+ * quick once they are behind.
+ */
+const FAR_OPACITY = 0.12;
+
+function layoutLabels() {
+  const labels = current.labelGroup?.children || [];
+  if (!labels.length || !current.labelGroup.visible) return;
+  const vh = stageSize().h;
+  const tanHalfFov = Math.tan((camera.fov * Math.PI / 180) / 2);
+
+  let near = Infinity;
+  let far = 0;
+  const dists = [];
+  for (const sp of labels) {
+    const d = camera.position.distanceTo(sp.position);
+    dists.push(d);
+    if (d < near) near = d;
+    if (d > far) far = d;
+  }
+
+  const span = far - near;
+  labels.forEach((sp, i) => {
+    const d = dists[i];
+    // World units per screen pixel at this depth — the one conversion the size
+    // rule runs on.
+    const perPx = (2 * tanHalfFov * d) / vh;
+    const lines = sp.userData.twoLine ? 1.33 : 1;
+    const h = Math.max(LABEL_VIEW_SHARE * vh, MIN_LABEL_PX) * lines * perPx;
+    sp.scale.set(h * sp.userData.aspect, h, 1);
+
+    // Across the labels actually on screen, not against an absolute distance:
+    // the contrast should read the same on a bungalow and on a long ranch.
+    const t = span > 1e-6 ? (d - near) / span : 0;
+    sp.material.opacity = 1 - (1 - FAR_OPACITY) * (t * t * (3 - 2 * t));
+    // Painted back to front, so the nearest name is the one on top.
+    sp.renderOrder = 999 + Math.round((1 - t) * 100);
+  });
+}
+
+// THE NOTICE COMES DOWN WHEN THE PICTURE IS THERE, and that is decided here
+// rather than inside the animation loop.
+//
+// It used to hide on the loop's first frame, which is the same thing right up
+// until the loop does not run — and a browser stops requestAnimationFrame for
+// any page it is not showing: a background tab, an iframe scrolled out of
+// view, a phone saving battery. The model would be built and ready behind a
+// veil that never lifted, which is what Saman saw on his embed test page.
+//
+// One synchronous render is all "is the picture there" needs, and it cannot be
+// throttled away.
+renderer.render(scene, camera);
+showLoading(null);
+
+// ---- THE LOOP RUNS ONLY WHILE SOMEONE CAN SEE IT.
+//
+// This is the single biggest thing the embed does to a host page, and until now
+// it did it forever. The model turns on its own, so the loop never idles: an
+// embed placed three sections down a seller's website drew sixty frames a second
+// from the moment the page loaded, while nobody was looking at it, for as long
+// as the tab stayed open. On a phone that is the battery and the scroll
+// smoothness of a page that has not even reached the plan yet.
+//
+// TWO GATES, because they answer different questions. `document.hidden` covers
+// the whole tab being in the background — the browser already throttles rAF
+// there, but throttled is not stopped and the work is pointless either way. The
+// observer covers the case the browser cannot help with: a visible tab where
+// this particular frame has been scrolled past.
+//
+// NOTHING IS LOST WHILE IT SLEEPS. The spin, the drift and the idle clock are
+// all driven by `dt`, and the clock is reset on waking, so the model resumes
+// exactly where it stopped instead of jumping forward by however long the
+// visitor spent elsewhere on the page.
+let lastFrame = performance.now();
+let running = false;
+let onScreen = true;
+let raf = 0;
+// Armed only while the loop is asleep; see the note in setRunning.
+let wakeTimer = 0;
+
+// `drawFrame`, not `frame` — that name is taken by the camera fit a thousand
+// lines up, and the collision is a hard error rather than a shadowed variable.
+function drawFrame() {
+  raf = requestAnimationFrame(drawFrame);
+  const now = performance.now();
+  // Clamped: a backgrounded tab returns one enormous delta, which would
+  // teleport the camera home in a single frame the moment you look back at it.
+  const dt = Math.min((now - lastFrame) / 1000, 0.05);
+  lastFrame = now;
+  drift(dt);
+  stepZoom(dt);
+  controls.update();
+  paintZoom();
+  // After the camera has settled for this frame, because every number in it is
+  // measured against the camera.
+  layoutLabels();
+  renderer.render(scene, camera);
+  // Debug hook. The scene lives in module scope, so without this there is no
+  // way to inspect what actually got built — and every question about this view
+  // so far has been answered by measuring the scene, not by reading the code.
+  // `spin` and `drift` are here for the same reason as the rest: the idle turn
+  // is invisible to a screenshot and can only be checked by reading it.
+  window.__view3d = { scene, camera, THREE, renderer, spin, idleSince, returning, running };
+}
+
+// WHY THIS IS NOT REPORTED THROUGH `__view3d`. That object is written inside
+// the loop, so when the loop stops it freezes at whatever it last said — and
+// what it last said was "running". A gate has to be observable from outside the
+// thing it gates, or its failure mode is a stale claim that it is fine.
+const gate = { running: false, onScreen: true, hidden: false, changes: [] };
+window.__loop = gate;
+
+function setRunning(on) {
+  gate.running = on;
+  gate.onScreen = onScreen;
+  gate.hidden = document.hidden;
+
+  // THE HEARTBEAT, AND IT IS OUTSIDE THE EARLY RETURN BELOW ON PURPOSE.
+  //
+  // The gate was purely event-driven and it deadlocked on its first day: a page
+  // that LOADS while hidden — a link opened in a background tab, an iframe a
+  // host page builds before it is scrolled to — called this with `false` while
+  // `running` was already `false`, hit the early return, and never scheduled a
+  // single frame. Recovery depended on a `visibilitychange` that, for a document
+  // that was hidden from the start, may simply never come. The model stayed
+  // frozen: no turn, no drag, no zoom, and `__view3d` still claiming it was
+  // running because that object is written inside the loop it had stopped.
+  //
+  // So while it sleeps, something has to keep asking. It re-reads the live
+  // `document.hidden` rather than any stored answer, and it runs ONLY while
+  // asleep — where the alternative it is guarding against is 60 frames a second,
+  // one boolean read per second is not a cost worth optimising.
+  if (!on && !wakeTimer) wakeTimer = setInterval(awake, 800);
+  if (on && wakeTimer) { clearInterval(wakeTimer); wakeTimer = 0; }
+
+  if (on === running) return;
+  running = on;
+  // ONLY REAL TRANSITIONS. The heartbeat calls this every 800ms while asleep, so
+  // logging before the check filled the record with forty identical lines and
+  // hid the thing it was built to show.
+  if (gate.changes.length < 40) {
+    gate.changes.push(`${Math.round(performance.now())}ms ${on ? 'run' : 'stop'}`
+      + (on ? '' : ` (${document.hidden ? 'tab hidden' : 'scrolled away'})`));
+  }
+  if (on) {
+    // The clock restarts here, not where it left off: without this the first
+    // frame back carries the whole absence as its delta.
+    lastFrame = performance.now();
+    // Any sleep longer than the idle timeout would otherwise wake up mid-return
+    // to the resting pose, which reads as the model lurching when you scroll to
+    // it. Waking is not a touch, so the clock is left where it was, but the
+    // return is allowed to be instantaneous rather than animated across a frame
+    // boundary nobody saw.
+    raf = requestAnimationFrame(drawFrame);
+  } else {
+    cancelAnimationFrame(raf);
+    raf = 0;
+  }
+}
+
+const awake = () => setRunning(onScreen && !document.hidden);
+// Four ways back, because no one of them fires in every case: a tab returning
+// to the foreground, a page restored from the back/forward cache, a window
+// regaining focus, and a frame being resized by its host.
+for (const ev of ['visibilitychange', 'pageshow', 'focus', 'resize']) {
+  (ev === 'visibilitychange' ? document : window).addEventListener(ev, awake);
+}
+// `rootMargin` starts it a little before it is reached, so the first thing a
+// visitor sees is a turning model rather than one that begins turning after
+// they arrive. `0.01` because "any part of it" is the question — a tall frame
+// half off the bottom of the screen is still being looked at.
+if (typeof IntersectionObserver === 'function') {
+  new IntersectionObserver((entries) => {
+    onScreen = entries.some((e) => e.isIntersecting);
+    awake();
+  }, { rootMargin: '200px', threshold: 0.01 }).observe($('stageWrap'));
+} else {
+  onScreen = true;
+}
+awake();
+
+// Exposed for the browser checks in this session; harmless, and it means the
+// numbers reported on screen can be verified against the objects themselves.
+window.__view = { ex: () => view.ex, theme: () => theme, frames, built: () => current, scene, camera, controls };
+</script>
+</body>
+</html>
