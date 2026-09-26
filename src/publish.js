@@ -1,0 +1,223 @@
+// What travels when a builder publishes a home.
+//
+// The 3D embed reads the plan out of the browser it is displayed in —
+// localStorage for the record, IndexedDB for the render — so on a seller's
+// website it shows "No floor was named" and always has. A buyer has never
+// opened StyloPlan; their browser holds nothing. See
+// docs/design-brief-embed-publishing.md.
+//
+// This is the first step of the answer and it deliberately touches no network:
+// one function that turns a floor into the object that will be stored, so the
+// SHAPE is settled and tested before anything is sent anywhere.
+//
+// PUBLISHING IS DELIBERATE. Nothing here runs on its own; it is called when the
+// builder says to publish, and what it returns is the whole of what leaves
+// their machine.
+
+import { isPrintable } from './compositor.js';
+import { planTitleOf } from './floor-context.js';
+
+/**
+ * ONLY WHAT THE BUYER'S PAGE DRAWS.
+ *
+ * A label carries a good deal that is ours rather than theirs: `fitBox` and
+ * `ink` are where the matcher found the tracing's own wording, `anchor0` is
+ * where it started so Studio can offer to put it back, `checkedFor` records
+ * which render it was checked against. None of that is read by the 3D view,
+ * which uses the name, the dimension and the position and nothing else.
+ *
+ * Publishing them would put our working notes on a stranger's website for no
+ * reader. A field that turns out to be needed is easy to add; data already sent
+ * cannot be recalled.
+ */
+const forEmbed = (l) => ({
+  id: l.id,
+  name: l.name,
+  // Transcribed upstream and never computed — red line 2. It travels verbatim
+  // or not at all.
+  ...(l.dim ? { dim: l.dim } : {}),
+  x: l.x,
+  y: l.y,
+});
+
+/**
+ * One floor, as it will be stored and read back by a buyer's browser.
+ *
+ * @param {object} project the home this floor belongs to
+ * @param {object} floor   the floor, carrying its `verified` sign-off
+ * @param {'light'|'dark'} look which render is being published
+ * @param {{companyName?:string, website?:string}} [kit] the brand kit in
+ *   use, whose company name and website go on the chip in the corner of the
+ *   buyer's page (Saman, 2026-09-21): the builder's mark, not ours. Only the
+ *   two strings travel; a logo would need a file in the bucket and is not
+ *   published yet.
+ * @returns {object|null} null when there is nothing to publish
+ */
+export function floorPayload(project, floor, look, kit = null) {
+  // A FLOOR THAT WAS NEVER CONFIRMED HAS NOTHING TO PUBLISH. `verified` is the
+  // reviewer's sign-off, and it is what every printed number on the model comes
+  // from. Without it there is no record, and inventing one here would put
+  // unreviewed labels on a listing.
+  const v = floor?.verified;
+  if (!project?.id || !floor?.id || !v) return null;
+  if (look !== 'light' && look !== 'dark') return null;
+
+  const labels = (v.labels || []).filter(isPrintable).map(forEmbed);
+  // THE STAIR MARKERS TRAVEL TOO, since 2026-09-21: the 3D on a buyer's page
+  // stands the stairs up from the render around each confirmed marker
+  // (src/model3d/stairs.js), and prints UP/DN beside it as the builder's page
+  // does. Only what that reads: where, which way, which kind, and whether the
+  // word is printed. Never the extraction's notes.
+  const staircases = (v.staircases || [])
+    .filter((st) => st && (st.position || typeof st.x === 'number'))
+    .map((st) => ({
+      id: st.id,
+      position: st.position ? { x: st.position.x, y: st.position.y } : { x: st.x, y: st.y },
+      direction: st.direction || 'unknown',
+      heading: st.heading || 'unknown',
+      ...(st.kind ? { kind: st.kind } : {}),
+      ...(st.printed === false ? { printed: false } : {}),
+    }));
+
+  const brand = brandOf(kit);
+  return {
+    floorId: floor.id,
+    projectId: project.id,
+    look,
+    // The builder's own order, so the switcher on a buyer's page reads Main
+    // Floor then Basement rather than whatever the database returns first.
+    sortOrder: (project.floors || []).findIndex((f) => f.id === floor.id),
+    floorName: floor.name || 'Floor',
+    // One rule for the title, shared with every other page rather than
+    // restated: floor-context owns it.
+    planTitle: planTitleOf(project, floor),
+    payload: {
+      labels,
+      ...(staircases.length ? { staircases } : {}),
+      // Which side of the ground, as the reviewer answered it (Review's specs
+      // card). The 3D view on a buyer's page sets its window sill by it. Null
+      // for a floor confirmed before the question existed: the page then reads
+      // the floor's words, as it does for the builder.
+      below: typeof v.specs?.below === 'boolean' ? v.specs.below : null,
+      // The builder's decisions about the openings (the 3D page's Windows
+      // panel): the record the publisher applies to its own reading, and the
+      // part of the signature that turns a published home stale when one of
+      // them changes. Null until a decision has been made.
+      openings: v.openings?.items?.length
+        ? { items: v.openings.items.map((o) => ({ id: o.id, x0: o.x0, y0: o.y0, x1: o.x1, y1: o.y1, horizontal: !!o.horizontal, interior: !!o.interior, kind: o.kind })), confirmedAt: v.openings.confirmedAt || null }
+        : null,
+      ...(brand ? { brand } : {}),
+    },
+  };
+}
+
+/**
+ * The builder's mark for a buyer's page: the kit's company name, and its
+ * website when that is an http(s) address. Null when the kit names nobody,
+ * so a published home shows StyloPlan's chip as before.
+ */
+export function brandOf(kit) {
+  const name = String(kit?.companyName || '').trim();
+  if (!name) return null;
+  let website = '';
+  try {
+    const u = new URL(String(kit?.website || ''));
+    if (u.protocol === 'http:' || u.protocol === 'https:') website = u.href;
+  } catch { /* not a link */ }
+  return { name, ...(website ? { website } : {}) };
+}
+
+/**
+ * Every floor of a home that can be published in one look.
+ *
+ * THE LOOK IS THE HOME'S, NOT THE FLOOR'S. A visitor stepping from the main
+ * floor to the basement and finding the plan has gone light to dark reads it as
+ * a broken page, which is why the all-floors embed already refuses a mixed set.
+ * This returns what CAN go, and the caller checks against what the builder
+ * asked for: a home with a floor missing from this list is not ready to be
+ * published whole.
+ *
+ * @param {object} project
+ * @param {'light'|'dark'} look
+ * @param {(floorId:string)=>boolean} hasRender  does this floor hold a render
+ *   in that look? Passed in because the answer lives in the artifact store,
+ *   which is the caller's business and not this module's.
+ * @returns {{ready: Array, missing: Array}} payloads, and the floors that have
+ *   no render in this look — named, so the builder is told which.
+ */
+export function homePayload(project, look, hasRender, kit = null) {
+  const ready = [];
+  const missing = [];
+  for (const floor of project?.floors || []) {
+    const row = floorPayload(project, floor, look, kit);
+    // A floor still in Review is not "missing a render" — it has not reached
+    // the point of having one, and saying so would send the builder to the
+    // wrong screen.
+    if (!row) continue;
+    if (hasRender(floor.id)) ready.push(row);
+    else missing.push({ id: floor.id, name: floor.name || 'Floor' });
+  }
+  return { ready, missing };
+}
+
+// The bucket and the key live in published-paths.js, a leaf, so the page that
+// only reads a published home (embed.html) does not carry this module's
+// compositor import with it. Re-exported here for everything that publishes.
+export { PUBLISHED_BUCKET, renderPath, posterPath, POSTER_SHAPES } from './published-paths.js';
+
+/**
+ * What the Embed panel's switch and status line should say.
+ *
+ * SEPARATED FROM THE DRAWING SO IT CAN BE CHECKED. The panel only renders for a
+ * signed-in builder with a real project, which is exactly the situation a demo
+ * fixture cannot reach — so the branch that matters most in this app was the
+ * one branch nothing could exercise. The DOM code is now dumb and this is a
+ * function with an answer.
+ *
+ * THE WORDS NAME THE OUTCOME, NOT THE MECHANISM. "Publish", "Withdraw" and
+ * "Publish again" were three labels for one decision — is this plan on my
+ * website or not — expressed in our vocabulary rather than the builder's.
+ *
+ * @param {object} o
+ * @param {boolean} o.signedIn
+ * @param {boolean} o.readable  did the check of what is already published work
+ * @param {number} o.total      floors in scope
+ * @param {number} o.live       of those, how many are on the web in this look
+ * @param {number} o.behind     of the live ones, how many have changed since
+ * @returns {{mode: string, on: boolean, text: string, tone: 'subtle'|'warn',
+ *   showSwitch: boolean, showUpdate: boolean, codeWorks: boolean}}
+ */
+export function publishState({ signedIn, readable, total, live, behind }) {
+  const say = (mode, text, extra = {}) => ({
+    mode, text, tone: 'subtle', on: false,
+    showSwitch: false, showUpdate: false, codeWorks: false, ...extra,
+  });
+
+  if (!signedIn) {
+    return say('noAccount', 'Publishing needs an account: it is what lets a '
+      + 'visitor’s browser read this home. Everything else on this page works without one.');
+  }
+  if (!readable) {
+    return say('unknown', 'Could not check whether this home is on your website. '
+      + 'Reload the page, or try again in a moment.', { tone: 'warn' });
+  }
+  if (!total) return say('nothing', 'Nothing to put on your website in this look yet.');
+
+  const on = live === total;
+  if (!on) {
+    return say('off', live
+      // PARTLY ON IS ITS OWN STATE and must not read as "off": some of these
+      // floors are on somebody's website right now, and a switch that says
+      // "off" over them would be a lie about what strangers can see.
+      ? `${live} of ${total} floors are on your website. Turn this on to add the rest.`
+      : 'Off. The code below shows nothing until you turn this on.',
+    { showSwitch: true });
+  }
+  return say('on', behind
+    // NOT "a newer render": the signature covers the labels too, so this fires
+    // for a room renamed in Review as well as for a re-render, and naming the
+    // wrong cause would send them to Studio to redo finished work.
+    ? 'Your website still shows an older version.'
+    : `Live. Anyone with your link can see ${total > 1 ? 'these floors' : 'this plan'}.`,
+  { on: true, showSwitch: true, codeWorks: true, showUpdate: true, tone: behind ? 'warn' : 'subtle' });
+}
