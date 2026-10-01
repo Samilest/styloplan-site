@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- THE POSTER IN FRONT OF THE 3D. This is what a builder's website embeds
+     now, and it is deliberately small: one published picture, one button,
+     and nothing of the model. The 3D page (view3d.html) is 2.2MB of script,
+     a WebGL context and about three seconds of a phone's CPU, and until this
+     page existed every visitor to a builder's listing paid all of that at
+     load, whether or not they ever touched the model. Measured 2026-09-20,
+     docs/brief-3d-load.md. Matterport, Sketchfab and YouTube embeds all show
+     a still with a play control first, for the same reason; a visitor knows
+     what this is.
+
+     What happens on the click: this frame navigates itself to the 3D page,
+     with the same query it was given plus embed=1, so the builder's page is
+     untouched and the model arrives where the poster was. Nothing is
+     prefetched before the click -- the point is that the host page carries
+     none of the model's weight until somebody asks for it.
+
+     The poster is a still of the model, drawn by the 3D page itself at
+     publish (view3d.html `?poster=WxH`, posterFor) -- the same home view,
+     labels and openings the click leads to -- and read here by the same
+     `readPublishedHome` the 3D page reads. A floor published before posters
+     existed shows the plan itself until its builder publishes again.
+
+     Not a search result, same as view3d.html: the picture is a builder's
+     customer's plan. -->
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Floor plan · StyloPlan</title>
+<!-- THE LOOK IS PAINTED BEFORE ANYTHING LOADS. The embed code pins it
+     (?look=), so the first frame is already the right ground colour instead
+     of a white flash inside a dark website; the published look, when the
+     record arrives, is what the picture wears and it corrects this if the
+     two ever differ. The two colours are THEMES.light.bg and THEMES.dark.bg
+     from src/model3d/theme3d.js, written here because the module that
+     knows them cannot run during the parse; test/view3d-preload.test.mjs
+     holds them equal. -->
+<script>try{var p=new URLSearchParams(location.search);document.documentElement.dataset.look=p.get("look")==="light"?"light":"dark"}catch(e){}</script>
+<!-- The wire starts during the parse, as on the 3D page: the modules this
+     page reaches are named for the preload scanner, and the config round
+     trip opens now through the same `getSupabase` the module below joins. -->
+<link rel="modulepreload" href="./src/published-read.js">
+<link rel="modulepreload" href="./src/supabase-client.js">
+<link rel="modulepreload" href="./src/api-origin.js">
+<link rel="modulepreload" href="./src/artifacts.js">
+<link rel="modulepreload" href="./src/published-paths.js">
+<link rel="modulepreload" href="./src/floor-context.js">
+<link rel="modulepreload" href="./src/store.js">
+<link rel="modulepreload" href="./src/palettes.js">
+<link rel="modulepreload" href="./src/house-style.js">
+<link rel="modulepreload" href="./src/versions.js">
+<link rel="modulepreload" href="./src/model3d/theme3d.js">
+<link rel="preload" href="./src/vendor/supabase.js" as="script">
+<script>import('./src/supabase-client.js').then(function (m) { return m.getSupabase(); }).catch(function () {});</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<!-- Poppins for the wordmark only, one weight, as on the 3D page. The rest
+     is the system stack: this page has three words on it and no reason to
+     make a host page wait on a font. -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap">
+<style>
+  /* `hidden` must win over the display rules below (ui.css carries the same
+     line, and the reason: any author display rule beats the attribute). */
+  [hidden] { display: none !important; }
+  /* The two grounds, held equal to THEMES.*.bg (see the head). */
+  :root { --ground: #1b1e23; --ink: #e6e9ee; --ink-soft: rgba(230,233,238,.6);
+          --chip: rgba(30,36,46,.86); --cta: #ffffff; --cta-ink: #211e19; }
+  :root[data-look="light"] { --ground: #f8f7f4; --ink: #211e19; --ink-soft: rgba(33,30,25,.6);
+          --chip: rgba(255,255,255,.86); --cta: #211e19; --cta-ink: #ffffff; }
+  html, body { margin: 0; height: 100%; background: var(--ground); }
+  body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         overflow: hidden; -webkit-font-smoothing: antialiased; }
+  /* The stage fills the iframe, whatever shape the builder gave it. */
+  #stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+  /* The picture, whole. `contain`, never `cover`: the still is drawn at the
+     render's shape, which is the shape the embed code gives this frame, so
+     it fits exactly; in any other frame the model keeps its edges and the
+     bands are the same ground the still was drawn on. */
+  #poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+            opacity: 0; transition: opacity .35s ease; }
+  #poster.in { opacity: 1; }
+  /* A LITTLE DARKER UNDER THE BUTTON. On the bare picture the pill sat in
+     the drawing and read as part of it (Saman, 2026-09-20). A quiet, even
+     scrim -- a quarter on the dark look, less on the light, where the pill
+     is ink and already stands off the sheet -- keeps the plan readable and
+     lets the one control read as a control. Comes in with the picture. */
+  #scrim { position: absolute; inset: 0; background: rgba(0,0,0,.26); opacity: 0;
+           transition: opacity .35s ease; pointer-events: none; }
+  :root[data-look="light"] #scrim { background: rgba(0,0,0,.14); }
+  #scrim.in { opacity: 1; }
+  /* The caption, where the 3D page puts it. */
+  #caption { position: absolute; left: 14px; top: 12px; max-width: calc(100% - 28px);
+             font-size: 13px; font-weight: 600; letter-spacing: .01em; pointer-events: none; }
+  /* THE ONE CONTROL. A pill the height of a thumb, high contrast against
+     either ground (white on dark, ink on light), a cube so it reads as 3D
+     before the words do; the scrim above is what keeps it legible. */
+  #play { position: relative; display: inline-flex; align-items: center; gap: 10px;
+          height: 48px; padding: 0 22px 0 18px; border: 0; border-radius: 999px;
+          background: var(--cta); color: var(--cta-ink); font: inherit; font-weight: 600; font-size: 15px;
+          letter-spacing: .01em; cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,.18), 0 10px 30px rgba(0,0,0,.22);
+          transition: transform .18s ease, box-shadow .18s ease, opacity .25s ease;
+          opacity: 0; }
+  #play.in { opacity: 1; }
+  #play:hover, #play:focus-visible { transform: translateY(-1px) scale(1.03);
+          box-shadow: 0 3px 8px rgba(0,0,0,.22), 0 14px 36px rgba(0,0,0,.28); }
+  #play:focus-visible { outline: 3px solid #6FB9C4; outline-offset: 3px; }
+  #play:disabled { cursor: progress; transform: none; }
+  #play svg { width: 20px; height: 20px; flex: 0 0 auto; }
+  /* The whole poster is the button too: a visitor who taps the plan gets the
+     3D, not nothing. The cursor says so. */
+  #stage.ready { cursor: pointer; }
+  /* The wordmark chip, as on the 3D page: Poppins 600, half-strength. */
+  #wordmark { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center;
+              height: 32px; padding: 0 12px; border-radius: 10px; background: var(--chip);
+              -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+              font-family: Poppins, system-ui, sans-serif; font-weight: 600; font-size: 14px;
+              letter-spacing: .01em; color: var(--ink-soft); text-decoration: none;
+              transition: color .18s ease; }
+  #wordmark:hover, #wordmark:focus-visible { color: var(--ink); }
+  /* What a withdrawn or unknown floor says, in the 3D page's own words. */
+  #note { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+          text-align: center; color: var(--ink-soft); font-size: 14px; max-width: 46ch; margin: 0 auto; }
+  @media (prefers-reduced-motion: reduce) {
+    #poster, #scrim, #play, #wordmark { transition: none; }
+    #play:hover, #play:focus-visible { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="poster" alt="" decoding="async">
+  <div id="scrim"></div>
+  <div id="caption" hidden></div>
+  <button id="play" type="button" aria-label="View this floor plan in 3D">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
+    </svg>
+    <span>View in 3D</span>
+  </button>
+  <a id="wordmark" href="https://styloplan.com" target="_blank" rel="noopener" aria-label="StyloPlan: open styloplan.com">StyloPlan</a>
+  <div id="note" hidden></div>
+</div>
+<script type="module">
+import { readPublishedHome } from './src/published-read.js';
+import { planTitleOf } from './src/floor-context.js';
+import { THEMES } from './src/model3d/theme3d.js';
+
+const $ = (id) => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
+
+// The 3D page this frame becomes on the click: the same query the builder's
+// code carries (look, floors, title), plus embed=1. `replace`, so the host
+// page's history does not gain an entry for a frame that changed itself.
+const q3d = new URLSearchParams(location.search);
+q3d.set('embed', '1');
+const url3d = `${new URL('view3d.html', location.href).href}?${q3d}`;
+let going = false;
+function go() {
+  if (going) return;
+  going = true;
+  const b = $('play');
+  b.disabled = true;
+  b.querySelector('span').textContent = 'Loading 3D…';
+  location.replace(url3d);
+}
+
+const home = await readPublishedHome(q.get('p'), q.get('f'));
+if (!home) {
+  // The 3D page's own sentence for the same situation, so a builder who has
+  // seen one recognises the other.
+  $('play').hidden = true;
+  $('caption').hidden = true;
+  const note = $('note');
+  note.textContent = q.get('p')
+    ? 'This floor plan is not being shared. If it is yours, open it in StyloPlan and turn on “Share this plan”; otherwise ask whoever sent you this page.'
+    : 'No floor was named.';
+  note.hidden = false;
+} else {
+  // The published look is the truth; the URL's was only the first paint.
+  const look = home.look === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.look = look;
+  document.documentElement.style.setProperty('--ground', hex(THEMES[look].bg));
+
+  const title = planTitleOf(home.ctx.project, home.ctx.floor);
+  // The chip is the builder's where the floor was published with a brand
+  // (publish.js brandOf): their name, opening their site when one is set.
+  const brand = home.ctx.floor.brand;
+  if (brand) {
+    const wm = $('wordmark');
+    wm.textContent = brand.name;
+    if (brand.website) {
+      wm.href = brand.website;
+      let host = brand.website;
+      try { host = new URL(brand.website).host; } catch { /* as given */ }
+      wm.setAttribute('aria-label', `${brand.name}: open ${host}`);
+    } else {
+      wm.removeAttribute('href'); wm.removeAttribute('target'); wm.removeAttribute('rel');
+      wm.setAttribute('aria-label', brand.name);
+    }
+  }
+  if (title && q.get('title') !== '0') { $('caption').textContent = title; $('caption').hidden = false; }
+  $('poster').alt = title ? `${title}, 3D floor plan` : '3D floor plan';
+
+  // The button is live as soon as the home is known: the picture may still
+  // be on its way, and a visitor who clicks first is not made to wait for
+  // a poster they are about to leave.
+  $('play').classList.add('in');
+  $('play').addEventListener('click', (e) => { e.stopPropagation(); go(); });
+  const stage = $('stage');
+  stage.classList.add('ready');
+  stage.addEventListener('click', (e) => { if (!e.target.closest('#wordmark')) go(); });
+
+  // THE STILL THAT FITS THIS FRAME. The publisher draws the model in two
+  // shapes (POSTER_SHAPES: the render's own, and 5:4 for the squarer frames
+  // a phone or a host makes), because a wide still letterboxed into a
+  // square frame is a small model in a field of ground -- Saman,
+  // 2026-09-20, twice. The nearer shape is chosen by the frame's own
+  // proportions (the record carries the render-shaped still's), and it
+  // FILLS the frame (`cover`) when what that crops is within the still's
+  // own margin (the model is fitted to 86% of its frame, so 7% a side is
+  // ground); a frame further off keeps the whole still and shows ground at
+  // two edges (`contain`). Re-decided when the
+  // frame changes shape. A floor published before posters existed shows
+  // the plan itself, whole, until its builder publishes again.
+  const img = $('poster');
+  const still = {};
+  const near = (fa, a) => Math.abs(Math.log(fa / a));
+  // The render-shaped still's proportions travel in the record; without
+  // them (a floor published before the second shape existed) it is the
+  // only still there is.
+  const shapeFor = (fa) => (home.posterAspect && near(fa, home.posterAspect) > near(fa, 1.25) ? '5x4' : '');
+  // 0.14 of the still cropped in all, 7% a side: the fitted model's own margin.
+  const fitFor = (fa, pa) => (1 - Math.min(fa, pa) / Math.max(fa, pa) <= 0.14 ? 'cover' : 'contain');
+  let shown = null;
+  const show = async () => {
+    const st = $('stage');
+    const fa = st.clientWidth / Math.max(1, st.clientHeight);
+    const shape = shapeFor(fa);
+    if (!(shape in still)) still[shape] = await home.posterUrl(shape).catch(() => null);
+    if (!still[shape] && !('' in still)) still[''] = await home.posterUrl('').catch(() => null);
+    const isStill = Boolean(still[shape] || still['']);
+    const src = still[shape] || still[''] || (await home.renderUrl(look).catch(() => null));
+    if (!src) return;
+    const fit = () => { img.style.objectFit = isStill ? fitFor(fa, img.naturalWidth / img.naturalHeight) : 'contain'; };
+    if (src !== shown) {
+      const first = !shown;
+      shown = src;
+      img.addEventListener('load', () => { fit(); if (first) { img.classList.add('in'); $('scrim').classList.add('in'); } }, { once: true });
+      img.src = src;
+    } else if (img.naturalWidth) fit();
+  };
+  await show();
+  let resizing = null;
+  addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(show, 150); });
+}
+</script>
+</body>
+</html>
