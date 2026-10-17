@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What's new · StyloPlan</title>
+<meta name="description" content="What changed in StyloPlan, update by update: new tools, improvements and fixes, newest first.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Archivo:wght@600;700&family=Lato:wght@400;700&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  :root {
+    --paper:#F2F0EA; --ink:#211E19; --ink-2:#5F5A50; --ink-3:#6E6759;
+    --line:#E3DFD6; --line-strong:#CBC4B6; --accent:#1C5A64;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family:Lato, system-ui, sans-serif; font-size:16px; line-height:1.65; }
+  a { color:var(--accent); }
+  ::selection { background: color-mix(in oklab, var(--accent) 30%, transparent); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wm { font-family:Poppins, system-ui, sans-serif; font-weight:600; }
+  .dsp { font-family:Archivo, system-ui, sans-serif; font-weight:700; letter-spacing:-0.02em; }
+  .num { font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  .sheet { max-width:880px; margin:0 auto; padding:0 24px; }
+  header { border-bottom:1px solid var(--line-strong); }
+  header .bar { max-width:1440px; margin:0 auto; padding:0 24px;
+                height:78px; display:flex; align-items:center; gap:24px; }
+  h1 { margin:0; font-size:clamp(30px,5vw,44px); line-height:1.05; }
+  footer { border-top:1px solid var(--ink); margin-top:64px; }
+  .tap { display:inline-flex; align-items:center; min-height:44px; }
+
+  
+  .ups { margin-top:48px; }
+  .up { display:grid; grid-template-columns:160px minmax(0,1fr); gap:8px 32px;
+        padding:28px 0; border-top:1px solid var(--line-strong); }
+  .up:last-child { border-bottom:1px solid var(--line-strong); }
+  .up time { font-size:12.5px; color:var(--ink-3); letter-spacing:.04em; padding-top:5px; }
+  .up h2 { margin:0; font-size:21px; line-height:1.3; }
+  .up ul { list-style:none; margin:12px 0 0; padding:0; }
+  .up li { display:grid; grid-template-columns:56px minmax(0,1fr); gap:12px; padding:6px 0; color:var(--ink-2); }
+  .tag { font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); padding-top:4px; }
+  .tag.new { color:var(--accent); }
+  @media (max-width: 640px) {
+    .up { grid-template-columns:minmax(0,1fr); }
+    .up time { padding-top:0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a href="index.html" class="wm tap" style="font-size:21px;color:var(--ink);text-decoration:none">StyloPlan</a>
+    <span style="flex-grow:1"></span>
+    <a href="index.html" class="tap" style="font-size:15px">&larr; Back to the site</a>
+  </div>
+</header>
+
+<main class="sheet" style="padding-top:56px;padding-bottom:24px">
+  <h1 class="dsp">What's new</h1>
+  <p style="margin-top:20px;font-size:17px;color:var(--ink-2);max-width:60ch">
+    What changed in StyloPlan, update by update, newest first.
+  </p>
+
+  <div class="ups">
+
+    <article class="up" id="2026-10-12">
+      <time class="num" datetime="2026-10-12">12 OCT 2026</time>
+      <div>
+        <h2 class="dsp">Studio starts where your plan wants it</h2>
+        <ul>
+          <li><span class="tag num new">New</span><span>Studio opens on the format that suits your plan's shape: landscape for a wide plan, portrait for a tall one, square otherwise. You can still switch.</span></li>
+          <li><span class="tag num">Better</span><span>The Render button gently pulses until a floor is rendered, so the one paid step is easy to find. Render again is quieter.</span></li>
+          <li><span class="tag num">Better</span><span>"Not rendered yet" now sits in Credits and notes instead of over your drawing.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-10-11">
+      <time class="num" datetime="2026-10-11">11 OCT 2026</time>
+      <div>
+        <h2 class="dsp">A cleaner Studio and Review</h2>
+        <ul>
+          <li><span class="tag num">Better</span><span>Studio's before/after handle stays where you leave it, and the rendered side keeps its labels, so you can check names on either side.</span></li>
+          <li><span class="tag num">Better</span><span>No more watermark across a drawing that is not rendered yet.</span></li>
+          <li><span class="tag num">Better</span><span>The info panel in Review and Studio floats over the stage, the same on both pages.</span></li>
+          <li><span class="tag num">Better</span><span>One loading bar across the app, so a wait looks the same wherever it happens.</span></li>
+          <li><span class="tag num">Better</span><span>On a phone, Review shows your plan first, then the steps.</span></li>
+          <li><span class="tag num">Fixed</span><span>Tracing a plan again no longer pushes the plan down the page.</span></li>
+          <li><span class="tag num">Fixed</span><span>Stray dots and dashes left behind where text is covered are cleaned up.</span></li>
+          <li><span class="tag num">Fixed</span><span>A shared 3D page opens in your plan's look from the first moment, without a white flash.</span></li>
+          <li><span class="tag num">Fixed</span><span>A brand change now reaches every published floor of a project, not only the one you edited.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-10-10">
+      <time class="num" datetime="2026-10-10">10 OCT 2026</time>
+      <div>
+        <h2 class="dsp">Cleaner renders, faster pages, Help in the app</h2>
+        <ul>
+          <li><span class="tag num new">New</span><span>A new styling model: cleaner renders, and each plan is rendered at its own size and shape.</span></li>
+          <li><span class="tag num new">New</span><span>Help opens inside the app: the steps for the page you are on, common questions and a search.</span></li>
+          <li><span class="tag num new">New</span><span>In the 3D view, click a door or window on the model to find it in the list, add one in a doorway that was left open, and choose sliding, pocket or bifold doors.</span></li>
+          <li><span class="tag num">Better</span><span>Every page opens faster. The 3D view is ready in about 3.4 seconds on a phone, down from 5.5.</span></li>
+          <li><span class="tag num">Better</span><span>The 3D view reads more doors and windows from the drawing, including closet sliders, bifolds, pocket doors and doors onto a deck. You still check each one.</span></li>
+          <li><span class="tag num">Better</span><span>The app now has the same look as this site.</span></li>
+          <li><span class="tag num">Fixed</span><span>Deleting a floor that had been shared works again.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-10-06">
+      <time class="num" datetime="2026-10-06">6 OCT 2026</time>
+      <div>
+        <h2 class="dsp">Truer walls in 3D</h2>
+        <ul>
+          <li><span class="tag num">Better</span><span>The short walls between two windows or doors are built, where before they could go missing.</span></li>
+          <li><span class="tag num">Better</span><span>Wall corners in the 3D view stay square instead of rounding off.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-10-05">
+      <time class="num" datetime="2026-10-05">5 OCT 2026</time>
+      <div>
+        <h2 class="dsp">Review, redesigned</h2>
+        <ul>
+          <li><span class="tag num new">New</span><span>Review puts its tools in a column on the left and your plan on one stage, with a handle to compare your plan with our drawing.</span></li>
+          <li><span class="tag num">Better</span><span>A label you place sits in the same spot on every picture of the plan.</span></li>
+          <li><span class="tag num">Better</span><span>Long room names can wrap, and labels land on their own words.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-10-04">
+      <time class="num" datetime="2026-10-04">4 OCT 2026</time>
+      <div>
+        <h2 class="dsp">Sheets with several plans, a kit per project</h2>
+        <ul>
+          <li><span class="tag num new">New</span><span>Upload a sheet with several plans on it, and each plan is found and outlined so you can pick the floor you want.</span></li>
+          <li><span class="tag num new">New</span><span>Each project keeps its own brand kit, colours and font.</span></li>
+          <li><span class="tag num">Better</span><span>A calmer Studio preview, simpler project cards and a 3D page with fewer panels.</span></li>
+        </ul>
+      </div>
+    </article>
+
+    <article class="up" id="2026-09-30">
+      <time class="num" datetime="2026-09-30">30 SEP 2026</time>
+      <div>
+        <h2 class="dsp">Rename anything, railings that climb</h2>
+        <ul>
+          <li><span class="tag num new">New</span><span>Rename a floor from its row, and a project from its menu.</span></li>
+          <li><span class="tag num">Better</span><span>In 3D, railings follow the stairs up and down and guard the open edges of a raised deck.</span></li>
+          <li><span class="tag num">Better</span><span>The 3D view zooms in to the scale of the house, not further.</span></li>
+        </ul>
+      </div>
+    </article>
+
+  </div>
+</main>
+
+<footer>
+  <div class="sheet num" style="padding:22px 24px;font-size:11.5px;color:var(--ink-3);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span>© 2026 StyloPlan</span>
+    <a href="index.html" style="color:var(--ink-3);display:inline-flex;align-items:center;
+      min-height:44px;padding:0 4px;margin:-13px -4px">styloplan</a>
+  </div>
+</footer>
+</body>
+</html>

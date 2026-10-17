@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Floor plan · StyloPlan</title>
+
+<script>try{var p=new URLSearchParams(location.search);document.documentElement.dataset.look=p.get("look")==="light"?"light":"dark"}catch(e){}</script>
+
+<link rel="modulepreload" href="./src/published-read.js">
+<link rel="modulepreload" href="./src/supabase-client.js">
+<link rel="modulepreload" href="./src/api-origin.js">
+<link rel="modulepreload" href="./src/artifacts.js">
+<link rel="modulepreload" href="./src/published-paths.js">
+<link rel="modulepreload" href="./src/floor-context.js">
+<link rel="modulepreload" href="./src/store.js">
+<link rel="modulepreload" href="./src/palettes.js">
+<link rel="modulepreload" href="./src/house-style.js">
+<link rel="modulepreload" href="./src/versions.js">
+<link rel="modulepreload" href="./src/model3d/theme3d.js">
+<link rel="preload" href="./src/vendor/supabase.js" as="script">
+<script>import('./src/supabase-client.js').then(function (m) { return m.getSupabase(); }).catch(function () {});</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap">
+<style>
+  
+  [hidden] { display: none !important; }
+  
+  :root { --ground: #1b1e23; --ink: #e6e9ee; --ink-soft: rgba(230,233,238,.6);
+          --chip: rgba(30,36,46,.86); --cta: #ffffff; --cta-ink: #211e19; }
+  :root[data-look="light"] { --ground: #f8f7f4; --ink: #211e19; --ink-soft: rgba(33,30,25,.6);
+          --chip: rgba(255,255,255,.86); --cta: #211e19; --cta-ink: #ffffff; }
+  html, body { margin: 0; height: 100%; background: var(--ground); }
+  body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         overflow: hidden; -webkit-font-smoothing: antialiased; }
+  
+  #stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+  
+  #poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+            opacity: 0; transition: opacity .35s ease; }
+  #poster.in { opacity: 1; }
+  
+  #scrim { position: absolute; inset: 0; background: rgba(0,0,0,.26); opacity: 0;
+           transition: opacity .35s ease; pointer-events: none; }
+  :root[data-look="light"] #scrim { background: rgba(0,0,0,.14); }
+  #scrim.in { opacity: 1; }
+  
+  #caption { position: absolute; left: 14px; top: 12px; max-width: calc(100% - 28px);
+             font-size: 13px; font-weight: 600; letter-spacing: .01em; pointer-events: none; }
+  
+  #play { position: relative; display: inline-flex; align-items: center; gap: 10px;
+          height: 48px; padding: 0 22px 0 18px; border: 0; border-radius: 999px;
+          background: var(--cta); color: var(--cta-ink); font: inherit; font-weight: 600; font-size: 15px;
+          letter-spacing: .01em; cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,.18), 0 10px 30px rgba(0,0,0,.22);
+          transition: transform .18s ease, box-shadow .18s ease, opacity .25s ease;
+          opacity: 0; }
+  #play.in { opacity: 1; }
+  #play:hover, #play:focus-visible { transform: translateY(-1px) scale(1.03);
+          box-shadow: 0 3px 8px rgba(0,0,0,.22), 0 14px 36px rgba(0,0,0,.28); }
+  #play:focus-visible { outline: 3px solid #A9C7CA; outline-offset: 3px; }
+  #play:disabled { cursor: progress; transform: none; }
+  #play svg { width: 20px; height: 20px; flex: 0 0 auto; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  #play:hover svg, #play:focus-visible svg { transform: rotate(-12deg) scale(1.06); }
+  
+  @property --sweep { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  :root { --ring: #8EB4B9; --ring-hi: #D9F2F4; }
+  :root[data-look="light"] { --ring: #1C5A64; --ring-hi: #2F9AA8; }
+  
+  #play::before, #play::after { content: ""; position: absolute; inset: -5px; border-radius: inherit; padding: 3px;
+    background:
+      conic-gradient(from var(--sweep), transparent 0deg, transparent 200deg,
+        color-mix(in srgb, var(--ring) 70%, transparent) 280deg, var(--ring) 330deg, var(--ring-hi) 356deg, transparent 360deg),
+      color-mix(in srgb, var(--ring) 40%, transparent);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    animation: sweep 3.6s linear infinite; pointer-events: none; }
+  
+  #play::after { inset: -8px; padding: 6px; filter: blur(6px); opacity: .9;
+    background: conic-gradient(from var(--sweep), transparent 0deg, transparent 260deg,
+        color-mix(in srgb, var(--ring) 80%, transparent) 320deg, var(--ring-hi) 356deg, transparent 360deg); }
+  @keyframes sweep { to { --sweep: 360deg; } }
+  
+  #stage.ready { cursor: pointer; }
+  
+  #wordmark { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center;
+              height: 32px; padding: 0 12px; border-radius: 10px; background: var(--chip);
+              -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+              font-family: Poppins, system-ui, sans-serif; font-weight: 600; font-size: 14px;
+              letter-spacing: .01em; color: var(--ink-soft); text-decoration: none;
+              transition: color .18s ease; }
+  #wordmark:hover, #wordmark:focus-visible { color: var(--ink); }
+  
+  #note { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+          text-align: center; color: var(--ink-soft); font-size: 14px; max-width: 46ch; margin: 0 auto; }
+  @media (prefers-reduced-motion: reduce) {
+    #poster, #scrim, #play, #wordmark { transition: none; }
+    #play:hover, #play:focus-visible { transform: none; }
+    #play::before { animation: none; background: color-mix(in srgb, var(--ring) 60%, transparent); }
+    #play::after { display: none; }
+    #play:hover svg, #play:focus-visible svg { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="poster" alt="" decoding="async">
+  <div id="scrim"></div>
+  <div id="caption" hidden></div>
+  <button id="play" type="button" aria-label="View this floor plan in 3D">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
+    </svg>
+    <span>View in 3D</span>
+  </button>
+  <a id="wordmark" href="https://styloplan.com" target="_blank" rel="noopener" aria-label="StyloPlan: open styloplan.com">StyloPlan</a>
+  <div id="note" hidden></div>
+</div>
+<script type="module">
+import { readPublishedHome } from './src/published-read.js';
+import { planTitleOf } from './src/floor-context.js';
+import { THEMES } from './src/model3d/theme3d.js';
+
+const $ = (id) => document.getElementById(id);
+const q = new URLSearchParams(location.search);
+const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
+
+// The 3D page this frame becomes on the click: the same query the builder's
+// code carries (look, floors, title), plus embed=1. `replace`, so the host
+// page's history does not gain an entry for a frame that changed itself.
+const q3d = new URLSearchParams(location.search);
+q3d.set('embed', '1');
+const url3d = `${new URL('view3d.html', location.href).href}?${q3d}`;
+let going = false;
+function go() {
+  if (going) return;
+  going = true;
+  const b = $('play');
+  b.disabled = true;
+  b.querySelector('span').textContent = 'Loading 3D…';
+  location.replace(url3d);
+}
+
+const home = await readPublishedHome(q.get('p'), q.get('f'));
+if (!home) {
+  // The 3D page's own sentence for the same situation, so a builder who has
+  // seen one recognises the other.
+  $('play').hidden = true;
+  $('caption').hidden = true;
+  const note = $('note');
+  note.textContent = q.get('p')
+    ? 'This floor plan is not being shared. If it is yours, open it in StyloPlan and turn on “Share this plan”; otherwise ask whoever sent you this page.'
+    : 'No floor was named.';
+  note.hidden = false;
+} else {
+  // The published look is the truth; the URL's was only the first paint.
+  const look = home.look === 'light' ? 'light' : 'dark';
+  document.documentElement.dataset.look = look;
+  document.documentElement.style.setProperty('--ground', hex(THEMES[look].bg));
+
+  const title = planTitleOf(home.ctx.project, home.ctx.floor);
+  // The chip is the builder's where the floor was published with a brand
+  // (publish.js brandOf): their name, opening their site when one is set.
+  const brand = home.ctx.floor.brand;
+  if (brand) {
+    const wm = $('wordmark');
+    wm.textContent = brand.name;
+    if (brand.website) {
+      wm.href = brand.website;
+      let host = brand.website;
+      try { host = new URL(brand.website).host; } catch { /* as given */ }
+      wm.setAttribute('aria-label', `${brand.name}: open ${host}`);
+    } else {
+      wm.removeAttribute('href'); wm.removeAttribute('target'); wm.removeAttribute('rel');
+      wm.setAttribute('aria-label', brand.name);
+    }
+  }
+  if (title && q.get('title') !== '0') { $('caption').textContent = title; $('caption').hidden = false; }
+  $('poster').alt = title ? `${title}, 3D floor plan` : '3D floor plan';
+
+  // The button is live as soon as the home is known: the picture may still
+  // be on its way, and a visitor who clicks first is not made to wait for
+  // a poster they are about to leave.
+  $('play').classList.add('in');
+  $('play').addEventListener('click', (e) => { e.stopPropagation(); go(); });
+  const stage = $('stage');
+  stage.classList.add('ready');
+  stage.addEventListener('click', (e) => { if (!e.target.closest('#wordmark')) go(); });
+
+  // THE STILL THAT FITS THIS FRAME. The publisher draws the model in two
+  // shapes (POSTER_SHAPES: the render's own, and 5:4 for the squarer frames
+  // a phone or a host makes), because a wide still letterboxed into a
+  // square frame is a small model in a field of ground -- Saman,
+  // 2026-09-20, twice. The nearer shape is chosen by the frame's own
+  // proportions (the record carries the render-shaped still's), and it
+  // FILLS the frame (`cover`) when what that crops is within the still's
+  // own margin (the model is fitted to 86% of its frame, so 7% a side is
+  // ground); a frame further off keeps the whole still and shows ground at
+  // two edges (`contain`). Re-decided when the
+  // frame changes shape. A floor published before posters existed shows
+  // the plan itself, whole, until its builder publishes again.
+  const img = $('poster');
+  const still = {};
+  const near = (fa, a) => Math.abs(Math.log(fa / a));
+  // The render-shaped still's proportions travel in the record; without
+  // them (a floor published before the second shape existed) it is the
+  // only still there is.
+  const shapeFor = (fa) => (home.posterAspect && near(fa, home.posterAspect) > near(fa, 1.25) ? '5x4' : '');
+  // 0.14 of the still cropped in all, 7% a side: the fitted model's own margin.
+  const fitFor = (fa, pa) => (1 - Math.min(fa, pa) / Math.max(fa, pa) <= 0.14 ? 'cover' : 'contain');
+  let shown = null;
+  const show = async () => {
+    const st = $('stage');
+    const fa = st.clientWidth / Math.max(1, st.clientHeight);
+    const shape = shapeFor(fa);
+    if (!(shape in still)) still[shape] = await home.posterUrl(shape).catch(() => null);
+    if (!still[shape] && !('' in still)) still[''] = await home.posterUrl('').catch(() => null);
+    const isStill = Boolean(still[shape] || still['']);
+    const src = still[shape] || still[''] || (await home.renderUrl(look).catch(() => null));
+    if (!src) return;
+    const fit = () => { img.style.objectFit = isStill ? fitFor(fa, img.naturalWidth / img.naturalHeight) : 'contain'; };
+    if (src !== shown) {
+      const first = !shown;
+      shown = src;
+      img.addEventListener('load', () => { fit(); if (first) { img.classList.add('in'); $('scrim').classList.add('in'); } }, { once: true });
+      img.src = src;
+    } else if (img.naturalWidth) fit();
+  };
+  await show();
+  let resizing = null;
+  addEventListener('resize', () => { clearTimeout(resizing); resizing = setTimeout(show, 150); });
+}
+</script>
+</body>
+</html>
