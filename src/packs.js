@@ -1,0 +1,1 @@
+export const PACKS=[{id:"home",name:"One home",credits:2,price:"$25",env:"STRIPE_PRICE_HOME"},{id:"starter",name:"Starter",credits:8,price:"$79",env:"STRIPE_PRICE_STARTER"},{id:"builder",name:"Builder",credits:30,price:"$259",env:"STRIPE_PRICE_BUILDER",mark:!0}],packById=e=>PACKS.find(r=>r.id===e)||null;
