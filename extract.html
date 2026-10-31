@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>(function(){try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Upload · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Roboto:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=97">
+<script>try{var t=localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>
+  main { padding-block: var(--s-2) var(--s-6); }
+  #drop { border: 1.5px dashed var(--line-strong); border-radius: var(--r-panel); padding: 48px 32px;
+          text-align: center; background: var(--surface); cursor: pointer; transition: border-color .15s, background .15s; }
+  #drop:hover, #drop.over { border-color: var(--accent); background: var(--surface-2); }
+  #drop:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-color: var(--accent); }
+  #drop p { margin: 8px 0; color: var(--ink-2); font-size: 13px; }
+  #drop .big { font-size: var(--t-17); color: var(--ink); font-weight: 600; }
+  
+  .have-row { display: flex; gap: var(--s-4); align-items: center; flex-wrap: wrap; }
+  
+  .panel img.have-thumb { width: 96px; height: 96px; object-fit: contain; flex: none;
+                border: 1px solid var(--line); border-radius: var(--r-ctl);
+                background: var(--paper); }
+  .have-text { flex: 1; min-width: 180px; }
+  .have-text h2 { margin: 0 0 4px; font-size: var(--t-17); }
+  .have-text p { margin: 0; }
+  .have-acts { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+  #gate { margin: 16px 0; }
+  #stages { list-style: none; padding: 0; margin: 16px 0; display: none; }
+  #stages li { display: flex; gap: 12px; align-items: baseline; padding: 4px 0; font-size: 14px; }
+  #stages .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--line-strong); flex: none; align-self: center; }
+  
+  #stages li.run .dot { background: var(--load); animation: stage-halo 1.6s ease-out infinite; }
+  @keyframes stage-halo { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--load) 55%, transparent); }
+                          100% { box-shadow: 0 0 0 7px transparent; } }
+  #stages .loadbar { margin: 12px 0 0 21px; max-width: 280px; }
+  #stages:not(:has(li.run)) .loadbar { display: none; }
+  @media (prefers-reduced-motion: reduce) { #stages li.run .dot { animation: none; } }
+  #stages li.done .dot { background: var(--ok); }
+  #stages li.error .dot { background: var(--err); }
+  #stages .detail { color: var(--ink-2); font-size: 12px; }
+  @keyframes pulse { 50% { opacity: .35; } }
+  #results { display: none; }
+  .sideby { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 16px 0; }
+  .panel img { width: 100%; height: auto; display: block; border: 1px solid var(--line); border-radius: 6px; }
+  .checkrow { display: flex; gap: 24px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); margin-bottom: 12px; }
+  .checkrow b { font: 600 17px var(--mono); color: var(--ink); }
+  
+  .pdf-pages { display: grid; gap: 12px; margin: 12px 0;
+               grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .pdf-page { display: flex; flex-direction: column; gap: 8px; align-items: center;
+              padding: 8px; cursor: pointer; background: var(--surface);
+              border: 1px solid var(--line-strong); border-radius: var(--r-ctl); }
+  .pdf-page:hover { border-color: var(--accent); background: var(--surface-2); }
+  .pdf-page canvas { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+  .pdf-page span { font-size: 12px; color: var(--ink-2); }
+  
+  .part { margin: 12px 0; }
+  .part-q { margin: 0; font-weight: 600; color: var(--ink); }
+  .part-lead { margin: 4px 0 12px; color: var(--ink-2); }
+  .part-stage { position: relative; display: inline-block; max-width: 100%; overflow: hidden;
+                line-height: 0; cursor: crosshair; touch-action: none; user-select: none; }
+  .part-stage img { display: block; max-width: 100%; max-height: 62vh; width: auto; height: auto;
+                    border: 1px solid var(--line); pointer-events: none; }
+  .part-box { position: absolute; border: 2px solid var(--accent); pointer-events: none;
+              box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35); }
+  
+  .part-picks { position: absolute; inset: 0; pointer-events: none; }
+  .part-stage .part-pick { position: absolute; padding: 0; margin: 0; min-height: 0; pointer-events: none;
+    background: color-mix(in oklab, var(--accent) 6%, transparent);
+    border: 2px dashed var(--accent); border-radius: 4px;
+    transition: background var(--d-micro) var(--ease);
+    animation: part-found 1.1s var(--ease) 2; }
+  .part-stage .part-pick.hot { background: color-mix(in oklab, var(--accent) 16%, transparent); border-style: solid; }
+  .part-stage .part-pick:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .part-pick .num { position: absolute; top: 6px; left: 6px; padding: 3px 8px; border-radius: 999px;
+    font: 600 12px/1 var(--sans); color: var(--on-accent); background: var(--accent); }
+  @keyframes part-found {
+    from { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent); }
+    to   { box-shadow: 0 0 0 18px color-mix(in oklab, var(--accent) 0%, transparent); }
+  }
+  @media (prefers-reduced-motion: reduce) { .part-stage .part-pick { animation: none; transition: none; } }
+  .part-note { margin-top: 12px; }
+  .part-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+  
+  #stages .elapsed { margin-left: 8px; font-size: 12px; color: var(--ink-3); }
+  .by-touch { display: none; }
+  @media (pointer: coarse) { .by-mouse { display: none; } .by-touch { display: inline; } }
+  
+  .msg-details { margin-top: 8px; }
+  .msg-details summary { cursor: pointer; font-size: 12px; color: var(--ink-2); }
+  .msg-details p { margin: 4px 0 0; font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere;
+                   max-height: 8em; overflow: auto; }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/chrome.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/ask.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/quality-gate.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/pdf-input.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sheet-part.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/l1-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-plan.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-l1.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sample-project.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/aspect.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/plan-trim.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/ink.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/registration.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/credit-jobs.js" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1>Upload a floor plan</h1>
+  <span id="modeBadge" class="chip">checking…</span>
+  <div class="actions">
+    <button id="sampleBtn" class="btn btn--secondary">Run bundled sample</button>
+  </div>
+</div>
+<main id="main" tabindex="-1">
+  
+  <section id="havePlan" class="panel" hidden>
+    <div class="have-row">
+      <img id="haveThumb" alt="" class="have-thumb">
+      <div class="have-text">
+        <h2 id="haveTitle">This floor already has a plan</h2>
+        <p id="haveWhat" class="subtle"></p>
+      </div>
+      <div class="have-acts">
+        <a id="haveNext" class="btn btn--primary">Continue to Review <span class="go" aria-hidden="true">→</span></a>
+        <button id="haveReplace" class="btn btn--secondary">Replace plan</button>
+      </div>
+    </div>
+  </section>
+  
+  <div id="drop" role="button" tabindex="0" aria-label="Choose a floor plan to upload">
+    
+    <p class="big"><span class="by-mouse">Drop a floor plan here, or click to choose</span><span class="by-touch">Tap to choose a floor plan</span></p>
+    
+    
+    <p>PDF, PNG, JPG or WebP. Images need a short side of 800px or more. A sheet with several floors is fine.</p>
+    
+    <p id="readsBest"><strong>For the best result:</strong> upload the plan itself, the PDF or export from your architect, not a photo or a scan. If you have a presentation plan and a construction sheet, use the presentation plan. Doors and windows drawn clearly in the walls read best.</p>
+    <input type="file" id="fileInput" accept="application/pdf,image/png,image/jpeg,image/webp" hidden>
+  </div>
+  <div id="gate"></div>
+
+  <ul id="stages" aria-live="polite">
+    <li data-stage="read"><span class="dot"></span><span class="name">Reading plan…</span><span class="detail"></span></li>
+    <li data-stage="extract"><span class="dot"></span><span class="name">Extracting rooms, labels and dimensions…</span><span class="detail"></span></li>
+    <li data-stage="wireframe"><span class="dot"></span><span class="name">Making our drawing…</span><span class="detail"></span></li>
+    <li data-stage="crosscheck"><span class="dot"></span><span class="name">Cross-checking dimensions…</span><span class="detail"></span></li>
+    <li class="bar" aria-hidden="true"><span class="loadbar" style="flex:1"></span></li>
+  </ul>
+
+  
+  <section id="results">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px">
+      <div class="checkrow" id="checkrow" style="margin-bottom:0"></div>
+      <button id="toReview" class="btn btn--primary">Continue to Review <span class="go" aria-hidden="true">→</span></button>
+    </div>
+    <div class="sideby">
+      <div class="panel"><h3>Original plan</h3><img id="srcImg" alt="original plan"></div>
+      <div class="panel"><h3>Our drawing</h3><img id="wfImg" alt="Our drawing of your plan"></div>
+    </div>
+  </section>
+</main>
+
+<script type="module">import{renderChrome as V}from"./src/chrome.js";import{track as E}from"./src/events.js";import{runQualityGate as X}from"./src/quality-gate.js";import{isPdf as Z,openPdf as _,renderPage as O,renderPageRegion as ee,renderThumb as te,canvasToFile as M,isPdfTimeout as U}from"./src/pdf-input.js";import{boxFrom as I,isBox as ne,boxPixels as W,inkGrid as ae,findParts as oe}from"./src/sheet-part.js";import{runL1 as re,fetchHealth as se}from"./src/l1-client.js";import{ApiError as ie}from"./src/api.js";import{openSignIn as le}from"./src/auth-ui.js";import{floorHref as G}from"./src/floor-context.js";const s=e=>document.getElementById(e),{ctx:h}=await V();let Y=!1;const ce=se().then(e=>{Y=e.live;const n=s("modeBadge");e.live?n.remove():n.textContent="Demo mode: no AI key on the server"});async function de(){if(!h)return!1;let e=null;try{const{getArtifactUrl:t}=await import("./src/artifacts.js");e=await t(h.scope,"source")}catch{return!1}if(!e)return!1;const n=!!h.floor.verified;return s("haveThumb").src=e,s("haveWhat").textContent=n?"Replacing it removes this floor’s confirmation and renders, and you confirm the new plan in Review. The old confirmation stays in the floor’s history. A published 3D view keeps the old plan until you publish again.":"Replacing it starts reading the new plan from the beginning.",s("haveNext").firstChild.textContent=n?"Open Studio ":"Continue to Review ",s("haveNext").href=G(n?"studio.html":"review.html",h.project.id,h.floor.id),s("havePlan").hidden=!1,s("drop").hidden=!0,s("haveReplace").onclick=()=>{s("havePlan").hidden=!0,s("drop").hidden=!1,s("drop").scrollIntoView({block:"nearest",behavior:"smooth"})},!0}await de();const ue=h?.project?.isSample===!0;if(ue?s("sampleBtn").onclick=()=>F(null,"mock"):s("sampleBtn").remove(),s("drop").onclick=()=>s("fileInput").click(),s("drop").onkeydown=e=>{(e.key==="Enter"||e.key===" ")&&(e.preventDefault(),s("fileInput").click())},s("fileInput").onchange=()=>{s("fileInput").files[0]&&D(s("fileInput").files[0])},h){const{getArtifact:e,deleteArtifact:n}=await import("./src/artifacts.js"),t=await e(h.scope,"pending");t&&(await n(h.scope,"pending"),s("havePlan").hidden=!0,s("drop").hidden=!1,await ce,D(t))}s("drop").ondragover=e=>{e.preventDefault(),s("drop").classList.add("over")},s("drop").ondragleave=()=>s("drop").classList.remove("over"),s("drop").ondrop=e=>{e.preventDefault(),s("drop").classList.remove("over"),e.dataTransfer.files[0]&&D(e.dataTransfer.files[0])};const $=()=>{s("drop").hidden=!1};async function D(e){s("gate").innerHTML="",s("drop").hidden=!0;let n=null;if(Z(e)){n=e;const r=await pe(e);if(!r)return $();e=r}const t=await he(e);if(!t)return $();if(t.box){const r=n?await ge(n,e.pdfPage||1,t.box,e.name):await we(t.img,t.box,e.name);if(t.release(),!r)return $();r.sheetPart=!0,e=r}const a=await X(e);for(const r of a.hard)x("err",r);for(const r of a.soft)x("warn",r,e);if(!a.ok||a.soft.length)return $();z(e)}function z(e){if(!Y){x("warn","Your plan passed the quality check, but the AI is not available on this server.");return}F(e,"live")}async function pe(e){const n=s("gate");n.innerHTML="";const t=document.createElement("div");t.className="msg",t.textContent="Reading the PDF…",n.append(t);const a=u=>(t.className="msg err",t.textContent=U(u)?"This PDF is slow to read. Export the plan page as a PNG and upload that instead.":"That PDF could not be opened. If it is password-protected, remove the password first.",null);let r,i,d;try{({doc:r,pageCount:i,close:d}=await _(e))}catch(u){return a(u)}if(i===1){t.textContent="Reading page 1…";try{const u=await O(r,1);n.innerHTML="";const l=await M(u,e.name.replace(/\.pdf$/i,".png"));return l.pdfPage=1,l}catch(u){return a(u)}finally{d()}}t.textContent=`${i} page${i===1?"":"s"}. Choose the floor plan to process.`;const o=document.createElement("div");return o.className="pdf-pages",n.append(o),new Promise(u=>{let l=!1;const m=g=>{l||(l=!0,d(),u(g))},w=document.createElement("button");w.className="btn btn--quiet",w.textContent="Cancel",w.onclick=()=>{n.innerHTML="",m(null)},n.append(w),(async()=>{for(let g=1;g<=i;g++){if(l)return;let y;try{y=await te(r,g)}catch(k){if(o.children.length){t.textContent=`${o.children.length} of ${i} page${i===1?"":"s"} could be shown. Choose the floor plan to process.`;return}l||(l=!0,a(k),d(),u(null));return}const f=document.createElement("button");f.className="pdf-page",f.append(y);const v=document.createElement("span");v.textContent=`Page ${g}`,f.append(v),f.onclick=async()=>{if(!l){l=!0,t.textContent=`Reading page ${g}…`,o.remove(),w.remove();try{const k=await O(r,g);n.innerHTML="";const T=await M(k,e.name.replace(/\.pdf$/i,`-p${g}.png`));T.pdfPage=g,u(T)}catch(k){a(k),u(null)}finally{d()}}},o.append(f)}})()})}function he(e){const n=s("gate");n.innerHTML="";const t=URL.createObjectURL(e),a=document.createElement("div");a.className="part",a.innerHTML=`
+    <p class="part-q"></p>
+    <p class="part-lead">If it shows more than one floor, drag a box around this one. Include the dimensions around its walls.</p>
+    <div class="part-stage"><img alt="The plan sheet you chose"><div class="part-picks"></div><div class="part-box" hidden></div></div>
+    <p class="msg warn part-note" hidden></p>
+    <div class="part-actions">
+      <button type="button" class="btn btn--quiet" data-act="cancel">Cancel</button>
+      <button type="button" class="btn btn--secondary" data-act="clear" hidden>Clear the box</button>
+      <button type="button" class="btn btn--secondary" data-act="whole" hidden>Use the whole sheet</button>
+      <button type="button" class="btn btn--primary" data-act="use">Use the whole sheet</button>
+    </div>`;const r=h?.floor?.name;a.querySelector(".part-q").textContent=r?`Is this whole sheet ${r}?`:"Is this whole sheet one floor?",n.append(a);const i=a.querySelector("img"),d=a.querySelector(".part-stage"),o=a.querySelector(".part-box"),u=a.querySelector(".part-note"),l=a.querySelector('[data-act="use"]'),m=a.querySelector('[data-act="clear"]'),w=a.querySelector('[data-act="whole"]'),g=a.querySelector(".part-picks");let y=null,f=null,v=[];const k=c=>v.find(({box:p})=>c.x>=p.x&&c.x<=p.x+p.w&&c.y>=p.y&&c.y<=p.y+p.h)||null,T=c=>{const p=i.getBoundingClientRect();return{x:(c.clientX-p.left)/p.width,y:(c.clientY-p.top)/p.height}},R=c=>{o.hidden=!c,c&&Object.assign(o.style,{left:`${c.x*100}%`,top:`${c.y*100}%`,width:`${c.w*100}%`,height:`${c.h*100}%`})},Q=c=>{if(!c||e.pdfPage)return null;const p=W(c,i.naturalWidth,i.naturalHeight);return Math.min(p.w,p.h)<800?p:null},L=c=>{y=c,R(c),m.hidden=!c,l.textContent=c||v.length?"Use this part":"Use the whole sheet";const p=Q(c);u.hidden=!p,l.disabled=!!p||v.length>0&&!c,p&&(u.textContent=`That part is ${p.w}×${p.h} pixels. The reading needs 800 on the short side. Draw a larger box, or upload a sharper file.`)};return d.addEventListener("pointerdown",c=>{c.button===0&&(c.preventDefault(),d.setPointerCapture(c.pointerId),f=T(c),R(I(f,f)))}),d.addEventListener("pointermove",c=>{if(f){R(I(f,T(c)));return}const p=k(T(c));for(const b of v)b.el.classList.toggle("hot",b===p);d.style.cursor=p?"pointer":""}),d.addEventListener("pointerleave",()=>{for(const c of v)c.el.classList.remove("hot")}),d.addEventListener("pointerup",c=>{if(!f)return;const p=T(c),b=I(f,p);f=null,L(ne(b)?b:k(p)?.box||y)}),d.addEventListener("pointercancel",()=>{f=null,L(y)}),new Promise(c=>{const p=()=>URL.revokeObjectURL(t),b=S=>{p(),c(S)};a.querySelector('[data-act="cancel"]').onclick=()=>{n.innerHTML="",b(null)},m.onclick=()=>{L(null),l.focus()},w.onclick=()=>{n.innerHTML="",b({box:null})},l.onclick=()=>{if(n.innerHTML="",!y)return b({box:null});c({box:y,img:i,release:p})},i.onload=()=>{if(!e.pdfPage&&Math.min(i.naturalWidth,i.naturalHeight)<800){n.innerHTML="",b({box:null});return}l.focus(),me(()=>{let S=[];try{S=fe(i)}catch{S=[]}if(S.length<2||!a.isConnected)return;const j=r||"this floor";a.querySelector(".part-q").textContent=`Which plan is ${j}?`,a.querySelector(".part-lead").textContent=`This sheet has ${S.length} plans. Click the one that is ${j}, or drag a box around it.`,v=S.map((P,B)=>{const C=document.createElement("button");return C.type="button",C.className="part-pick",C.setAttribute("aria-label",`Plan ${B+1}`),C.innerHTML=`<span class="num" aria-hidden="true">${B+1}</span>`,Object.assign(C.style,{left:`${P.x*100}%`,top:`${P.y*100}%`,width:`${P.w*100}%`,height:`${P.h*100}%`}),C.onclick=()=>{L(P),l.focus()},g.append(C),{box:P,el:C}}),w.hidden=!1,L(y)})},i.onerror=()=>{n.innerHTML="",x("err","That file could not be shown as an image."),b(null)},i.src=t})}function fe(e){const n=Math.min(1,4096/Math.max(e.naturalWidth,e.naturalHeight)),t=Math.max(1,Math.round(e.naturalWidth*n)),a=Math.max(1,Math.round(e.naturalHeight*n)),r=document.createElement("canvas");r.width=t,r.height=a;const i=r.getContext("2d",{willReadFrequently:!0});return i.fillStyle="#ffffff",i.fillRect(0,0,t,a),i.drawImage(e,0,0,t,a),oe(ae(i.getImageData(0,0,t,a)))}const me=e=>requestAnimationFrame(()=>setTimeout(e,0));async function ge(e,n,t,a){const r=x("","Reading that part of the page…");let i=()=>{};try{const d=await _(e);i=d.close;const o=await ee(d.doc,n,t);return r.remove(),await M(o,a)}catch(d){return r.className="msg err",r.textContent=U(d)?"This PDF is slow to read. Export the plan page as a PNG and upload that instead.":"That part of the PDF could not be read. Try the whole sheet, or export the page as a PNG.",null}finally{i()}}async function we(e,n,t){const a=W(n,e.naturalWidth,e.naturalHeight),r=document.createElement("canvas");r.width=a.w,r.height=a.h;const i=r.getContext("2d");return i.fillStyle="#ffffff",i.fillRect(0,0,a.w,a.h),i.drawImage(e,a.x,a.y,a.w,a.h,0,0,a.w,a.h),M(r,t.replace(/\.(jpe?g|webp)$/i,".png"))}function x(e,n,t){const a=document.createElement("div");if(a.className=`msg ${e}`,a.textContent=n,t){const r=document.createElement("button");r.textContent="Process anyway",r.style.marginLeft="10px",r.onclick=()=>{s("gate").innerHTML="",z(t)},a.append(r)}return s("gate").append(a),a}let H=null;const q=new Map;function ye(){for(const[e,n]of q){let t=e.querySelector(".elapsed");t||(t=document.createElement("span"),t.className="elapsed num",t.setAttribute("aria-hidden","true"),e.querySelector(".name").after(t)),t.textContent=`${Math.round((Date.now()-n)/1e3)}s`}}async function F(e,n,t=null){s("drop").hidden=!0,s("results").style.display="none",s("stages").style.display="block",clearInterval(H),q.clear();for(const o of document.querySelectorAll("#stages .elapsed"))o.remove();H=setInterval(ye,250);const a=(o,u)=>{o.className=u,o.querySelector(".name")?.classList.toggle("working",u==="run"),u==="run"?q.has(o)||q.set(o,Date.now()):(q.delete(o),o.querySelector(".elapsed")?.remove())};for(const o of document.querySelectorAll("#stages li[data-stage]"))a(o,""),o.querySelector(".detail").textContent="";const r=(o,u,l)=>{const m=document.querySelector(`#stages li[data-stage="${o}"]`);m&&(a(m,u),l&&(m.querySelector(".detail").textContent=l))},i=Date.now(),d=()=>Math.round((Date.now()-i)/1e3);E("upload_started",{kb:e?Math.round(e.size/1024):0,mode:n,part:!!e?.sheetPart,retry:!!t,kept:!!t?.wireframe});try{const o=await re(e,n,r,t);o.mock=n==="mock",E("upload_done",{seconds:d(),spaces:o.extraction?.spaceCount??null});const u=ke(o);try{A=(await J(o)).scope}catch(l){x("warn",`This render could not be saved to your browser (${l.message}). Press Continue to Review before leaving this page, or it will have to be rendered again.`)}if(A&&!s("gate").children.length&&await u!=="not confirmed"){r("crosscheck","done","opening Review…"),K();return}s("results").style.display="block"}catch(o){if(o instanceof ie&&o.actionable){const l=x("warn",o.code==="not_signed_in"?"Sign in to process this plan. Your file is still here.":o.message);if(o.code==="not_signed_in"&&l){const m=document.createElement("button");m.className="btn btn--secondary btn--sm",m.style.marginLeft="8px",m.textContent="Sign in",m.onclick=()=>le(),l.append(m)}}else ve(o,()=>F(e,n,o.partial?.wireframe?{wireframe:o.partial.wireframe}:null));const u=[...document.querySelectorAll("#stages li.run, #stages li.error")].map(l=>l.dataset.stage).join(",");E("upload_failed",{seconds:d(),stage:u||null,kept:!!o?.partial?.wireframe,gate:o?.actionable?o.code:null,reason:o?.actionable?null:o?.message});for(const l of document.querySelectorAll("#stages li.run"))a(l,"error");$()}finally{clearInterval(H)}}function be(e){const n=String(e?.message||"");return e?.partial?.wireframe?{text:"The drawing is done, but reading the room names and sizes did not work. Try again reads the plan once more and keeps the drawing.",detail:n}:/could not start just now|did not answer in time/.test(n)?{text:n,detail:null}:{text:"The plan could not be processed this time. Your file is still here, so you can try again.",detail:n}}function ve(e,n){const{text:t,detail:a}=be(e),r=x("err",t),i=document.createElement("button");if(i.className="btn btn--secondary btn--sm",i.style.marginLeft="8px",i.textContent="Try again",i.onclick=()=>{s("gate").innerHTML="",n()},r.append(i),a){const d=document.createElement("details");d.className="msg-details";const o=document.createElement("summary");o.textContent="Details";const u=document.createElement("p");u.textContent=a,d.append(o,u),r.append(d)}}let N=null,A=null;async function J(e){const{putArtifact:n,getArtifact:t,discardKinds:a,STYLED_KINDS:r,DRAFT:i}=await import("./src/artifacts.js"),d=h?h.scope:i;if(await n(d,"source",e.sourceUrl),await n(d,"wireframe",e.wireframeUrl),h){const u=await import("./src/store.js"),{sourceFingerprint:l}=await import("./src/versions.js");u.clearReviewDraft(h.project.id,h.floor.id);const m=u.getFloor(h.project.id,h.floor.id).floor?.verified;if(m){const w=await l(await t(d,"source"));(!w||!m.source?.sha||w.sha!==m.source.sha)&&(await a(d,r,{withRejects:!0}),u.supersedeSignOff(h.project.id,h.floor.id),E("plan_replaced"))}}const o={scope:d,extraction:e.extraction,readBack:e.readBack??null,mock:e.mock};return await n(d,"extraction",new Blob([JSON.stringify(o)],{type:"application/json"})),sessionStorage.setItem("l1result",JSON.stringify(o)),o}async function K(){if(!N)return;const e=s("toReview");e.disabled=!0;try{A||await J(N),location.href=h?G("review.html",h.project.id,h.floor.id):"review.html"}catch(n){e.disabled=!1,s("results").style.display="block",x("err",`Could not open Review for this plan: ${n.message}`)}}s("toReview").onclick=K;async function xe(e,n){const t=s("aspectCell");try{const{register:a}=await import("./src/review/registration.js"),r=w=>new Promise((g,y)=>{const f=new Image;f.onload=()=>g(f),f.onerror=y,f.src=w}),[i,d]=await Promise.all([r(e),r(n)]),{frameForModel:o}=await import("./src/aspect.js"),u=await r(o(i).canvas.toDataURL("image/png")),l=a(u,d);return l.aspectDev<=l.aspectTolerance?(t.remove(),"matched"):(t.innerHTML=`outline: <b>not confirmed</b>, ${(l.aspectDev*100).toFixed(2)}% apart`,t.title=`source ${l.sourceAspect.toFixed(3)} vs wireframe ${l.wireframeAspect.toFixed(3)} · tolerance ${(l.aspectTolerance*100).toFixed(0)}%`,t.style.color="var(--warn)","not confirmed")}catch{return t.remove(),"not measured"}}function ke({sourceUrl:e,wireframeUrl:n,extraction:t,readBack:a,mock:r}){N={sourceUrl:e,wireframeUrl:n,extraction:t,readBack:a,mock:r},s("srcImg").src=e,s("wfImg").src=n;const i=t.staircases||(t.stairs?.present?[t.stairs]:[]);return s("checkrow").innerHTML=[`<span><b>${t.spaceCount}</b> spaces</span>`,`<span><b>${t.doorCount}</b> doors</span>`,`<span><b>${t.windowCount}</b> windows</span>`,`<span>staircases: <b>${i.length}</b></span>`,'<span id="aspectCell">outline: <b>measuring…</b></span>'].join(""),xe(e,n)}
+</script>
+</body>
+</html>

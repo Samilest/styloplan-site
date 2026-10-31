@@ -1,0 +1,1561 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<script>(function(){var h=location.hash;if(/(^#|&)(type=recovery|error_code=)/.test(h))location.replace("projects.html"+h);})();</script>
+
+<title>Floor plans into pre-construction marketing images</title>
+<meta name="description" content="Upload the technical plan your architect drew, confirm every room name and dimension, and take back a branded marketing image. No photograph needed.">
+<link rel="canonical" href="https://samilest.github.io/styloplan-site/">
+<meta name="theme-color" content="#F2F0EA">
+
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="StyloPlan">
+<meta property="og:title" content="StyloPlan: floor plans into pre-construction marketing images">
+<meta property="og:description" content="Turn the floor plan your architect drew into a branded marketing image and a 3D view. You check every room name and dimension first. No photograph needed.">
+<meta property="og:url" content="https://samilest.github.io/styloplan-site/">
+<meta property="og:image" content="https://samilest.github.io/styloplan-site/assets/tour-3-studio.jpg">
+<meta property="og:image:width" content="1980">
+<meta property="og:image:height" content="1320">
+<meta property="og:image:alt" content="The StyloPlan Studio, showing a floor plan with its rooms labelled and dimensioned.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="StyloPlan: floor plans into pre-construction marketing images">
+<meta name="twitter:description" content="Upload the technical plan your architect drew, take back a branded marketing image. No photograph needed.">
+<meta name="twitter:image" content="https://samilest.github.io/styloplan-site/assets/tour-3-studio.jpg">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "StyloPlan",
+  "url": "https://samilest.github.io/styloplan-site/",
+  "applicationCategory": "BusinessApplication",
+  "applicationSubCategory": "Pre-construction marketing for home builders",
+  "operatingSystem": "Any modern web browser",
+  "description": "Upload the technical plan your architect drew, confirm every room name and dimension, and take back a branded marketing image. No photograph needed.",
+  "image": "https://samilest.github.io/styloplan-site/assets/tour-3-studio.jpg",
+  "provider": { "@type": "Person", "name": "Saman Nooraie" },
+  "offers": [
+    { "@type": "Offer", "name": "One home", "price": "25", "priceCurrency": "USD",
+      "description": "2 floor credits, one-off. Each credit covers one floor in one look. Unused credits never expire." },
+    { "@type": "Offer", "name": "Starter", "price": "79", "priceCurrency": "USD",
+      "description": "8 floor credits, one-off. Each credit covers one floor in one look. Unused credits never expire." },
+    { "@type": "Offer", "name": "Builder", "price": "259", "priceCurrency": "USD",
+      "description": "30 floor credits, one-off. Each credit covers one floor in one look. Unused credits never expire." }
+  ]
+}
+</script>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Archivo:wght@500;600;700&family=Lato:wght@400;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    
+    --paper: #F2F0EA;  --surface: #FFFFFF;  --inset: #FAF9F5;
+    --ink: #211E19;    --ink-2: #5F5A50;    --ink-3: #6E6759;
+    --line: #E3DFD6;   --line-strong: #CBC4B6;
+    --accent: #211E19; --accent-press: #000000; --accent-soft: #F3EBD9;   
+    
+    --paid: #FFD517;
+    --dark: #1F2125;
+    
+    --pop: #9E8040;   
+    
+    --jade: #D1B678;
+  }
+  
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: Lato, system-ui, sans-serif; font-size: 16px; line-height: 1.6;
+  }
+  
+  
+  
+  ::selection { background: color-mix(in oklab, var(--pop) 34%, transparent); }
+  img { max-width: 100%; height: auto; }
+  svg { max-width: 100%; }
+  a { color: inherit; text-decoration: none; }
+
+  
+  .dsp { font-family: Archivo, system-ui, sans-serif; font-weight: 700; letter-spacing: -0.03em; }
+  
+  .dsp em { font-style: normal; }   
+  .wm { font-family: Poppins, system-ui, sans-serif; font-weight: 600; }
+  .num, .an { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+              font-variant-numeric: tabular-nums; }
+  .an { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+
+  
+  
+  .rise { opacity: 1; }
+  html.reveal .rise { opacity: 0; transform: translateY(10px);
+    transition: opacity .75s cubic-bezier(.25,.46,.45,.94),
+                transform .75s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .rise.in { opacity: 1; transform: none; }
+
+  
+
+  
+  html.reveal .rise[data-d="1"] { transition-delay: .10s; }
+  html.reveal .rise[data-d="2"] { transition-delay: .20s; }
+  html.reveal .rise[data-d="3"] { transition-delay: .30s; }
+
+  
+  html.reveal .draw { transform: scaleX(0); transform-origin: left center;
+    transition: transform 1.4s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .draw.in { transform: scaleX(1); }
+
+  
+  .band-slats { display: none; }
+  html.reveal .band-slats { display: grid; grid-template-rows: repeat(8, 1fr); position: absolute; z-index: -1;
+    left: 0; right: 0; top: calc(40px + min(340px, 84vw) * 761 / 340 * 0.16);
+    height: calc(min(340px, 84vw) * 761 / 340 * 0.6); pointer-events: none; }
+  @media (max-width: 600px) { html.reveal .band-slats { left: -16px; right: -16px; } }
+  html.reveal .band-slats i { display: block; background: var(--paper); margin-bottom: -1px;
+    transform-origin: 50% 0; transition: transform .7s cubic-bezier(.65,0,.35,1) calc(var(--i) * 70ms); }
+  html.reveal .stage-in.in .band-slats i { transform: scaleY(0); }
+  html.reveal .stage-in .chat-phone { opacity: 0; transform: translateY(24px);
+    transition: opacity .2s linear .9s, transform .6s cubic-bezier(.25,.46,.45,.94) .9s; }   
+  html.reveal .stage-in.in .chat-phone { opacity: 1; transform: none; }
+
+  
+
+  
+  
+  .pts { margin: 32px 0 0; display: grid; gap: 0; }
+  .pts > div { padding: 16px 0; border-top: 1px solid rgba(242,240,234,.14); }
+  .pts > div:last-child { border-bottom: 1px solid rgba(242,240,234,.14); }
+  .pts dt { font-weight: 700; font-size: 16px; color: var(--paper); }
+  .pts dd { margin: 4px 0 0; font-size: 15px; line-height: 1.55; color: #A9A294; }
+  .isoslot { aspect-ratio: 5 / 4; width: 100%; min-height: 340px; position: relative;
+    border-radius: 4px; overflow: hidden; background: #1B1D21; }
+  .isoslot > iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; display: block; }
+  
+  @media (max-width: 600px) { .isoslot { aspect-ratio: 4 / 5; } }
+
+
+  
+  html.reveal .regs::before, html.reveal .regs::after,
+  html.reveal .regs > .r1, html.reveal .regs > .r2 {
+    opacity: 0; transition: opacity .4s cubic-bezier(.25,.46,.45,.94) .5s; }
+  html.reveal .regs.in::before, html.reveal .regs.in::after,
+  html.reveal .regs.in > .r1, html.reveal .regs.in > .r2 { opacity: 1; }
+
+  a, .btn, .pack, .dot { transition: background-color .12s, color .12s, box-shadow .12s, border-color .12s; }
+  .pack:hover { border-color: var(--ink); }
+
+  
+
+  
+  @media (prefers-reduced-motion: reduce) {
+    html.reveal .rise, html.reveal .rise.in,
+    html.reveal .hl, html.reveal .hl.in,
+    html.reveal .hero-r, html.reveal .hero-r.in { opacity: 1; transform: none; transition: none; }
+    html.reveal .draw, html.reveal .draw.in { transform: none; transition: none; }
+    html.reveal .band-slats { display: none; }
+    html.reveal .stage-in .chat-phone { opacity: 1; transform: none; transition: none; }
+    html.reveal .regs::before, html.reveal .regs::after,
+    html.reveal .regs > .r1, html.reveal .regs > .r2 { opacity: 1; transition: none; }
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+
+  
+  
+  
+  .shot-frame > picture img { position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: top; opacity: 0; transition: opacity .9s cubic-bezier(.25,.46,.45,.94); }
+  .shot-frame > picture img.on { opacity: 1; }
+  
+  .shot-frame { position: relative; aspect-ratio: 16 / 9; background: var(--dark);
+    border: 1px solid var(--line-strong); overflow: hidden; container-type: inline-size; }
+  
+  
+  @media (max-width: 600px) { .shot-frame { aspect-ratio: 4 / 5; } }
+  .scene-touch { position: absolute; left: 0; top: 0; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%;
+    background: rgba(255,255,255,.55); border: 2px solid rgba(255,255,255,.9); box-shadow: 0 1px 6px rgba(0,0,0,.35); opacity: 0; pointer-events: none; }
+  .scene { position: absolute; inset: 0; background: #16181a; opacity: 0; transition: opacity .5s ease; }
+  .scene.on { opacity: 1; }
+  .scene-screen { position: absolute; left: 0; top: 0; width: 1440px; transform-origin: 0 0; will-change: transform; }
+  .scene-layer, .scene-seq { position: absolute; background-repeat: no-repeat; display: block; }
+  .scene-handle { position: absolute; width: 0; }
+  .scene-handle::before { content: ""; position: absolute; left: -1px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.95); box-shadow: 0 0 0 1px rgba(0,0,0,.12); }
+  .scene-handle span { position: absolute; left: -24px; top: calc(50% - 24px); width: 48px; height: 48px; border-radius: 50%; background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,.25); display: grid; place-items: center; font: 600 18px/1 Lato, sans-serif; color: #211E19; letter-spacing: 2px; }
+  .scene-cursor { position: absolute; left: 0; top: 0; width: clamp(14px, 2.4cqw, 26px); height: clamp(14px, 2.4cqw, 26px);
+    pointer-events: none; opacity: 0; filter: drop-shadow(0 1px 2px rgba(0,0,0,.45)); }
+  .scene-ping { position: absolute; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; border: 2px solid #8fd3dc; opacity: 0; pointer-events: none; }
+  .scene-keys { position: absolute; left: 50%; top: 58%; transform: translateX(-50%); display: flex; gap: 8px; opacity: 0; pointer-events: none; }
+  .scene-keys kbd { font: 600 clamp(10px, 1.3cqw, 14px)/1 Lato, sans-serif; color: #211E19; background: #fff; border: 1px solid #CBC4B6;
+    border-bottom-width: 3px; border-radius: 6px; padding: .45em .6em; box-shadow: 0 2px 8px rgba(0,0,0,.18); }
+  .shot-frame.playing > picture img { visibility: hidden; }
+  
+  .scene-cap { margin: 0; flex: 1; min-height: 44px; display: flex; align-items: center; gap: 12px; font-size: 15px; color: var(--ink-2); }
+  .scene-cap b { font-family: 'IBM Plex Mono', ui-monospace, monospace; font-weight: 400; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); }
+  .scene-cap b:empty { display: none; }
+  @media (max-width: 600px) { .scene-cap { flex-direction: column; align-items: flex-start; justify-content: center; gap: 4px; font-size: 14px; } }
+  
+  .tour-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+  @media (min-width: 960px) { .tour-steps { margin-top: 40px; } }   
+  .tstep { font: inherit; display: grid; grid-template-columns: 32px 1fr; column-gap: 8px; width: 100%; text-align: left;
+    padding: 12px 0; background: none; border: 0; cursor: pointer; color: var(--ink-3); position: relative; }
+  .tstep .tnum { grid-row: 1 / 3; font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 12px; padding-top: 4px; }
+  .tstep .ttl { font-family: Archivo, system-ui, sans-serif; font-weight: 700; font-size: 18px; line-height: 1.3; }
+  .tstep .tline { font-size: 14px; line-height: 1.5; margin-top: 4px; display: none; }
+  .tstep[aria-selected="true"] { color: var(--ink); }
+  .tstep[aria-selected="true"] .tnum { color: var(--accent); }
+  .tstep[aria-selected="true"] .tline { display: block; color: var(--ink-2); }
+  .tstep:hover .ttl { color: var(--ink); }
+  .tstep .tbar { position: absolute; left: 40px; right: 0; bottom: 0; height: 1px; background: var(--line); overflow: hidden; }
+  .tstep[aria-selected="true"] .tbar { background: var(--line-strong); height: 2px; }
+  .tour-steps.auto .tstep[aria-selected="true"] .tbar::after {
+    content: ""; position: absolute; inset: 0; background: var(--pop);
+    transform-origin: left center; animation: dotfill 4s linear both; }   
+  .tour-steps.auto.held .tstep[aria-selected="true"] .tbar::after { animation-play-state: paused; }
+  .tour-steps.auto .tstep.has-scene[aria-selected="true"] .tbar::after { animation: none; transform: scaleX(var(--p, 0)); }
+  @keyframes dotfill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  .tour-foot { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 8px; }
+  
+  @media (min-width: 960px) {
+    .two.tour { grid-template-areas: "head screen" "list screen"; grid-template-rows: auto 1fr; align-items: start; row-gap: 0; }
+    .tour-head { grid-area: head; } .tour-list { grid-area: list; } .tour-screen { grid-area: screen; align-self: center; }
+  }
+  .pause[hidden] { display: none; }
+  
+  .pause { margin-left: 8px; min-height: 44px; display: inline-flex; align-items: center;
+           padding: 0 8px; background: none; border: 0; cursor: pointer;
+           font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px;
+           letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+  .pause:hover { color: var(--accent); }
+
+  
+  .sheet { max-width: 1440px; margin: 0 auto;
+           padding-left: max(24px, env(safe-area-inset-left));
+           padding-right: max(24px, env(safe-area-inset-right)); }
+  @media (min-width: 900px) {
+    .sheet { padding-left: max(56px, env(safe-area-inset-left));
+             padding-right: max(56px, env(safe-area-inset-right)); }
+  }
+  footer .sheet { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+  .navstrip ul { padding-left: max(24px, env(safe-area-inset-left));
+                 padding-right: max(24px, env(safe-area-inset-right)); }
+  .rule { height: 1px; background: var(--line-strong); }
+
+  
+  .tap { padding-top: 8px; padding-bottom: 8px; }
+  
+  
+  
+  @media (max-width: 959px), (pointer: coarse) {
+    .tap { padding-top: 12px; padding-bottom: 12px; }
+    header .bar > .wm { display: flex; align-items: center; min-height: 44px; }
+    
+    header .bar > .nav-l { padding-left: 4px; padding-right: 4px; }
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    height: 48px; padding: 0 24px; border-radius: 2px;
+    font-weight: 700; font-size: 15px; white-space: nowrap;
+  }
+  
+  .btn-a { background: var(--jade); color: var(--ink); }
+  .btn-a:hover { background: #BFA262; }
+  
+  header .btn-a { background: var(--ink); color: var(--paper); }
+  header .btn-a:hover { background: #000; }
+  .btn-o { box-shadow: inset 0 0 0 1px var(--ink); }
+  
+  .early { border: 1px solid var(--line-strong); border-radius: 4px; padding: 0; width: min(92vw, 440px);
+    background: var(--surface); color: var(--ink); box-shadow: 0 24px 64px -24px rgba(33,30,25,.45); }
+  .early::backdrop { background: rgba(33,30,25,.4); }
+  .early form { display: grid; gap: 12px; padding: 28px 24px 24px; }
+  .early h2 { margin: 0; font-size: 24px; }
+  .early p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--ink-2); }
+  .early label { margin-top: 4px; font-size: 13px; font-weight: 700; }
+  .early input { height: 48px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 2px;
+    font: inherit; font-size: 16px; color: var(--ink); background: var(--paper); }
+  .early input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .early .early-msg { font-size: 14px; color: #9A3B2A; }
+  .early .early-msg.ok { color: var(--accent); }
+  .early-row { display: flex; justify-content: flex-end; gap: 12px; margin-top: 4px; }
+  .early .early-fine { font-size: 12px; color: var(--ink-3); }
+  .early button { font: inherit; font-size: 15px; font-weight: 700; border: 0; cursor: pointer; }
+  .early button.btn-o { background: transparent; color: var(--ink); }
+  .early button[disabled] { opacity: .6; cursor: default; }
+  .a03-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; margin-top: 32px; }
+  .pack-example { margin: 20px 0 0; font-size: 15px; color: var(--ink-2); }
+  .pack-fine { margin: 16px 0 0; font-size: 14px; color: var(--ink-3); }
+  
+  .chat-wrap { display: flex; flex-direction: column; align-items: center;
+               position: relative; isolation: isolate; padding-top: 40px; }
+  
+  
+  .chat-wrap::before { content: ""; position: absolute; z-index: -1; left: 0; right: 0;
+    top: calc(40px + min(340px, 84vw) * 761 / 340 * 0.16);
+    height: calc(min(340px, 84vw) * 761 / 340 * 0.6); border-radius: 4px; background: var(--jade); }
+  @media (max-width: 600px) { .chat-wrap::before { left: -16px; right: -16px; border-radius: 0; } }
+  .chat-phone { width: min(340px, 84vw); aspect-ratio: 340 / 761; border-radius: 40px; background: #16181B; padding: 8px;
+    box-shadow: 0 24px 56px rgba(33,30,25,.16);
+    overflow: hidden; }  
+  .chat-phone .screen { position: relative; width: 100%; height: 100%; border-radius: 32px; overflow: hidden; background: var(--paper);
+    display: flex; flex-direction: column; }
+  .cbar { display: flex; align-items: center; gap: 12px; padding: 20px 16px 12px; background: var(--surface); border-bottom: 1px solid var(--line); }
+  .cbar .back { width: 8px; height: 8px; border-left: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); margin: 0 4px 0 8px; }
+  .cbar .av { width: 36px; height: 36px; border-radius: 50%; background: var(--jade); color: var(--ink); display: grid; place-items: center;
+    font-family: Archivo, sans-serif; font-weight: 700; font-size: 15px; }
+  .cbar b { display: block; font-family: Archivo, sans-serif; font-weight: 600; font-size: 15px; line-height: 1.2; }
+  .cbar small { color: var(--ink-3); font-size: 12px; }
+  .msgs { flex: 1; min-height: 0; overflow: hidden; padding: 12px 12px 8px; display: flex; flex-direction: column; justify-content: flex-end; }
+  .msgs > div { display: grid; grid-template-rows: 1fr; }
+  .msgs > div > * { min-height: 0; overflow: hidden; }
+  .msgs .day { display: block; text-align: center; font-size: 11px; color: var(--ink-3); padding: 4px 0 8px; }
+  
+  .msgs .m { width: fit-content; max-width: 78%; margin: 0 0 8px; padding: 8px 12px; border-radius: 18px; font-size: 15px; line-height: 1.35; }
+  .msgs .in { background: var(--surface); border-bottom-left-radius: 4px; box-shadow: 0 1px 0 var(--line); }
+  .msgs .out { margin-left: auto; background: var(--jade); color: var(--ink); border-bottom-right-radius: 4px; }
+  .msgs .pic { padding: 4px; }
+  .msgs .pic img { display: block; width: 188px; height: auto; border-radius: 14px; }
+  .msgs .pic.tall img { width: 148px; }
+  .msgs .card { padding: 0; overflow: hidden; width: 232px; max-width: 80%; }
+  .msgs .card img { display: block; width: 100%; height: auto; aspect-ratio: 520 / 401; object-fit: cover; background: var(--dark); }
+  .msgs .card span { display: block; padding: 8px 12px 12px; }
+  .msgs .card b { display: block; font-family: Archivo, sans-serif; font-weight: 600; font-size: 14px; line-height: 1.3; }
+  .msgs .card small { display: block; font-size: 12px; color: var(--ink-2); margin-top: 4px; }
+  .msgs .turn { margin-top: 8px; }
+  .typing { display: flex; gap: 4px; width: fit-content; margin: 8px 0 8px; padding: 12px 16px; border-radius: 18px; background: var(--surface); }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); animation: chatDot 1s infinite ease-in-out; }
+  .typing i:nth-child(2) { animation-delay: .15s; }
+  .typing i:nth-child(3) { animation-delay: .3s; }
+  @keyframes chatDot { 0%, 60%, 100% { opacity: .3; transform: none; } 30% { opacity: 1; transform: translateY(-2px); } }
+  .cin { display: flex; align-items: center; gap: 8px; padding: 8px 12px 20px; background: var(--surface); border-top: 1px solid var(--line); }
+  .cin .field { flex: 1; min-width: 0; border: 1px solid var(--line); border-radius: 20px; padding: 8px 16px; font-size: 14px; color: var(--ink);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cin .ph { color: var(--ink-3); }
+  .cin.busy .ph { display: none; }
+  .cin .send { width: 32px; height: 32px; border-radius: 50%; background: var(--accent-soft); transition: background .2s; }
+  .cin.busy .send { background: var(--jade); }
+  
+  .chat-phone .full { position: absolute; inset: 0; background: #0E0F11; visibility: hidden; transform: translateY(104%);
+    display: flex; flex-direction: column; padding: 24px 0 20px; }
+  .chat-phone .vp { position: relative; flex: 1; min-height: 0; }
+  .chat-phone .full canvas { display: block; width: 100%; height: 100%; object-fit: contain; }
+  .chat-phone .viewer { position: absolute; inset: 0; background: rgba(14,15,17,.96); display: grid; place-items: center;
+    padding: 48px 12px 32px; visibility: hidden; opacity: 0; }
+  .chat-phone .viewer img { display: block; max-width: 100%; max-height: 100%; border-radius: 8px; }
+  .chat-phone .viewer .vx { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%;
+    display: grid; place-items: center; color: #fff; font-size: 20px; line-height: 1; background: rgba(255,255,255,.12); }
+  .chat-phone .viewer .vx.press { background: rgba(255,255,255,.35); }
+  .chat-phone .dot, .chat-phone .ring { position: absolute; width: 32px; height: 32px; margin: -16px 0 0 -16px; border-radius: 50%;
+    background: rgba(255,255,255,.3); border: 2px solid rgba(255,255,255,.85); opacity: 0; pointer-events: none; }
+  .chat-phone .ring { left: 0; top: 0; background: rgba(209,182,120,.35); border-color: var(--jade); }
+  
+  .chat-js .msgs > div { grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
+  .chat-js .msgs > div > * { opacity: 0; transform: translateY(8px) scale(.98); transition: opacity .3s, transform .35s cubic-bezier(.2,.8,.2,1); }
+  .chat-js .msgs > div.on { grid-template-rows: 1fr; }
+  
+  .chat-js .msgs > div:not(.on) > * { margin-top: 0; margin-bottom: 0; padding-top: 0; padding-bottom: 0; }
+  .chat-js .msgs > div.on > * { opacity: 1; transform: none; }
+  .chat-js.snap .msgs > div, .chat-js.snap .msgs > div > * { transition: none; }
+  .chat-foot { display: flex; justify-content: center; margin-top: 48px; }   
+  .chat-note { margin: 16px 0 0; font-size: 13px; color: var(--ink-3); }
+  .chat-try { margin-top: 16px; color: var(--ink); font-size: 15px; text-decoration: underline; text-underline-offset: 4px;
+    min-height: 44px; display: inline-flex; align-items: center; }
+  .chat-try:hover { color: var(--accent); }
+  #a03 { scroll-margin-top: 72px; }
+  .chat-try.narrow-only { display: none; }
+  @media (max-width: 959px) { .chat-try.wide-only { display: none; } .chat-try.narrow-only { display: inline-flex; margin-top: 8px; } }
+  @media (prefers-reduced-motion: reduce) { .typing i { animation: none; } }
+  .last-word { background: var(--jade); padding: 72px 0; }
+  .last-word .last-line { color: var(--ink); }
+  .last-word .btn-a { background: var(--ink); color: var(--paper); }
+  .last-word .btn-a:hover { background: #000; }
+  
+  .last-sub { margin: 16px 0 0; font-size: 18px; line-height: 1.4; color: var(--ink); }
+  @media (max-width: 600px) { .last-sub { font-size: 16px; } }
+  .last-in { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 32px 48px; }
+  .last-line { margin: 0; max-width: 760px; font-size: clamp(28px, 3.4vw, 44px); line-height: 1.1; color: var(--ink); }
+  @media (max-width: 600px) { .last-word { padding: 56px 0; } }
+  .a03-open { color: var(--paper); font-size: 15px; text-underline-offset: 4px; min-height: 44px; display: inline-flex; align-items: center; }
+  .a03-open:hover { color: #ADCFCA; }
+  .btn-o:hover { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .nav-l { font-size: 15px; }
+  
+  .nav-l, .foot-menu a, .foot-legal a {
+    background: linear-gradient(currentColor, currentColor) no-repeat 0 100% / 0 1px;
+    transition: color .12s, background-size .18s cubic-bezier(.2,.8,.2,1);
+  }
+  .foot-menu a, .foot-legal a { background-origin: content-box; }
+  .nav-l:hover, .nav-l:focus-visible { color: var(--accent); background-size: 100% 1px; }
+  .foot-menu a:hover, .foot-legal a:hover,
+  .foot-menu a:focus-visible, .foot-legal a:focus-visible { background-size: 100% 1px; }
+  @media (prefers-reduced-motion: reduce) { .nav-l, .foot-menu a, .foot-legal a { transition: none; } }
+
+  
+  header { position: sticky; top: 0; z-index: 30; background: var(--paper);
+           transition: box-shadow .2s; }
+  header.stuck { box-shadow: 0 1px 0 var(--line-strong), 0 6px 16px -12px rgba(33,30,25,.35); }
+  header.stuck .rule { opacity: 0; }
+  header .bar { height: 80px; display: flex; align-items: center; gap: 28px; }
+  @media (max-width: 899px) { header .bar { height: 64px; } }
+  
+  
+  header nav { display: none; gap: 24px; }
+  @media (min-width: 900px) { header nav { display: flex; } }
+
+  
+  @media (max-width: 419px) {
+    header .bar { gap: 12px; padding-left: 16px; padding-right: 16px; }
+    header .bar > .nav-l, header .bar > .btn { flex-shrink: 0; }
+    header .bar > .btn { padding: 0 16px; }
+  }
+
+  
+  .navstrip { display: block; border-top: 1px solid var(--line); overflow-x: auto;
+              -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .navstrip::-webkit-scrollbar { display: none; }
+  .navstrip ul { display: flex; gap: 24px; margin: 0; list-style: none;
+                 white-space: nowrap; }
+  .navstrip a { display: inline-flex; align-items: center; min-height: 48px; font-size: 15px;
+                color: var(--ink-2); }
+  .navstrip a:hover { color: var(--accent); }
+  @media (min-width: 900px) { .navstrip { display: none; } }
+
+  
+  
+  .notice { margin-top: 24px; border-left: 2px solid var(--pop);
+            padding: 2px 0 2px 16px; }
+  .notice p { margin: 0; font-size: 14px; color: var(--ink-2); max-width: 58ch; }
+  .notice strong { color: var(--ink); }
+
+  .skip { position: absolute; left: -9999px; top: 0; z-index: 10;
+          background: var(--ink); color: var(--paper); padding: 12px 16px; }
+  .skip:focus { left: 0; }
+
+  
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(33,30,25,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(33,30,25,.03) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  h1 { margin: 0; font-size: clamp(38px, 7.2vw, 92px); line-height: .96; }
+  h2 { margin: 16px 0 0; font-size: clamp(30px, 4.4vw, 46px); line-height: 1.02; }
+  
+  h2:first-child { margin-top: 0; }
+  h3 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+
+  
+  .hero-sec { padding-top: 72px; }
+  @media (min-width: 900px) { .hero-sec { padding-top: 104px; } }
+  .hero { display: grid; gap: 40px; align-items: end; }
+  .hero-r > p:first-child { line-height: 1.6; }
+  .hero-r .hero-cta { display: flex; gap: 16px; margin-top: 32px; flex-wrap: wrap; }
+  .hero-r .facts { margin-top: 32px; gap: 12px 0; }
+  .hero-dim { margin-top: 56px; }
+  @media (min-width: 900px) { .hero-dim { margin-top: 80px; } }
+  
+  .hero-r > p:first-child { max-width: 46ch; }
+  .hl { display: block; }
+
+  
+  html.reveal .hl, html.reveal .hero-r {
+    opacity: 0; transform: translateY(8px);
+    transition: opacity .45s cubic-bezier(.25,.46,.45,.94),
+                transform .45s cubic-bezier(.25,.46,.45,.94); }
+  html.reveal .hl.in, html.reveal .hero-r.in { opacity: 1; transform: none; }
+  html.reveal .hl[data-h="1"] { transition-delay: .08s; }
+  html.reveal .hl[data-h="2"] { transition-delay: .16s; }
+  html.reveal .hero-r { transition-delay: .26s; }
+  @media (min-width: 1040px) {
+    .hero { grid-template-columns: minmax(0,1fr) 440px; gap: 96px; }
+  }
+
+  .two { display: grid; gap: 40px; }
+  @media (min-width: 960px) { .two { grid-template-columns: 320px minmax(0,1fr); gap: 72px; } }
+  @media (min-width: 1240px) { .two { gap: 96px; } }
+
+  
+  section { padding: 64px 0; }
+  @media (min-width: 900px) { section { padding: 96px 0; } }
+
+  .regs { position: relative; }
+  .regs::before, .regs::after,
+  .regs > .r1, .regs > .r2 { content: ''; position: absolute; width: 14px; height: 14px; }
+  .regs::before { top: -7px; left: -7px; border-top: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+  .regs::after  { top: -7px; right: -7px; border-top: 1px solid var(--ink); border-right: 1px solid var(--ink); }
+  .regs > .r1 { bottom: -7px; left: -7px; border-bottom: 1px solid var(--ink); border-left: 1px solid var(--ink); }
+  .regs > .r2 { bottom: -7px; right: -7px; border-bottom: 1px solid var(--ink); border-right: 1px solid var(--ink); }
+
+  .two > div:first-child p { max-width: 58ch; }
+
+  
+  
+  .sechead h2 { text-wrap: balance; }
+  .sechead p { margin: 20px 0 0; font-size: 16px; color: var(--ink-2); max-width: 58ch; }
+
+  
+  .sched { margin-top: 48px; border-top: 1.5px solid var(--ink); }
+  .sched-r { display: grid; gap: 8px; }
+  .sched-r { padding: 20px 0; border-bottom: 1px solid var(--line-strong); }
+  .sched-r h3 { font-size: 18px; }
+  .sched-r p { margin: 0; font-size: 15px; color: var(--ink-2); max-width: 58ch; }
+  .sched-r .tags { margin: 0; padding: 4px 0 0; }
+  @media (min-width: 760px) {
+    .sched-r { grid-template-columns: 240px minmax(0, 560px) minmax(0, 1fr); gap: 48px; align-items: baseline; }
+    .sched-r { padding: 24px 0; }
+    .sched-r h3 { font-size: 20px; }
+    .sched-r p { font-size: 16px; }
+    .sched-r .tags { padding: 0; }
+  }
+  
+  .keep { display: grid; gap: 32px; }
+  
+  .keep-photo { margin: 0; overflow: hidden; border-radius: 4px; box-shadow: -20px 20px 0 var(--jade); }
+  @media (max-width: 600px) { .keep-photo { box-shadow: -8px 12px 0 var(--jade); } }
+  .keep-photo img { display: block; width: 100%; height: auto; }
+  .keep-photo picture { display: block; }
+  
+  .keep-photo { position: relative; }
+  .slats { display: none; }
+  html.reveal .keep-photo.unmask .slats { display: grid; grid-template-rows: repeat(8, 1fr);
+    position: absolute; inset: 0; pointer-events: none; }
+  html.reveal .keep-photo.unmask .slats i { display: block; background: var(--paper); margin-bottom: -1px;
+    transform-origin: 50% 0; transition: transform .7s cubic-bezier(.65,0,.35,1) calc(var(--i) * 70ms); }
+  html.reveal .keep-photo.unmask.in .slats i { transform: scaleY(0); }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      
+      #a06 { view-timeline: --keep block; }
+      .keep-photo picture { animation: keep-drift linear both;
+        animation-timeline: --keep; animation-range: cover 0% cover 100%; }
+    }
+  }
+  @keyframes keep-drift { from { transform: translateY(-3%) scale(1.06); } to { transform: translateY(3%) scale(1.06); } }
+  .keep-head { order: -1; }
+  
+  @media (max-width: 959px) {
+    .keep-photo img { aspect-ratio: 4 / 3; object-fit: cover; object-position: 50% 60%; }
+  }
+  @media (min-width: 960px) {
+    .keep { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); grid-template-rows: auto 1fr;
+            column-gap: 72px; row-gap: 0; align-items: start; }
+    .keep-photo { grid-column: 1; grid-row: 1 / 3; position: sticky; top: 112px; }
+    .keep-head { grid-column: 2; grid-row: 1; order: 0; }
+    .keep-list { grid-column: 2; grid-row: 2; }
+  }
+  .keep .sched { margin-top: 0; }
+  @media (min-width: 960px) { .keep .sched { margin-top: 40px; } }   
+  @media (min-width: 760px) {
+    .keep .sched-r { grid-template-columns: 200px minmax(0, 1fr); gap: 8px 32px; }
+    .keep .sched-r .tags { grid-column: 2; padding-top: 12px; }
+  }
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin: auto 0 0; padding: 16px 0 0; list-style: none; }
+  .tags li { font-family: 'IBM Plex Mono', ui-monospace, Menlo, monospace; font-size: 11px;
+             letter-spacing: .08em; text-transform: uppercase; padding: 4px 8px;
+             border: 1px solid var(--line-strong); color: var(--ink-2); }
+
+
+  
+  .compare { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .compare th, .compare td { text-align: left; vertical-align: baseline; padding: 16px;
+    border-bottom: 1px solid var(--line); }
+  .compare thead th { font-family: Archivo, system-ui, sans-serif; font-size: 18px; font-weight: 700;
+    letter-spacing: -0.01em; padding-top: 16px; border-bottom: 1px solid var(--line-strong); }
+  .compare thead td { border-bottom: 1px solid var(--line-strong); }
+  .compare tbody th { font-weight: 400; color: var(--ink-3); width: 16%; padding-left: 0; }
+  .compare .us { background: var(--surface); }
+  .compare thead th.us { box-shadow: inset 0 3px 0 var(--accent); }
+  .compare td.us { font-weight: 600; color: var(--ink); }
+  .compare td:not(.us) { color: var(--ink-3); }
+  .compare thead th:not(.us) { color: var(--ink-2); font-size: 16px; font-weight: 600; }
+  .compare-cta { display: flex; justify-content: flex-start; margin-top: 32px; }   
+  
+  @media (max-width: 639px) {
+    .compare thead { display: none; }
+    .compare, .compare tbody, .compare tr, .compare th, .compare td { display: block; width: auto; }
+    .compare tr { padding: 20px 0; border-bottom: 1px solid var(--line); }
+    .compare tbody th { padding: 0 0 8px; border: 0; color: var(--ink-3); font-weight: 400; font-size: 14px; width: auto; }   
+    .compare td { padding: 2px 0; border: 0; font-size: 14px; }
+    .compare td::before { content: attr(data-who) ": "; }
+    .compare td.us { background: var(--surface); border-left: 2px solid var(--accent);
+      padding: 12px 16px; margin-bottom: 8px; font-size: 18px; }
+    .compare td.us::before { content: attr(data-who); display: block; margin-bottom: 4px;
+      font-family: 'IBM Plex Mono', ui-monospace, monospace; font-size: 11px; font-weight: 400;
+      letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+    .compare-cta { justify-content: flex-start; }
+  }
+
+  
+  
+  .faq { display: block; }
+  .qa { border-top: 1px solid var(--line-strong); }
+  .qa:last-child { border-bottom: 1px solid var(--line-strong); }
+  .qa summary { list-style: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; padding: 20px 0; min-height: 44px; }
+  .qa summary::-webkit-details-marker { display: none; }
+  .qa summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+  .qa h3 { margin: 0; font-size: 18px; text-wrap: balance; }
+  .qa summary:hover h3 { color: var(--accent); }
+  .qa p { margin: -4px 0 0; padding-bottom: 24px; max-width: 64ch; font-size: 15px; color: var(--ink-2); }
+  .pm { position: relative; width: 12px; height: 12px; flex: none; color: var(--ink-2); }
+  .pm::before, .pm::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1.5px; margin-top: -1px; background: currentColor; }
+  .pm::after { transform: rotate(90deg); transition: transform .25s cubic-bezier(.25,.46,.45,.94); }
+  .qa[open] .pm::after { transform: rotate(0deg); }
+  
+  @supports (interpolate-size: allow-keywords) {
+    @media (prefers-reduced-motion: no-preference) {
+      #a09 { interpolate-size: allow-keywords; }
+      .qa::details-content { block-size: 0; overflow: hidden; transition: block-size .3s cubic-bezier(.25,.46,.45,.94), content-visibility .3s allow-discrete; }
+      .qa[open]::details-content { block-size: auto; }
+    }
+  }
+  .qa a { color: var(--accent); text-decoration: underline; text-decoration-color: var(--pop); text-underline-offset: 2px; }
+
+  
+  .btn-go .go { display: inline-block; margin-left: 8px; transition: transform .2s cubic-bezier(.2,.8,.2,1); }
+  
+  .facts { list-style: none; display: flex; flex-wrap: wrap; gap: 8px 0; margin: 24px 0 0; padding: 0;
+           font-size: 14px; line-height: 1.5; color: var(--ink-2); }
+  .facts li { display: inline-flex; align-items: center; white-space: nowrap; }
+  
+  .facts li:last-child { flex-basis: 100%; }
+  .facts li + li:not(:last-child)::before { content: ''; width: 1px; height: 12px; background: var(--line-strong); margin: 0 12px; }
+  
+  @media (max-width: 479px) {
+    .facts, .hero-r .facts { gap: 8px 16px; }
+    .facts li + li:not(:last-child)::before { display: none; }
+  }
+  .facts svg { flex: none; width: 12px; height: 12px; margin-right: 8px;
+               fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round; }
+  .facts a { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+  .facts a:hover { color: var(--ink); }
+  .btn-go:hover .go, .btn-go:focus-visible .go { transform: translateY(2px); }
+
+  .slider img { display: block; width: 100%; height: 100%; object-fit: cover;
+            user-select: none; -webkit-user-drag: none; pointer-events: none; }
+  .slider { position: relative; width: 100%; aspect-ratio: 920 / 660;
+            overflow: hidden; border: 1px solid var(--line-strong);
+            touch-action: none; cursor: ew-resize; }
+  .dimline { display: flex; align-items: center; gap: 12px; }
+  
+  @media (max-width: 599px) {
+    .hero-plate { margin-left: -24px; margin-right: -24px; }
+    .hero-plate::before, .hero-plate::after, .hero-plate > .r1, .hero-plate > .r2 { display: none; }
+    .hero-plate #cmp { aspect-ratio: 2492 / 2048 !important; border-left: 0; border-right: 0; }
+  }
+  .slider .look-light { position: absolute; inset: 0; opacity: 0; transition: opacity 1.2s cubic-bezier(.45,.05,.55,.95); }
+  .slider.light .look-light { opacity: 1; }
+  .looks { display: inline-flex; align-items: center; white-space: nowrap; }
+  .lk-sep { margin: 0 8px; }
+  .lk { display: inline-flex; align-items: center; gap: 4px; }
+  .lkb { font: inherit; letter-spacing: inherit; text-transform: inherit; color: var(--ink-3); background: none; border: 0;
+    padding: 8px 2px; cursor: pointer; box-shadow: inset 0 -1px 0 transparent; transition: color .15s, box-shadow .15s; }
+  .lkb[aria-pressed="true"] { color: var(--ink); box-shadow: inset 0 -1px 0 var(--ink); }
+  .lkb:hover { color: var(--accent); }
+  .dimline .an { color: var(--ink-2); }
+  
+  @media (max-width: 429px) { .dimline .your { display: none; } }
+  
+  .handle {
+    position: absolute; top: 50%; transform: translate(-50%,-50%);
+    width: 44px; height: 44px; border-radius: 50%; background: var(--paper);
+    box-shadow: 0 1px 2px rgba(33,30,25,.18), 0 4px 14px rgba(33,30,25,.22);
+    display: flex; align-items: center; justify-content: center; cursor: ew-resize;
+    transition: box-shadow .15s, transform .15s cubic-bezier(.25,.46,.45,.94);
+  }
+  .handle:hover { transform: translate(-50%,-50%) scale(1.06); }
+  .handle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+
+
+  .packs { display: grid; gap: 24px; }
+  @media (min-width: 700px) and (max-width: 959px) {
+    
+    .packs { grid-template-columns: repeat(2, minmax(0,1fr)); }
+    .packs > :last-child { grid-column: 1 / -1; }
+  }
+  @media (min-width: 960px) { .packs { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+  
+  @media (min-width: 960px) and (max-width: 1199px) {
+    #a05 .two { grid-template-columns: minmax(0,1fr); gap: 40px; }
+  }
+  
+  .pack { background: var(--surface); border: 1px solid var(--line-strong);
+          border-top: 1px solid var(--ink); padding: 24px;
+          display: flex; flex-direction: column; }
+  
+  .pack.mark { border-color: var(--pop); box-shadow: inset 0 2px 0 var(--pop);
+               background: color-mix(in srgb, var(--pop) 6%, var(--surface)); }
+  .pack-name { font-size: 20px; margin-top: 8px; }
+  
+  .pack { position: relative; }
+  .pack .save { position: absolute; top: 20px; right: 20px; padding: 4px 8px; border-radius: 3px;
+                font: 600 11px/1.2 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+                letter-spacing: .08em; text-transform: uppercase;
+                background: var(--jade); color: #211E19; }
+
+  
+  .pack-inc { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line-strong); }
+  .pack-list { list-style: none; margin: 8px 0 0; padding: 0; font-size: 14px; color: var(--ink-2); }
+  .pack-list li { display: flex; gap: 12px; padding: 4px 0; }
+  .pack-list li::before { content: '+'; flex: none; width: 8px; color: var(--ink-3); }
+  .pack-list li:first-child { color: var(--ink); }
+  .pack-list .num { font-weight: 600; }
+  
+  .pack .price { margin-top: 24px; display: flex; align-items: baseline; gap: 8px; }
+  
+  
+  @media (max-width: 699px) {
+    .packs { gap: 16px; }
+    .pack { display: grid; grid-template-columns: minmax(0,1fr) auto; column-gap: 16px; padding: 20px; }
+    .pack > .an:first-child { grid-column: 1; grid-row: 1; }
+    .pack-name { grid-column: 1; grid-row: 2; }
+    .pack-sub { grid-column: 1; grid-row: 3; }
+    .pack .price { grid-column: 2; grid-row: 1 / 4; margin-top: 0; align-self: center;
+                   flex-direction: column; align-items: flex-end; gap: 0; }
+    .pack-inc, .pack-list { grid-column: 1 / -1; }
+    .pack-inc { margin-top: 20px; }
+  }
+  .offer { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center;
+           justify-content: space-between; gap: 20px 32px; }
+  .offer .notice { margin-top: 0; flex: 1 1 320px; }
+
+  
+  .foot { position: relative; overflow: hidden; overflow: clip;
+          background: var(--dark); color: var(--paper); }
+  
+  .foot-in { display: grid; grid-template-columns: repeat(12, minmax(0,1fr));
+             column-gap: 16px; padding-top: 56px; }
+  .foot a:focus-visible { outline: 2px solid var(--paper); outline-offset: 4px; }
+  .foot-brand { grid-column: 1 / -1; grid-row: 1; }
+  .foot-wm { font-size: 28px; line-height: 1; letter-spacing: -0.02em; }
+  .foot-brand p { margin: 12px 0 0; font-size: 15px; color: #A9A294; max-width: 34ch; }
+  .foot-menu, .foot-legal { display: flex; flex-direction: column; align-items: flex-start; }
+  .foot-menu { grid-column: 1 / -1; grid-row: 2; margin-top: 32px; }
+  .foot-menu a, .foot-legal a { font-size: 15px; line-height: 1.5; }   
+  .foot-legal { grid-column: 1 / -1; grid-row: 3; margin-top: 24px; }
+  .foot-disc { grid-column: 1 / -1; grid-row: 4; margin: 40px 0 0; max-width: 72ch;
+               font-size: 13px; line-height: 1.6; color: #8E877B; }
+  .foot-copy { grid-column: 1 / -1; grid-row: 5; margin-top: 24px; padding-top: 16px;
+               border-top: 1px solid rgba(242,240,234,.16);
+               display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+               font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: #7E8A8C; }
+  @media (min-width: 600px) {
+    .foot-menu { grid-column: 1 / 7; }
+    .foot-legal { grid-column: 7 / -1; grid-row: 2; margin-top: 32px; }
+  }
+  @media (min-width: 1024px) {
+    .foot-in { column-gap: 24px; padding-top: 72px; }
+    .foot-brand { grid-column: 1 / 6; }
+    .foot-menu { grid-column: 7 / 10; grid-row: 1; margin-top: 0; }
+    .foot-legal { grid-column: 10 / -1; grid-row: 1; margin-top: 0; }
+    .foot-disc { grid-row: 2; margin-top: 56px; }
+    .foot-copy { grid-row: 3; }
+  }
+  @keyframes foot-shift { from { transform: translateY(-50%); } to { transform: none; } }
+  @keyframes foot-dim { from { opacity: 1; } to { opacity: 0; } }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .foot { view-timeline: --foot block; }
+      .foot-in { animation: foot-shift linear both;
+                 animation-timeline: --foot; animation-range: entry 0% entry 100%; }
+      .foot::after { content: ""; position: absolute; inset: 0; background: #000; pointer-events: none;
+                     animation: foot-dim linear both;
+                     animation-timeline: --foot; animation-range: entry 0% entry 100%; }
+    }
+  }
+
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/motion-tour.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/motion-chat.js" fetchpriority="low">
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to content</a>
+
+
+<header>
+  <div class="sheet bar">
+    <a href="index.html" class="wm" style="font-size:20px">StyloPlan</a>
+    <nav aria-label="Sections">
+      
+      
+      <a href="#a03" class="nav-l tap">3D view</a>
+      <a href="#a01" class="nav-l tap">How it works</a>
+      <a href="#a05" class="nav-l tap">Pricing</a>
+      <a href="#a09" class="nav-l tap">Questions</a>
+    </nav>
+    <span style="flex-grow:1"></span>
+    <a href="projects.html" class="nav-l tap">Sign in</a>
+    <a href="projects.html" class="btn btn-a" data-start data-open="Start free">Early access</a>
+  </div>
+  <nav class="navstrip" aria-label="Sections">
+    <ul>
+      <li><a href="#a03">3D view</a></li>
+      <li><a href="#a01">How it works</a></li>
+      <li><a href="#a05">Pricing</a></li>
+      <li><a href="#a09">Questions</a></li>
+    </ul>
+  </nav>
+  <div class="rule"></div>
+</header>
+
+<main id="main" tabindex="-1">
+
+
+<section class="grid-bg hero-sec">
+  <div class="sheet">
+    <div class="hero">
+      
+      
+      
+      <h1 class="dsp">
+        <span class="hl">Market the home</span>
+        
+        <span class="hl" data-h="1">before <span style="white-space:nowrap">it's <em>built</em>.</span></span>
+      </h1>
+      <div class="hero-r">
+        
+        
+        
+        <p style="margin:0;font-size:18px;color:var(--ink-2);text-wrap:pretty">
+          Upload the plan your architect drew. Confirm every room and size, and get a branded
+          marketing image and a 3D view in minutes.
+        </p>
+        <div class="hero-cta">
+          <a href="projects.html" class="btn btn-a" data-start data-open="Start free">Get early access</a>
+          <a href="#a01" class="btn btn-o btn-go">See the process<span class="go" aria-hidden="true">↓</span></a>
+        </div>
+        
+        <ul class="facts">
+          
+          <li>No card, first floor free</li>
+          <li>Minutes, not days</li>
+          <li>You confirm every size</li>
+          <li><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2.5" y="5.5" width="7" height="5" rx="1"/><path d="M4 5.5V4a2 2 0 0 1 4 0v1.5"/></svg>Never used to train AI.&nbsp;<a href="legal.html#processors">See who handles it</a></li>
+        </ul>
+      </div>
+    </div>
+
+    
+    <div class="dimline hero-dim">
+      <div style="width:1px;height:12px;background:var(--ink-3)"></div>
+      <div class="an"><span class="your">Your </span>plan</div>
+      <div class="draw" style="flex-grow:1;height:1px;background:var(--ink-3)"></div>
+      <div class="an looks"><span class="your">Your&nbsp;</span>marketing image<span class="lk-sep" aria-hidden="true">·</span><span class="lk" role="group" aria-label="Look of the marketing image"><button type="button" class="lkb" data-look="dark" aria-pressed="true">Dark</button><span aria-hidden="true">/</span><button type="button" class="lkb" data-look="light" aria-pressed="false">Light</button></span></div>
+      <div style="width:1px;height:12px;background:var(--ink-3)"></div>
+    </div>
+
+    <div class="regs rise hero-plate" style="margin-top:24px"><span class="r1"></span><span class="r2"></span>
+      <div class="slider" id="cmp" style="aspect-ratio:2732/2048">
+        
+        
+        <picture>
+          <source srcset="assets/hero-star-after-1366.webp 1366w, assets/hero-star-after.webp 2732w" sizes="(min-width: 1440px) 1328px, (min-width: 900px) calc(100vw - 112px), calc(100vw - 48px)" type="image/webp">
+          <img src="assets/hero-star-after.jpg" width="2732" height="2048" fetchpriority="high" decoding="async"
+            alt="The Star's main floor as a branded marketing image: a plan with room names and sizes, a title, and the builder's name with 4 bed and 3 bath, in the dark look and the light one.">
+        </picture>
+        
+        <picture class="look-light" aria-hidden="true">
+          <source srcset="assets/hero-star-light-1366.webp 1366w, assets/hero-star-light.webp 2732w" sizes="(min-width: 1440px) 1328px, (min-width: 900px) calc(100vw - 112px), calc(100vw - 48px)" type="image/webp">
+          <img src="assets/hero-star-light.jpg" width="2732" height="2048" fetchpriority="low" decoding="async" alt="">
+        </picture>
+        
+        <div id="cmpBefore" style="position:absolute;inset:0;background:#fff;clip-path:inset(0 50% 0 0)">
+          <picture>
+            <source srcset="assets/hero-star-before-1366.webp 1366w, assets/hero-star-before.webp 2732w" sizes="(min-width: 1440px) 1328px, (min-width: 900px) calc(100vw - 112px), calc(100vw - 48px)" type="image/webp">
+            <img src="assets/hero-star-before.jpg" width="2732" height="2048" decoding="async"
+              alt="The same floor as a CAD sheet: hatched walls, grid lines, dimensions, general notes and a title block.">
+          </picture>
+        </div>
+        <div id="cmpLine" style="position:absolute;top:0;bottom:0;left:50%;width:2px;margin-left:-1px;background:#F2F0EA;box-shadow:0 0 6px rgba(33,30,25,.25);pointer-events:none"></div>
+        <div class="handle" id="cmpHandle" style="left:50%" role="slider" tabindex="0"
+             aria-label="Compare your plan with the marketing image" aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+          <svg width="18" height="10" viewBox="0 0 18 10" aria-hidden="true">
+            <path d="M5 1.5 1.5 5 5 8.5Z M13 1.5 16.5 5 13 8.5Z" fill="#211E19" stroke="#211E19"
+                  stroke-width="1" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+    <div style="height:64px"></div>
+  </div>
+</section>
+
+
+
+
+
+<section id="a10">
+  <div class="sheet">
+    <div class="two" style="align-items:center">
+      <div>
+        <h2 class="dsp">How your buyer <em>sees it</em></h2>
+        <p style="margin:20px 0 0;font-size:16px;color:var(--ink-2)">
+          A plan they can read, then a 3D they can turn, sent in the chat you already use.
+        </p>
+        <p class="chat-note">An example conversation. Northgate Homes is a made-up builder; the plan and the 3D are real.</p>
+        
+        <a href="#a03" class="chat-try wide-only">Turn the 3D yourself&nbsp;&#8595;</a>
+      </div>
+      <div class="chat-wrap stage-in">
+        <span class="band-slats" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i></span>
+        <div class="chat-phone" id="chatPhone" role="img" aria-label="An example chat on a buyer's phone. The builder sends the floor plan as drawn and the buyer cannot make sense of it. The builder sends the branded image, the one going on their Instagram, which the buyer opens to see larger, then a link to the 3D view, which the buyer opens, zooms into and turns on the phone, taps the kitchen to read its name and size, and is delighted by how clear it is. The buyer asks for a light version to show a partner, the builder sends it, and they book a lot visit for Saturday.">
+          <div class="screen" aria-hidden="true">
+            <div class="cbar"><span class="back"></span><span class="av">N</span><span><b>Northgate Homes</b><small>Sales</small></span></div>
+            <div class="msgs">
+              <div data-k="d1"><span class="day">Today 10:14</span></div>
+              <div data-k="m1"><div class="m in">Here's the floor plan for Plan B.</div></div>
+              <div data-k="m2"><div class="m in pic"><img src="assets/motion/chat/source.webp" width="560" height="636" loading="lazy" decoding="async" alt=""></div></div>
+              <div data-k="m3"><div class="m out">Honestly, I can't make sense of this 😅</div></div>
+              <div data-k="m4"><div class="m in">Here's the marketing version. It goes up on our Instagram this week.</div></div>
+              <div data-k="m5"><div class="m in pic tall"><img src="assets/motion/chat/portrait.webp" width="480" height="640" loading="lazy" decoding="async" alt=""></div></div>
+              <div data-k="m6"><div class="m out">So much better! I wish I could see it in 3D.</div></div>
+              <div data-k="m7"><div class="m in">You can 🙂</div></div>
+              <div data-k="m8"><div class="m in">Give me two minutes.</div></div>
+              <div data-k="d2"><span class="day">10:16</span></div>
+              <div data-k="m9"><div class="m in">Here you go:</div></div>
+              <div data-k="m10"><div class="m in card"><img src="assets/motion/chat/thumb.webp" width="520" height="401" loading="lazy" decoding="async" alt=""><span><b>Plan B - Main Floor · 3D</b><small>Turn it and zoom in. Northgate Homes</small></span></div></div>
+              <div data-k="mWow"><div class="m out">Wow, it&rsquo;s so clean and simple! 😍</div></div>
+              <div data-k="m11"><div class="m out">Could you send a light version too? I'd like to show my partner.</div></div>
+              <div data-k="m12"><div class="m in">Sure, here it is:</div></div>
+              <div data-k="m13"><div class="m in card"><img src="assets/motion/chat/thumb-light.webp" width="520" height="401" loading="lazy" decoding="async" alt=""><span><b>Plan B - Main Floor · 3D, light</b><small>Turn it and zoom in. Northgate Homes</small></span></div></div>
+              <div data-k="m14"><div class="m out">Thank you! 🙏</div></div>
+              <div data-k="m15"><div class="m out">Now I get it. Can we book a lot visit?</div></div>
+              <div data-k="m16"><div class="m in">Of course! Saturday at 10?</div></div>
+              <div data-k="m17"><div class="m out">Saturday works 👍</div></div>
+              <div data-k="m18"><div class="m in">Booked. See you there!</div></div>
+              <div class="typing-row"><div class="typing"><i></i><i></i><i></i></div></div>
+            </div>
+            <div class="cin"><div class="field"><span class="txt"></span><span class="ph">Message</span></div><span class="send"></span></div>
+            <div class="viewer"><img src="assets/motion/chat/portrait.webp" width="480" height="640" loading="lazy" decoding="async" alt=""><span class="vx">&times;</span></div>
+            <div class="full"><div class="vp"><canvas width="468" height="1012"></canvas><span class="dot"></span><span class="dot"></span></div></div>
+            <span class="ring"></span>
+          </div>
+        </div>
+        <div class="chat-foot"><button type="button" class="pause" id="chatPause" hidden aria-pressed="false">Pause</button></div>
+        
+        <a href="#a03" class="chat-try narrow-only">Turn the 3D yourself&nbsp;&#8595;</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="a03" style="background:var(--dark);color:var(--paper)">
+  <div class="sheet">
+    <div class="two" style="align-items:center">
+      <div>
+        
+        <h2 class="dsp" style="color:var(--paper)">Your plan,<br>standing up</h2>
+        
+        <p style="margin:20px 0 0;font-size:16px;color:#A9A294">
+          Buyers turn it and zoom in to see the layout before the house exists. A two-storey
+          home is one model, every floor in it, at no extra cost.
+        </p>
+        
+        <dl class="pts">
+          <div><dt>It builds itself</dt>
+            <dd>Walls, windows, doors and stairs are read from your drawing. You look it over, and
+              correct a window or door if one was read wrong.</dd></div>
+          <div><dt>Nothing to learn</dt>
+            <dd>No 3D software, nothing to install.</dd></div>
+          <div><dt>Shared in seconds</dt>
+            <dd>A link to send a client or buyer, and a code that puts the 3D on that home's own page
+              of your website, in a gallery or beside its plans. Visitors turn it and zoom in.</dd></div>
+        </dl>
+        
+        <div class="a03-cta">
+          <a href="projects.html" class="btn btn-a" data-start data-open="Start free">Get early access</a>
+          
+          <a href="example.html" target="_blank" rel="noopener" class="a03-open">On a builder's site&nbsp;&#8599;</a>
+        </div>
+      </div>
+      <div style="min-width:0">
+        
+        <div class="isoslot">
+          <iframe src="embed.html?p=proj-wdkrqf35&amp;f=floor-wy1qftrz&amp;look=dark&amp;floors=all"
+            title="A two-storey house in 3D, floor by floor" loading="lazy" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="a01">
+  <div class="sheet">
+    <div class="two tour">
+      <div class="tour-head">
+        <h2 class="dsp">Everything before the render is <em>free</em></h2>
+        <p style="margin:20px 0 0;font-size:16px;color:var(--ink-2)">The tracing, the room list and your
+          corrections cost nothing. You pay for the picture, nothing else.</p>
+      </div>
+      <div class="rise tour-screen">
+        <div class="regs"><span class="r1"></span><span class="r2"></span>
+          <div class="shot-frame" id="tourShots" role="tabpanel">
+            <picture><source media="(max-width: 600px)" srcset="assets/motion/m/projects.webp" type="image/webp"><source srcset="assets/tour-1-projects-990.webp 990w, assets/tour-1-projects-1320.webp 1320w, assets/tour-1-projects.webp 1980w" sizes="(min-width: 960px) 912px, 92vw" type="image/webp"><img class="on" src="assets/tour-1-projects.jpg" width="1980" height="1320" decoding="async"
+              alt="Projects: one card per home, a two-storey home with both floors rendered and a one-storey home beside it, each showing its plan and the Northgate Homes brand kit."></picture>
+            <picture><source data-srcset="assets/tour-2-review-990.webp 990w, assets/tour-2-review-1320.webp 1320w, assets/tour-2-review.webp 1980w" sizes="(min-width: 960px) 912px, 92vw" type="image/webp"><img data-src="assets/tour-2-review.jpg" width="1980" height="1320" decoding="async"
+              alt="Review: the plan as drawn beside its traced drawing, with every room name and size on it and each check marked confirmed."></picture>
+            <picture><source data-srcset="assets/tour-3-studio-990.webp 990w, assets/tour-3-studio-1320.webp 1320w, assets/tour-3-studio.webp 1980w" sizes="(min-width: 960px) 912px, 92vw" type="image/webp"><img data-src="assets/tour-3-studio.jpg" width="1980" height="1320" decoding="async"
+              alt="Studio: the plan rendered in the dark look with its title, brand name, beds and baths, and the export and colour controls beside it."></picture>
+            <picture><source data-srcset="assets/tour-4-view3d-990.webp 990w, assets/tour-4-view3d-1320.webp 1320w, assets/tour-4-view3d.webp 1980w" sizes="(min-width: 960px) 912px, 92vw" type="image/webp"><img data-src="assets/tour-4-view3d.jpg" width="1980" height="1320" decoding="async"
+              alt="The 3D view: the plan standing up with every window numbered, number 4 picked on the model and its type being chosen in the list beside it."></picture>
+          </div>
+        </div>
+        <div class="tour-foot"><p class="scene-cap" aria-hidden="true"><b id="sceneCapN"></b><span id="sceneCapT"></span></p><button type="button" class="pause" id="tourPause" hidden>Pause</button></div>
+      </div>
+      <div class="tour-list">
+        <ol class="tour-steps" role="tablist" aria-label="How it works">
+          <li><button type="button" class="tstep" role="tab" aria-selected="true" aria-controls="tourShots">
+            <span class="tnum">01</span><span class="ttl">Drop in your plan</span>
+            <span class="tline">The PDF or image your architect sent. One project holds every floor of one home.</span><i class="tbar" aria-hidden="true"></i></button></li>
+          <li><button type="button" class="tstep" role="tab" aria-selected="false" aria-controls="tourShots">
+            <span class="tnum">02</span><span class="ttl">Check it before you pay</span>
+            <span class="tline">The plan is traced and its names and sizes are read off your drawing. Fix any of them, free.</span><i class="tbar" aria-hidden="true"></i></button></li>
+          <li><button type="button" class="tstep" role="tab" aria-selected="false" aria-controls="tourShots">
+            <span class="tnum">03</span><span class="ttl">Render it in your brand</span>
+            <span class="tline">Your colours, name, beds and baths, light or dark, laid out for you. Anything the render added, you take out, free. The one step you pay for.</span><i class="tbar" aria-hidden="true"></i></button></li>
+          <li><button type="button" class="tstep" role="tab" aria-selected="false" aria-controls="tourShots">
+            <span class="tnum">04</span><span class="ttl">See it standing up</span>
+            <span class="tline">The same plan in 3D, every window and door numbered so you can set its type. Send it as a link or put it on your website. No extra cost.</span><i class="tbar" aria-hidden="true"></i></button></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+
+<section id="a06">
+  <div class="sheet keep">
+    
+    <figure class="keep-photo unmask">
+      <picture>
+        <source srcset="assets/keep-photo-720.webp 720w, assets/keep-photo.webp 1024w" sizes="(min-width: 960px) 40vw, 100vw" type="image/webp">
+        <img src="assets/keep-photo.jpg" width="1024" height="1536" loading="lazy" decoding="async"
+          alt="A builder at her desk, smiling, beside a monitor showing a floor plan standing up in StyloPlan's 3D view.">
+      </picture>
+      <span class="slats" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i></span>
+    </figure>
+    <div class="sechead keep-head">
+      <h2 class="dsp">Four things you keep</h2>
+      <p>All from one upload of one plan. Yours to use commercially.</p>
+    </div>
+    <div class="sched keep-list" role="table" aria-label="What you keep">
+      <div class="sched-r rise" data-d="0" role="row"><h3 role="rowheader">The marketing image</h3>
+        
+        <p role="cell">Clean plans buyers can read: every room named, every size shown. Your logo, colours and font on it, light or dark, in square, landscape and portrait. Laid out again for each, never cropped.</p>
+        <ul class="tags" role="cell"><li>Light</li><li>Dark</li><li>JPG</li><li>PNG</li><li>PDF</li></ul></div>
+      <div class="sched-r rise" data-d="1" role="row"><h3 role="rowheader">The 3D view</h3>
+        <p role="cell">The same plan standing up, light or dark to match the render, with your company name on it. A link to send to a buyer, and a code to embed on your website.</p>
+        <ul class="tags" role="cell"><li>Light</li><li>Dark</li><li>Link</li><li>Embed code</li></ul></div>
+      <div class="sched-r rise" data-d="2" role="row"><h3 role="rowheader">The pack</h3>
+        <p role="cell">One PDF with every floor, its room schedule, and a one-page report that says who checked it and when.</p>
+        <ul class="tags" role="cell"><li>PDF</li></ul></div>
+      <div class="sched-r rise" data-d="3" role="row"><h3 role="rowheader">The record</h3>
+        <p role="cell">The plan exactly as you confirmed it, so you can always show where a number came from.</p>
+        <ul class="tags" role="cell"><li>PNG</li></ul></div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="a07">
+  <div class="sheet">
+    <div class="two">
+      <div>
+        <h2 class="dsp">Why not a studio, an AI tool, or your own hands?</h2>
+        <p style="margin:20px 0 0;font-size:16px;color:var(--ink-2)">
+          Four ways to turn a floor plan into a marketing image. Only one is fast and keeps every size from your plan.
+        </p>
+        
+        <div class="compare-cta"><a href="projects.html" class="btn btn-a" data-start data-open="Start free">Get early access</a></div>
+      </div>
+      <div>
+        <table class="compare">
+          <thead>
+            <tr>
+              <td></td>
+              <th scope="col" class="us">StyloPlan</th>
+              <th scope="col">A rendering studio</th>
+              <th scope="col">Doing it yourself</th>
+              <th scope="col">An AI image tool</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><th scope="row">Room sizes</th>
+              <td class="us" data-who="StyloPlan">Copied from your plan, confirmed by you</td>
+              <td data-who="A studio">Retyped by a drafter</td><td data-who="Yourself">Typed by you</td><td data-who="An AI tool">Redrawn as part of the picture; can change</td></tr>
+            <tr><th scope="row">Time</th>
+              <td class="us" data-who="StyloPlan">Minutes</td>
+              <td data-who="A studio">Usually 1 to 3 business days</td><td data-who="Yourself">Often hours a plan</td><td data-who="An AI tool">Minutes, then fixing it</td></tr>
+            <tr><th scope="row">Cost</th>
+              <td class="us" data-who="StyloPlan">From $8.63 a floor</td>
+              <td data-who="A studio">Typically from $100 a plan</td><td data-who="Yourself">Your time and a design tool</td><td data-who="An AI tool">Usually a subscription</td></tr>
+            <tr><th scope="row">Changes</th>
+              <td class="us" data-who="StyloPlan">Yourself, on one screen</td>
+              <td data-who="A studio">By email, each round</td><td data-who="Yourself">Redo it yourself</td><td data-who="An AI tool">Ask again, get a different picture</td></tr>
+            <tr><th scope="row">3D view</th>
+              <td class="us" data-who="StyloPlan">Included</td>
+              <td data-who="A studio">Sold separately</td><td data-who="Yourself">Needs modelling software</td><td data-who="An AI tool">Not from your plan</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="a05">
+  <div class="sheet">
+    <div class="two" style="align-items:start">
+      <div>
+        <h2 class="dsp">Pay per floor. <em style="white-space:nowrap">No subscription.</em></h2>
+        
+        <p style="margin:20px 0 0;font-size:16px;color:var(--ink-2)">
+          Turn your approved floor plan into a branded marketing package. Each floor
+          credit covers one floor in one look, light or dark, with three image formats,
+          a shareable 3D view and a verification report. Unused credits never expire.
+        </p>
+      </div>
+
+      <div>
+        
+        
+        <div class="packs">
+          <div class="pack rise" data-d="0">
+            <div class="an">A first project</div>
+            <div class="dsp pack-name">One home</div>
+            <div class="pack-sub" style="font-size:14px;color:var(--ink-2);margin-top:4px">One two-storey home, one look</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>25</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">USD, one-off</span>
+            </div>
+            <div class="an pack-inc">Includes</div>
+            <ul class="pack-list">
+              <li><span><span class="num">2</span> floor credits, <span class="num" style="color:var(--accent);font-weight:600">$12.50</span> each</span></li>
+              <li>Branded plan in 3 image formats</li>
+              <li>3D view to share and embed</li>
+              <li>Verification report</li>
+            </ul>
+          </div>
+
+          <div class="pack rise" data-d="1">
+            <div class="an">A few projects</div>
+            <span class="save">Save 21%</span>
+            <div class="dsp pack-name">Starter</div>
+            <div class="pack-sub" style="font-size:14px;color:var(--ink-2);margin-top:4px">About 4 two-storey homes, one look</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>79</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">USD, one-off</span>
+            </div>
+            <div class="an pack-inc">Includes</div>
+            <ul class="pack-list">
+              <li><span><span class="num">8</span> floor credits, <span class="num" style="color:var(--accent);font-weight:600">$9.88</span> each</span></li>
+              <li>Branded plan in 3 image formats</li>
+              <li>3D view to share and embed</li>
+              <li>Verification report</li>
+            </ul>
+          </div>
+
+          <div class="pack mark rise" data-d="2">
+            <div class="an">Many projects</div>
+            <span class="save">Save 31%</span>
+            <div class="dsp pack-name">Builder</div>
+            <div class="pack-sub" style="font-size:14px;color:var(--ink-2);margin-top:4px">About 15 two-storey homes, one look</div>
+            <div class="price">
+              <span class="dsp" style="font-size:46px;line-height:1;display:inline-flex;align-items:flex-start;gap:2px"><span style="font-size:26px;font-weight:600;color:var(--ink-2);line-height:1.25">$</span>259</span>
+              <span class="num" style="font-size:13px;color:var(--ink-3)">USD, one-off</span>
+            </div>
+            <div class="an pack-inc">Includes</div>
+            <ul class="pack-list">
+              <li><span><span class="num">30</span> floor credits, <span class="num" style="color:var(--accent);font-weight:600">$8.63</span> each</span></li>
+              <li>Branded plan in 3 image formats</li>
+              <li>3D view to share and embed</li>
+              <li>Verification report</li>
+            </ul>
+          </div>
+        </div>
+
+        
+        
+        
+        
+        
+        <p class="pack-example">One floor in light or dark uses 1 credit. A two-storey home uses 2 credits for one look, or 4 for both.</p>
+        <p class="pack-fine">A render our checks reject is redone free. A 3D link stays up for as long as your account does, with no hosting fee. Sales tax is added at checkout where it applies, and you can pay in your own currency.</p>
+        <div class="offer">
+          <div class="notice">
+            <p>
+              <strong>New accounts and card payment open soon.</strong>
+              These are the pack prices. Leave your email for early access; your first
+              floor will be free.
+            </p>
+          </div>
+          <a href="projects.html" class="btn btn-a" data-start data-open="Start free">Get early access</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="a09">
+  <div class="sheet">
+    <div class="two">
+      <div>
+        <h2 class="dsp">Before you start</h2>
+        <p style="margin:20px 0 0;font-size:16px;color:var(--ink-2)">
+          Short answers to what a builder asks before the first plan.
+        </p>
+        <p style="margin:12px 0 0;font-size:16px;color:var(--ink-2)">
+          You do not have to take our word for it. When we open, try it on your own plan; the first floor is free.
+        </p>
+        
+      </div>
+      <div class="faq">
+        <details class="qa" open><summary><h3>How accurate are the dimensions?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>They are copied from your drawing, never measured or calculated. You check and confirm each one before anything renders, and the image says so in its footer.</p></details>
+        <details class="qa"><summary><h3>What if the tracing gets something wrong?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>You fix it on the review screen, for free. Rename a room, correct a dimension, remove anything the tracing added, or trace the plan again. Nothing is spent until you render.</p></details>
+        <details class="qa"><summary><h3>What kind of plan works best?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>The plan itself: the PDF or export from your architect, not a photo or a scan. PDF, PNG, JPG and WebP all work; from CAD, such as a DWG, print the sheet to PDF. Images need a short side of 800px or more.</p></details>
+        <details class="qa"><summary><h3>Can I use the images for a permit or for construction?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>No. They are presentation material for marketing, and every image says so in its footer. Use your architect’s drawings for anything built or approved.</p></details>
+        <details class="qa"><summary><h3>What does the 3D view show, and what does it cost?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>Walls, windows, doors and stairs, read from the symbols on your drawing. Fittings like kitchen counters, appliances and the cars in a garage stay on the floor as your plan draws them, so nothing appears that your plan does not show. You confirm the windows and doors. It is built from your render, so it costs nothing extra.</p></details>
+        <details class="qa"><summary><h3>What if I do not like the render?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>Something the render added that your plan does not have, such as a shower or a cabinet, you can take out yourself in Studio, for free, and Undo puts it back. A render our checks reject is redone at no charge. Colours, type and logo change instantly, with no new render. Asking for a new render uses one floor from your pack.</p></details>
+        <details class="qa"><summary><h3>Who owns the images, and who sees my plans?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>The images are yours to use commercially. We do not train on your plans, publish them or show them to other customers. <a href="legal.html#processors" style="color:var(--accent);text-decoration:underline">Who sees your plans</a> lists exactly where they go.</p></details>
+        <details class="qa"><summary><h3>Is there a subscription?</h3><span class="pm" aria-hidden="true"></span></summary>
+          <p>No. Packs are bought once and never expire, and a 3D link stays up for as long as your account does, with no hosting fee. Stop whenever you like and keep everything you made.</p></details>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<section id="a11" class="last-word">
+  <div class="sheet last-in">
+    <div>
+      <p class="dsp last-line">From your architect&rsquo;s PDF to a branded plan and a 3D link, before lunch.</p>
+      <p class="last-sub">No design skills needed. Upload, check, download.</p>
+    </div>
+    <a href="projects.html" class="btn btn-a" data-start data-open="Start free">Get early access</a>
+  </div>
+</section>
+
+</main>
+
+
+<footer class="foot">
+  <div class="sheet foot-in">
+    <div class="foot-brand">
+      <div class="wm foot-wm">StyloPlan</div>
+      <p>Marketing images and 3D views, made from the plans you already have. Built for home builders.</p>
+    </div>
+    
+    <nav class="foot-menu" aria-label="Product">
+      <a href="#a03" class="tap">3D view</a>
+      <a href="#a01" class="tap">How it works</a>
+      <a href="#a05" class="tap">Pricing</a>
+      <a href="#a09" class="tap">Questions</a>
+      <a href="updates.html" class="tap">What's new</a>
+    </nav>
+    <nav class="foot-legal" aria-label="Legal">
+      <a href="legal.html#terms" class="tap">Terms of Service</a>
+      <a href="legal.html#privacy" class="tap">Privacy Policy</a>
+      <a href="legal.html#processors" class="tap">Who sees your plans</a>
+    </nav>
+    
+    <p class="foot-disc">Presentation material only. Dimensions and room names are transcribed from
+      the drawing you supply and confirmed by you before rendering; StyloPlan does not measure,
+      derive or certify them. Not for construction, permitting or survey.</p>
+    <div class="foot-copy"><span>© <span data-year>2026</span> StyloPlan</span><script>/* The year turns over by itself; never earlier than the year this was written. */document.querySelectorAll("[data-year]").forEach(function(e){e.textContent=Math.max(2026,new Date().getFullYear())})</script></div>
+  </div>
+</footer>
+
+<script>
+// ── REVEAL ────────────────────────────────────────────────────────────────
+// The class goes on <html> from script, so the hidden state exists ONLY once
+// something is running that can un-hide it. A page whose content starts at
+// opacity 0 in the stylesheet is a page that is blank when the script fails,
+// and this one is the whole pitch.
+(function () {
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce || !('IntersectionObserver' in window)) return;   // already visible
+  document.documentElement.classList.add('reveal');
+  var io = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (!e.isIntersecting) return;
+      // A picture that uncovers itself waits for its pixels, or the gesture
+      // plays over an empty frame (it is lazy, and a jump link skips the run-up).
+      var img = e.target.classList.contains('unmask') && e.target.querySelector('img');
+      if (img && !img.complete) img.addEventListener('load', function () { e.target.classList.add('in'); }, { once: true });
+      else e.target.classList.add('in');
+      io.unobserve(e.target);          // it happens once; this is not a loop
+    });
+  }, { rootMargin: '0px 0px -12% 0px', threshold: 0.08 });
+  var watched = [].slice.call(document.querySelectorAll('.rise, .draw, .unmask, .stage-in'));
+  watched.forEach(function (el) { io.observe(el); });
+
+  // The hero is already on screen, so it does not wait to be scrolled to. Two
+  // frames, not zero: setting the hidden class and the visible one in the same
+  // frame gives the browser nothing to transition BETWEEN, and the headline
+  // would simply appear.
+  var hero = [].slice.call(document.querySelectorAll('.hl, .hero-r'));
+  watched = watched.concat(hero);
+  requestAnimationFrame(function () {
+    requestAnimationFrame(function () {
+      hero.forEach(function (el) { el.classList.add('in'); });
+    });
+  });
+
+  // A DEAD MAN'S SWITCH. Everything above is an effect; the content under it is
+  // the page. If the observer never delivers -- a browser quirk, an extension,
+  // a rendering path nobody tested -- the effect's hidden state becomes
+  // permanent and the pricing section is simply blank on a page whose job is to
+  // sell. So after eight seconds everything is shown whatever happened, which
+  // turns the worst case from "invisible forever" into "arrived late".
+  //
+  // Eight seconds and not one: a reader scrolling normally reaches the pricing
+  // section well after that, and firing early would throw away the effect on a
+  // slow connection for no reason.
+  setTimeout(function () {
+    watched.forEach(function (el) { el.classList.add('in'); });
+  }, 8000);
+})();
+
+// ── THE HEADER, STUCK ─────────────────────────────────────────────────────
+// .stuck once the page has moved, for the hairline; scroll-padding-top from
+// the header's own height, so a link to a section lands below it on any width.
+(function () {
+  var h = document.querySelector('header');
+  if (!h) return;
+  var root = document.documentElement, ticking = false;
+  function pad() { root.style.scrollPaddingTop = (h.offsetHeight + 8) + 'px'; }
+  function paint() { ticking = false; h.classList.toggle('stuck', window.scrollY > 4); }
+  addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(paint); } }, { passive: true });
+  addEventListener('resize', pad);
+  pad(); paint();
+})();
+
+// ── THE TOUR ──────────────────────────────────────────────────────────────
+// Four steps beside four screens. It moves on by itself while it is on screen,
+// because a visitor who does not click would never see past the first; the
+// active step's line fills, and the next step comes when it is full (CSS
+// animationend, so the bar and the change cannot drift apart). A click on a
+// step shows it and stops the tour for good; Pause stops it too (WCAG 2.2.2);
+// the pointer on the picture, focus on a step, the section off screen or the
+// tab hidden only hold it. Reduced motion: nothing moves, the steps still work.
+(function () {
+  var frame = document.getElementById('tourShots');
+  if (!frame) return;
+  // SCREENS 2-4 ARE FETCHED WHEN THE TOUR IS NEAR (2026-10-11). Native lazy
+  // loading fetched all four with the page -- the tour sits right under the
+  // hero, inside the browser's 1250px lazy margin -- 230KB nobody sees until a
+  // step changes. They carry data-src/data-srcset and get their real sources
+  // when the frame comes within 400px, or when a step is chosen first.
+  var later = [].slice.call(frame.querySelectorAll('img[data-src]'));
+  function fetchRest() {
+    later.forEach(function (im) {
+      var src = im.parentNode.querySelector('source[data-srcset]');
+      if (src) { src.srcset = src.getAttribute('data-srcset'); src.removeAttribute('data-srcset'); }
+      if (im.getAttribute('data-src')) { im.src = im.getAttribute('data-src'); im.removeAttribute('data-src'); }
+    });
+    later = [];
+  }
+  // SOONER (2026-10-12): also once the page has loaded and the browser is
+  // idle, so a screen is in the cache before its step comes round, whoever
+  // scrolls fast or lands lower down. Each screen is sized to its frame by
+  // srcset (990/1320/1980w): a phone or a 1x desktop fetches ~30KB, not ~75KB.
+  if ('IntersectionObserver' in window) {
+    var near = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { near.disconnect(); fetchRest(); } }, { rootMargin: '400px 0px' });
+    near.observe(frame);
+    var idle = function () { (window.requestIdleCallback || setTimeout)(function () { near.disconnect(); fetchRest(); }, { timeout: 2000 }); };
+    if (document.readyState === 'complete') idle(); else addEventListener('load', idle);
+  } else fetchRest();
+  var imgs = [].slice.call(frame.querySelectorAll('img'));
+  var steps = [].slice.call(document.querySelectorAll('.tstep'));
+  var list = document.querySelector('.tour-steps');
+  var pause = document.getElementById('tourPause');
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var i = 0, stopped = reduce, hover = false, focus = false, userPaused = false;
+  var inView = !('IntersectionObserver' in window);
+  function show(n) {
+    if (later.length && n !== i) fetchRest();   // not for the first screen, shown at start
+    i = (n + imgs.length) % imgs.length;
+    imgs.forEach(function (im, k) { im.classList.toggle('on', k === i); });
+    steps.forEach(function (b, k) { b.setAttribute('aria-selected', String(k === i)); b.tabIndex = k === i ? 0 : -1; });
+    dispatchEvent(new CustomEvent('tour:step', { detail: i }));
+  }
+  // THE SCENES' VIEW OF THE TOUR (src/motion-tour.js): which step shows, whether
+  // it moves on by itself, whether the visitor pressed Pause, and how to move on.
+  window.__tour = {
+    current: function () { return i; },
+    auto: function () { return !stopped; },
+    userPaused: function () { return userPaused; },
+    next: function () { show(i + 1); paint(); }
+  };
+  function paint() {
+    list.classList.toggle('auto', !stopped);
+    list.classList.toggle('held', hover || focus || !inView || document.visibilityState !== 'visible');
+    pause.textContent = stopped ? 'Play' : 'Pause';
+    pause.setAttribute('aria-label', stopped ? 'Play the tour' : 'Pause the tour');
+  }
+  steps.forEach(function (b, n) {
+    b.addEventListener('click', function () { stopped = true; userPaused = false; show(n); paint(); });
+  });
+  list.addEventListener('animationend', function (e) { if (e.animationName === 'dotfill') show(i + 1); });
+  list.addEventListener('keydown', function (e) {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp' && e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    show(i + (e.key === 'ArrowDown' || e.key === 'ArrowRight' ? 1 : -1)); steps[i].focus(); e.preventDefault();
+  });
+  // NOT HELD UNDER THE POINTER since the tour moves (2026-10-18): a hand resting
+  // on the frame to watch a scene held step 01's still for good. Pause holds it.
+  list.addEventListener('focusin', function () { focus = true; paint(); });
+  list.addEventListener('focusout', function () { focus = false; paint(); });
+  document.addEventListener('visibilitychange', paint);
+  pause.addEventListener('click', function () { stopped = !stopped; userPaused = stopped; paint(); });
+  if (!reduce) pause.hidden = false;
+  show(0); paint();
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { inView = es[0].isIntersecting; paint(); }, { threshold: 0.35 }).observe(frame);
+  }
+})();
+
+// (The tour's scenes are mounted by the module after this script: src/motion-tour.js.)
+
+// The comparison slider. Pointer, click anywhere on the frame, and the keyboard
+// -- a control that only answers to a drag is a control a keyboard user cannot
+// reach, and this one is the page's main illustration of what the product does.
+(function () {
+  var box = document.getElementById('cmp');
+  if (!box) return;
+  var before = document.getElementById('cmpBefore');
+  var line = document.getElementById('cmpLine');
+  var handle = document.getElementById('cmpHandle');
+  var pos = 50, dragging = false, sweeping = 0;
+
+  function set(p) {
+    pos = Math.max(0, Math.min(100, p));
+    before.style.clipPath = 'inset(0 ' + (100 - pos) + '% 0 0)';
+    line.style.left = pos + '%';
+    handle.style.left = pos + '%';
+    handle.setAttribute('aria-valuenow', Math.round(pos));
+  }
+  function fromEvent(e) {
+    var r = box.getBoundingClientRect();
+    set(((e.clientX - r.left) / r.width) * 100);
+  }
+  box.addEventListener('pointerdown', function (e) {
+    stopSweep(); dragging = true; box.setPointerCapture(e.pointerId); fromEvent(e);
+  });
+  box.addEventListener('pointermove', function (e) { if (dragging) fromEvent(e); });
+  box.addEventListener('pointerup', function () { dragging = false; });
+  box.addEventListener('pointercancel', function () { dragging = false; });
+  handle.addEventListener('keydown', function (e) {
+    stopSweep();
+    var step = e.shiftKey ? 10 : 2;
+    if (e.key === 'ArrowLeft') { set(pos - step); e.preventDefault(); }
+    else if (e.key === 'ArrowRight') { set(pos + step); e.preventDefault(); }
+    else if (e.key === 'Home') { set(0); e.preventDefault(); }
+    else if (e.key === 'End') { set(100); e.preventDefault(); }
+  });
+  set(50);
+
+  // THE SWEEP: middle -> left (the render whole) -> right (the plan) -> middle,
+  // once, when at least half the slider is on screen. Each leg eases in and
+  // out, so it reads as a hand moving the line and not as a machine. Any
+  // touch, drag or key stops it where it is: the visitor has taken over.
+  function stopSweep() { if (sweeping) { cancelAnimationFrame(sweeping); sweeping = 0; if (typeof startCycle === 'function') setTimeout(startCycle, 2500); } }
+  var LEGS = [[50, 6, 1300], [6, 6, 450], [6, 94, 2200], [94, 94, 350], [94, 50, 1300]];
+  function ease(t) { return t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2; }
+  function sweep() {
+    var leg = 0, t0 = performance.now();
+    function frame(now) {
+      var L = LEGS[leg], k = Math.min(1, (now - t0) / L[2]);
+      set(L[0] + (L[1] - L[0]) * ease(k));
+      if (k >= 1) { leg++; t0 = now; if (leg >= LEGS.length) { sweeping = 0; startCycle(); return; } }
+      sweeping = requestAnimationFrame(frame);
+    }
+    sweeping = requestAnimationFrame(frame);
+  }
+  // THE TWO LOOKS. The switch sets one and ends the cycle; the cycle starts
+  // when the sweep has finished and turns dark to light and back every few
+  // seconds while the slider is on screen. Reduced motion: the switch only.
+  var lookBtns = [].slice.call(document.querySelectorAll('.lkb'));
+  var look = 'dark', cycle = 0, cycling = false, shown = false;
+  function setLook(l) {
+    look = l; box.classList.toggle('light', l === 'light');
+    lookBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-look') === l)); });
+  }
+  function stopCycle() { cycling = false; clearInterval(cycle); }
+  lookBtns.forEach(function (b) {
+    b.addEventListener('click', function () { stopCycle(); setLook(b.getAttribute('data-look')); });
+  });
+  function startCycle() {
+    if (cycling || !lookBtns.length) return;
+    cycling = true;
+    setTimeout(function () { if (cycling && shown && !document.hidden) setLook('light'); }, 1200);
+    cycle = setInterval(function () {
+      if (!cycling || !shown || document.hidden) return;
+      setLook(look === 'dark' ? 'light' : 'dark');
+    }, 5200);
+  }
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!still && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (es) { shown = es[0].isIntersecting; }, { threshold: 0.35 }).observe(box);
+    var seen = new IntersectionObserver(function (es) {
+      if (!es[0].isIntersecting) return;
+      seen.disconnect();
+      // After the slider's own fade-in (.rise) has settled, not during it.
+      setTimeout(function () { if (!dragging) sweep(); }, 900);
+    }, { threshold: 0.5 });
+    seen.observe(box);
+  }
+})();
+</script>
+
+<dialog id="early" class="early" aria-labelledby="earlyTitle">
+  <form method="dialog" id="earlyForm" novalidate>
+    <h2 class="dsp" id="earlyTitle">Get early access</h2>
+    <p>StyloPlan opens for new accounts soon. Leave your email and we will write once, when it does. Your first floor will be free.</p>
+    <label for="earlyEmail">Work email</label>
+    <input type="email" id="earlyEmail" autocomplete="email" required maxlength="254" placeholder="you@yourcompany.com">
+    <p class="early-msg" id="earlyMsg" role="status" hidden></p>
+    <div class="early-row">
+      <button type="button" class="btn btn-o" id="earlyClose">Close</button>
+      <button type="submit" class="btn btn-a" id="earlyGo">Join the list</button>
+    </div>
+    <p class="early-fine">One email when we open. Nothing else, and never shared. <a href="legal.html#privacy">Privacy</a></p>
+  </form>
+</dialog>
+<script type="module">import{apiUrl as i}from"./src/api-origin.js";const r=[...document.querySelectorAll("a[data-start]")],s=document.getElementById("early");let d=null;const u=async()=>d??=await fetch(i("/api/config")).then(e=>e.ok?e.json():null).catch(()=>null);(async()=>{const e=await u();if(!e?.supabaseUrl)return;const t=await fetch(e.supabaseUrl+"/auth/v1/settings",{headers:{apikey:e.supabaseAnonKey}}).then(a=>a.ok?a.json():null).catch(()=>null);if(t&&t.disable_signup===!1)for(const a of r)a.textContent=a.dataset.open,a.dataset.live="1"})();for(const e of r)e.addEventListener("click",t=>{e.dataset.live||(t.preventDefault(),o(""),s.showModal())});document.getElementById("earlyClose").onclick=()=>s.close();const o=(e,t)=>{const a=document.getElementById("earlyMsg");a.textContent=e,a.hidden=!e,a.classList.toggle("ok",!!t)};{const e=new URLSearchParams(location.search),t=e.get("waitlist");(t==="confirmed"||t==="expired")&&(o(t==="confirmed"?"Confirmed. You are on the list, and we will write once, when StyloPlan opens.":"That link has expired or was already replaced. Enter your email again for a new one.",t==="confirmed"),s.showModal(),e.delete("waitlist"),history.replaceState(null,"",location.pathname+(e.size?`?${e}`:"")+location.hash))}document.getElementById("earlyForm").addEventListener("submit",async e=>{e.preventDefault();const t=document.getElementById("earlyEmail"),a=t.value.trim();if(!t.checkValidity()||!a){o("Enter an email address like you@yourcompany.com."),t.focus();return}const l=document.getElementById("earlyGo");l.disabled=!0;try{const n=await fetch(i("/api/waitlist"),{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({email:a,source:"landing"})});if(!n.ok)throw new Error(n.status===400?"bad":"");const c=await n.json().catch(()=>({}));o(c.mail?"Check your inbox. We sent a link to confirm this address, and you are on the list once you click it.":"You are on the list. We will write when StyloPlan opens.",!0),t.value=""}catch(n){o(n.message==="bad"?"That email address does not look right.":"That did not go through. Try again in a minute.")}finally{l.disabled=!1}});
+</script>
+<script type="module">import{mountTour as c}from"./src/motion-tour.js";window.__tour&&c(window.__tour);import{mountChat as n}from"./src/motion-chat.js";n(document.getElementById("chatPhone"));for(const o of document.querySelectorAll(".chat-try"))o.addEventListener("click",e=>{e.preventDefault();const r=!matchMedia("(prefers-reduced-motion: reduce)").matches,t=matchMedia("(max-width: 959px)").matches;(t?document.querySelector("#a03 .isoslot"):document.getElementById("a03")).scrollIntoView({behavior:r?"smooth":"auto",block:t?"center":"start"}),history.replaceState(null,"","#a03")});
+</script>
+</body>
+</html>

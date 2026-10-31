@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>(function(){try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Projects · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Roboto:wght@400;500&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600&family=DM+Sans:wght@400;600&family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=97">
+<script>try{var t=localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>
+  
+  
+  body { --page-max: 1600px; }
+  main { padding-block: var(--s-2) var(--s-6); }
+  .panel { margin-bottom: 16px; }
+  .panel h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.005em; }
+  .phead { display: flex; align-items: center; gap: 12px 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  
+  .busy { font-size: 12.5px; color: var(--ink-3); min-height: 0; }
+  .busy:not(:empty) { margin-top: 12px; }
+  .busy.is-done { color: var(--ok); }
+  .busy.is-warn { color: var(--warn); }
+
+  
+  
+  .fold { background: none; border: 0; padding: 0.4em 0.15em; margin-left: -0.15em;
+          display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .fold:hover { background: none; }
+  .fold .chev { color: var(--ink-3); font-size: 11px; transition: transform .15s ease; }
+  
+  
+  .page-head { padding-bottom: 0; }
+  #list { margin-top: var(--s-5); }
+
+  #list, #archivedList { display: grid; gap: var(--s-4);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-items: start; }
+  
+  
+  .panel .fold-body { display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows var(--d-overlay) var(--ease); }
+  .panel:not(.collapsed) .fold-body { grid-template-rows: 1fr; }
+  
+  .panel .fold-body > * { overflow: hidden; min-height: 0;
+    visibility: visible; transition: visibility 0s; }
+  .panel.collapsed .fold-body > * { visibility: hidden;
+    transition: visibility 0s var(--d-overlay); }
+  @media (prefers-reduced-motion: reduce) {
+    .panel .fold-body, .nextup, .chev { transition: none; }
+  }
+
+  
+  .phead { height: 48px; display: flex; align-items: center; gap: var(--s-2);
+    flex-wrap: nowrap; margin: 0; }
+  .phead h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .pcount { font-family: var(--mono); font-size: var(--t-12); color: var(--ink-2);
+    white-space: nowrap; }
+  .fold .pstatus { height: 44px; display: flex; align-items: center; gap: var(--s-2);
+    overflow: hidden; }
+  .pstatus .sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: var(--t-13); color: var(--ink-2); }
+  .pips { display: flex; gap: 4px; flex: none; }
+  .pip { width: 8px; height: 8px; border-radius: 999px; background: var(--line-strong); }
+  .pip.on { background: var(--ok); }
+
+  
+  .thumb { position: relative; }
+  .thumb .tag { position: absolute; left: var(--s-2); bottom: var(--s-2);
+    font-family: var(--mono); font-size: var(--t-11); padding: 2px 8px;
+    border-radius: var(--r-chip); background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--line); }
+
+  
+  
+  .fold { display: block; width: 100%; text-align: left; background: none;
+    border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; }
+  .fold .phead { display: flex; align-items: center; gap: var(--s-2);
+    height: 48px; padding: 0; }
+  .foldcue { display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s-2); padding: var(--s-2) 0; }
+  .foldtext { font-size: var(--t-13); color: var(--ink-2); }
+  .fold:hover .foldtext { color: var(--accent); }
+  
+  .foldtext.is-said { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }
+  .foldcue .chevbox { margin-left: auto; }
+
+  
+  .chevbox { width: 32px; height: 32px; display: grid; place-items: center;
+    flex: none; border-radius: var(--r-ctl); color: var(--ink-2);
+    transition: background var(--d-micro) var(--ease); }
+  .chev { transition: transform var(--d-std) var(--ease); }
+  
+  .panel:not(.collapsed) .chev { transform: rotate(-90deg); }
+  .pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font: 500 var(--t-17)/1.3 var(--display); }
+  .fold:hover .chevbox { background: var(--neutral-soft); color: var(--ink); }
+  .fold:hover .pname { color: var(--accent); }
+  .fold:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  
+  .floorlist { list-style: none; margin: 0; padding: 0; }
+  .addFloorRow { margin: var(--s-2) 0 0; }
+  
+  .floorrow { display: flex; align-items: center; }
+  .floorrow .floorlink { flex: 1; min-width: 0; }
+  
+  .floorrow .floorlink { padding-right: var(--s-2); }
+  
+  
+  .fl-del, .fl-ren { flex: none; display: inline-flex; align-items: center; justify-content: center;
+    
+    width: 32px; height: 32px; padding: 0; margin-right: calc(var(--s-1) * -1);
+    background: none; border: 1px solid transparent; border-radius: var(--r-ctl);
+    color: var(--ink-3); cursor: pointer;
+    transition: color var(--d-micro) var(--ease), border-color var(--d-micro) var(--ease); }
+  .fl-del:hover, .fl-del:focus-visible { color: var(--err); border-color: var(--line-strong); }
+  .fl-ren { margin-right: 0; }
+  .fl-ren:hover, .fl-ren:focus-visible { color: var(--accent); border-color: var(--line-strong); }
+  @media (prefers-reduced-motion: reduce) { .fl-del, .fl-ren { transition: none; } }
+  
+  @media (pointer: coarse) {
+    .fl-del { width: 44px; height: 44px; margin-right: calc(var(--s-2) * -1); }
+    .fl-ren { width: 44px; height: 44px; }
+  }
+  .floorlink { display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-2) var(--s-3); border-radius: var(--r-ctl);
+    text-decoration: none; color: inherit; }
+  .floorlink:hover { background: var(--neutral-soft); }
+  .fl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fl-name { font-size: var(--t-15); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .fl-meta { font-size: var(--t-13); color: var(--ink-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .fl-next { display: inline-flex; align-items: center; gap: var(--s-1); flex: none;
+    min-height: 32px; padding: 0 var(--s-3);
+    font-size: var(--t-13); font-weight: 600; color: var(--accent);
+    white-space: nowrap;
+    background: var(--surface);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+    border-radius: var(--r-ctl);
+    transition: background var(--d-micro) var(--ease), color var(--d-micro) var(--ease),
+                border-color var(--d-micro) var(--ease); }
+  .floorlink:hover .fl-next, .floorlink:focus-visible .fl-next {
+    background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  
+  @media (prefers-reduced-motion: reduce) { .fl-next { transition: none; } }
+  
+  .floorlist { container-type: inline-size; }
+  @container (max-width: 470px) {
+    .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+    .fl-next { flex: 1 0 100%; justify-content: center; }
+    
+    .floorrow { align-items: flex-start; }
+    .fl-del, .fl-ren { margin-top: var(--s-1); }
+    
+    .floorrow { position: relative; --icon: 32px; }
+    .floorrow .floorlink { margin-inline: calc(var(--s-3) * -1); padding-right: var(--s-3); }
+    .fl-main { padding-right: calc(var(--icon) * 2 + var(--s-3)); }
+    .floorrow .fl-ren, .floorrow .fl-del { position: absolute; top: var(--s-2); margin: 0; }
+    .floorrow .fl-ren { right: calc(var(--icon) + var(--s-1)); }
+    .floorrow .fl-del { right: 0; }
+    .fl-next { min-height: 36px; font-size: var(--t-15); color: var(--ink); border-color: var(--line-strong); }
+    .floorlink:hover .fl-next, .floorlink:focus-visible .fl-next {
+      background: var(--surface-2); color: var(--ink); border-color: var(--line-strong); }
+  }
+  @container (max-width: 470px) {
+    @media (pointer: coarse) {
+      .floorrow { --icon: 44px; }
+      .floorrow .fl-ren, .floorrow .fl-del { top: 0; }
+      .fl-next { min-height: 44px; }
+    }
+  }
+  
+  @supports not (container-type: inline-size) {
+    @media (max-width: 560px) {
+      .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+      .fl-next { flex: 1 0 100%; justify-content: center; }
+      .floorrow { align-items: flex-start; }
+      .fl-del, .fl-ren { margin-top: var(--s-1); }
+    }
+  }
+  .dot--idle { background: var(--line-strong); }
+
+  
+  .nextup { padding: 0 0 var(--s-3); overflow: hidden;
+    max-height: 96px; opacity: 1;
+    transition: max-height var(--d-overlay) var(--ease),
+                opacity var(--d-std) var(--ease),
+                padding var(--d-overlay) var(--ease); }
+  .nextup .nextbtn { width: 100%; }
+  
+  .nextup .nextbtn { white-space: normal; line-height: 1.3; padding-block: var(--s-2); }
+  
+  .panel:not(.collapsed) .nextup { max-height: 0; opacity: 0; padding-bottom: 0;
+    visibility: hidden; transition: max-height var(--d-overlay) var(--ease),
+                                    opacity var(--d-std) var(--ease),
+                                    padding var(--d-overlay) var(--ease),
+                                    visibility 0s var(--d-overlay); }
+  
+  .archive .panel:not(.collapsed) .nextup { max-height: 96px; opacity: 1;
+    padding-bottom: var(--s-3); visibility: visible; transition-delay: 0s; }
+
+  
+  
+  .panel[data-project] { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .panel[data-project] > * { grid-column: 1 / -1; }
+  .panel[data-project] > .fold { grid-row: 1; }
+  .panel[data-project] > .projMenuBtn { grid-row: 1; grid-column: 2; align-self: start;
+    width: 32px; min-height: 32px; margin: 8px 0 0 0; z-index: 1; color: var(--ink-2); }
+  .panel[data-project] .fold .phead { padding-right: var(--s-7); }
+  @media (pointer: coarse) {
+    .panel[data-project] > .projMenuBtn { width: 44px; min-height: 44px; margin: 2px 0 0 0; }
+  }
+  
+  .fold--one .pcount { display: none; }
+  
+  .fold--one.is-inert { cursor: default; }
+  .fold--one.is-inert:hover .pname { color: inherit; }
+  
+  .onecue { display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s-2); padding: var(--s-2) 0; }
+  .onecue .addFloorRow { margin: 0; }
+  .onecue-acts { display: inline-flex; gap: var(--s-1); }
+  .onecue, .foldcue { min-height: 48px; box-sizing: border-box; }
+  @media (pointer: coarse) { .onecue, .foldcue { min-height: 60px; } }   
+  
+  .panel[data-project] > .busy { padding: 0 var(--s-3); }
+  .panel[data-project].collapsed > .busy:not(:empty) { margin-top: 0; padding-bottom: var(--s-3); }
+
+  
+  .projmenu { margin: auto; border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface); color: var(--ink); box-shadow: var(--e-2);
+    padding: var(--s-1); min-width: 240px; }
+  .projmenu::backdrop { background: rgba(20,18,15,.4); }
+  
+  .projmenu:popover-open {
+    opacity: 1; transform: none; transform-origin: top center;
+    transition: opacity var(--d-std) var(--ease), transform var(--d-std) var(--ease);
+  }
+  @starting-style { .projmenu:popover-open { opacity: 0; transform: scale(.97); } }
+  @supports (overlay: auto) {
+    .projmenu {
+      opacity: 0; transform: scale(.99); transform-origin: top center;
+      transition: opacity var(--d-micro) var(--ease), transform var(--d-micro) var(--ease),
+                  overlay var(--d-micro) allow-discrete, display var(--d-micro) allow-discrete;
+    }
+    .projmenu:popover-open {
+      transition: opacity var(--d-std) var(--ease), transform var(--d-std) var(--ease),
+                  overlay var(--d-std) allow-discrete, display var(--d-std) allow-discrete;
+    }
+  }
+
+  
+  @supports (anchor-name: --a) {
+    
+    .projmenu {
+      position-area: block-end span-inline-start;
+      margin: var(--s-1) 0 0;
+      position-try-fallbacks: block-start span-inline-start,
+                              block-end span-inline-end,
+                              block-start span-inline-end;
+    }
+    .projmenu::backdrop { background: transparent; }
+  }
+  .pm-head { display: flex; justify-content: space-between; gap: var(--s-3);
+    padding: var(--s-2) var(--s-3); font: 500 var(--t-15)/1.3 var(--display);
+    border-bottom: 1px solid var(--line); margin-bottom: var(--s-1); }
+  .projmenu button { display: flex; width: 100%; justify-content: flex-start;
+    flex-direction: column; align-items: flex-start; gap: 2px;
+    min-height: 40px; padding: var(--s-2) var(--s-3); border: 0; background: transparent;
+    color: var(--ink); border-radius: var(--r-chip); text-align: left; }
+  .projmenu button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .projmenu button:disabled { color: var(--ink-3); }
+  
+  
+  .pm-sub { font-size: var(--t-12); color: var(--ink-3); font-weight: 400; }
+  button:disabled .pm-sub { color: var(--ink-3); }
+
+  
+  .ps-head { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+  .ps-head h2 { margin: 0; overflow-wrap: anywhere; }
+  .ps-row { padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .ps-row:last-child { border-bottom: 0; }
+  .ps-floor { display: block; font-weight: 600; margin-bottom: var(--s-1); }
+  .ps-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  
+  .ps-acts .btn { padding: 0 var(--s-3); }
+  
+  .ps-floors { max-height: min(46vh, 340px); overflow-y: auto; }
+  .ps-kit { display: block; margin: var(--s-3) 0 0; }
+  .ps-kit select { display: block; width: 100%; margin-top: var(--s-1); }
+  .ps-kitnote { margin: var(--s-1) 0 var(--s-3); }
+
+  .menu { position: relative; flex: none; }
+  .menu > summary { list-style: none; cursor: pointer; width: 32px; height: 32px;
+    display: grid; place-items: center; border-radius: var(--r-ctl); color: var(--ink-2); }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu > summary:hover { background: var(--neutral-soft); color: var(--ink); }
+  .menu[open] > summary { background: var(--neutral-soft); color: var(--ink); }
+  .menu .sheet { position: absolute; right: 0; top: 36px; z-index: 5; min-width: 190px;
+    display: flex; flex-direction: column; padding: var(--s-1);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-ctl); box-shadow: var(--e-2); }
+  .menu .sheet button { justify-content: flex-start; width: 100%; border: 0;
+    background: transparent; min-height: 36px; padding: 0 var(--s-3);
+    border-radius: var(--r-chip); color: var(--ink); text-align: left; }
+  .menu .sheet button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .menu .sheet button:disabled { color: var(--ink-3); }
+
+  
+  .thumb { display: block; width: 100%; aspect-ratio: 4 / 3; margin-bottom: var(--s-3);
+    border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface-2) center/contain no-repeat; }
+  
+  
+  
+  .thumb--empty { display: flex; align-items: center; justify-content: center; gap: var(--s-2);
+    font-size: var(--t-13); color: var(--ink-3); aspect-ratio: auto; min-height: 44px;
+    background: none; border: 1px dashed var(--line-strong); }
+  .thumb--empty svg { flex: none; }
+  .panel.collapsed .fold .chev { transform: rotate(90deg); }
+  .panel.collapsed .phead { margin-bottom: 0; }
+  @media (prefers-reduced-motion: reduce) { .fold .chev { transition: none; } }
+
+  
+  .reuse-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .reuse-opt { display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+               padding: 12px 12px; background: var(--surface);
+               border: 1px solid var(--line-strong); border-radius: var(--r-ctl); cursor: pointer; }
+  .reuse-opt:hover { border-color: var(--accent); background: var(--surface-2); }
+  .reuse-opt[aria-pressed="true"] { border-color: var(--accent);
+                                    box-shadow: 0 0 0 3px var(--accent-soft); }
+  .reuse-opt b { font-weight: 600; }
+  .reuse-opt .meta { margin-left: auto; font-size: 12px; color: var(--ink-2); }
+  .reuse-empty { font-size: 13px; color: var(--ink-2); padding: 4px 0; }
+  
+  .just-added { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); }
+  
+  .floorrow.just-added { border-radius: var(--r-ctl); transition: box-shadow .6s ease; }
+
+  .hist-list { display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto; }
+  .hist-v { border-left: 2px solid var(--line-strong); padding-left: 12px; }
+  .hist-v h4 { margin: 0 0 2px; font-size: 13px; font-weight: 600; }
+  .hist-v .when { font-size: 12px; color: var(--ink-2); }
+  .hist-v ul { margin: 8px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.6; }
+  .hist-v .same { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  
+  
+  
+  .archive { margin-top: var(--s-5); padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2); }
+  .archive > summary { cursor: pointer; font-size: 12px; color: var(--ink-2);
+                       padding: 8px 2px; list-style: none; }
+  .archive > summary::-webkit-details-marker { display: none; }
+  .archive > summary::before { content: '▸ '; color: var(--ink-3); }
+  .archive[open] > summary::before { content: '▾ '; }
+  .archive > summary:hover { color: var(--ink); }
+  .archive .panel { opacity: .78; }
+  .archive .panel:hover { opacity: 1; }
+
+  
+  .undo-notice { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+    width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+    display: flex; align-items: center; gap: 16px; padding: 12px 16px 15px;
+    background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px;
+    box-shadow: var(--e-2); overflow: hidden; font-size: 14px; line-height: 1.4; }
+  .undo-notice[hidden] { display: none; }
+  .undo-notice p { flex: 1; margin: 0; color: var(--ink-2); }
+  .undo-notice b { color: var(--ink); }
+  .undo-notice .un-undo { color: var(--accent); border-color: var(--accent); }
+  .undo-notice .un-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: var(--paid); transform-origin: left center; }
+  @media (prefers-reduced-motion: reduce) { .undo-notice .un-bar { transition: none !important; } }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/ask.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/chrome.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/compositor.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/formats.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/footer.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/spec-strip.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/patch.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/plan-trim.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/ink.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/recolour.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/text-runs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/xmp.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/label-frame.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sweep-fit.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/registration.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/theme3d.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-paths.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-withdraw.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/delete-flow.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/pdf.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/report.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/doc-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/render-history.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/room-schedule.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-plan.js" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#list">Skip to content</a>
+
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1>Projects</h1>
+  
+  <div class="actions">
+    
+    <input type="file" id="planFile" accept="application/pdf,image/png,image/jpeg,image/webp" hidden>
+    <button id="newProject" class="btn btn--primary">New project</button>
+  </div>
+</div>
+<main id="list" tabindex="-1"></main>
+
+
+<dialog id="reuseDlg">
+  <h3 id="reuseTitle" style="margin:0 0 8px">Reuse this plan</h3>
+  <p class="subtle" id="reuseLead" style="margin:0 0 16px"></p>
+  <div id="reuseList" class="reuse-list"></div>
+  <label class="fld" for="reuseNew" id="reuseNewLabel" style="margin-top:16px"></label>
+  <input type="text" id="reuseNew" placeholder="Project name">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="reuseCancel" class="btn btn--quiet">Cancel</button>
+    <button id="reuseGo" class="btn btn--primary">Copy floor</button>
+  </div>
+</dialog>
+
+
+<dialog id="nameDlg">
+  <h3 id="nameTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="nameLead" style="margin:0 0 16px"></p>
+  <label class="fld" for="nameField" id="nameLabel"></label>
+  <input type="text" id="nameField" autocomplete="off">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="nameCancel" class="btn btn--quiet">Cancel</button>
+    <button id="nameGo" class="btn btn--primary"></button>
+  </div>
+</dialog>
+
+
+
+<dialog id="histDlg">
+  <h3 id="histTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="histLead" style="margin:0 0 16px"></p>
+  <div id="histList" class="hist-list"></div>
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="histClose" class="btn btn--quiet">Close</button>
+  </div>
+</dialog>
+
+<script type="module">import{askConfirm as M,dropWhenFaded as Te}from"./src/ask.js";import{signOffName as xe,onAuthChange as Ie,authState as X}from"./src/auth.js";import{openSignIn as Ee}from"./src/auth-ui.js";import{renderChrome as Fe}from"./src/chrome.js";import{track as _}from"./src/events.js";await Fe();import*as p from"./src/store.js";import{composeAll as Pe}from"./src/compositor.js";import{labelsOnRender as qe}from"./src/label-frame.js";import{getArtifactUrl as J,scopeFor as H,styledKind as Q,resolveStyled as Z,STYLED_KINDS as De,deleteScope as ee,copyScope as Re,deleteArtifact as Me,putArtifact as He}from"./src/artifacts.js";import{lookOfImage as Oe}from"./src/model3d/theme3d.js";import{floorHref as K,floorStage as Be}from"./src/floor-context.js";import{diffVersions as Ue}from"./src/versions.js";import{getSupabase as _e}from"./src/supabase-client.js";import{PUBLISHED_TABLE as Ke}from"./src/published-paths.js";import{publishedAmong as We,withdrawFloors as Ge}from"./src/published-withdraw.js";import{deleteFlow as te,createUndoHold as Ve}from"./src/delete-flow.js";import{canvasesToPdfBlob as oe}from"./src/pdf.js";import{renderVerificationReport as ne}from"./src/report.js";import{editCount as ae}from"./src/render-history.js";import{DOC_FONTS as Ye}from"./src/doc-style.js";import{renderRoomSchedule as ze}from"./src/room-schedule.js";import{makeStyledMock as Xe}from"./src/mock-style.js";import{makeMockLogo as Je}from"./src/mock-plan.js";import{derived as Qe,paletteFor as Ze}from"./src/palettes.js";import{DEFAULT_DISCLAIMER as et}from"./src/footer.js";const m=e=>document.getElementById(e);p.ensureSeed();const tt={empty:"needs a plan",uploaded:"needs review",confirmed:"ready to style",styled:"rendered"},Ut={empty:"new",uploaded:"busy",confirmed:"accent",styled:"confirmed"};function se(e){return e?.confirmedAt?new Date(e.confirmedAt).toLocaleDateString(void 0,{day:"numeric",month:"short",year:"numeric"}):"Not yet"}const b=e=>String(e??"").replace(/[&<>"]/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[t]);async function g(){const e=p.getKits(),t=m("list");t.innerHTML="",document.querySelectorAll("details.archive").forEach(a=>a.remove());const o=p.getProjects().filter(a=>!O.hidesProject(a.id)).map(O.drawnAs),r=o.filter(a=>!a.archived),s=o.filter(a=>a.archived);if(!r.length&&!s.length){const a=document.createElement("div");a.className="empty-state",a.innerHTML=`
+      <h2>Start your first project</h2>
+      <p class="subtle">A project is one home model. Upload a floor plan, confirm the rooms
+        and dimensions, and get branded images in three formats.</p>
+      <div class="row" style="justify-content:center; margin-top:16px">
+        <button id="emptyNew" class="btn btn--primary">New project</button>
+      </div>`,t.append(a),m("emptyNew").onclick=()=>m("newProject").onclick(),m("newProject").hidden=!0;return}m("newProject").hidden=!1;for(const a of r)await me(a,e,t);if(s.length){const a=document.createElement("details");a.className="archive",a.innerHTML=`<summary>Archived (${s.length})</summary>`;const n=document.createElement("div");n.id="archivedList",a.append(n),t.after(a);for(const c of s)await me(c,e,n)}}async function ot(e,t){if(!e)return;const o=t.floors||[];if(!o.length)return;const r={"styled-light":"light render","styled-dark":"dark render",styled:"render",wireframe:"our drawing · not rendered yet",source:"your plan · upload not finished"};for(const s of[Q("light"),Q("dark"),"styled","wireframe","source"])for(const a of o){const n=a.verified?.artifactScope||H(t.id,a.id);try{const c=await J(n,s);if(!c)continue;e.style.backgroundImage=`url("${c}")`,e.classList.remove("thumb--empty"),e.textContent="";const h=document.createElement("span");h.className="tag";const u=o.length>1&&a!==o[0];h.textContent=(r[s]||s)+(u?` · ${a.name}`:""),e.append(h),e.setAttribute("role","img"),e.setAttribute("aria-label",`${t.name}, ${a.name}, ${r[s]||s}`);return}catch{}}}const re='<svg class="go" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5"/></svg>';function nt(e,t){const o=["empty","uploaded","confirmed"].find(a=>t[a]);if(!o)return"All floors rendered";const r=t[o],s=`${r} floor${r>1?"s":""}`;return o==="empty"?`${s} need${r>1?"":"s"} a plan`:o==="uploaded"?`${s} need${r>1?"":"s"} review`:`${s} ready to style`}const le=(e,t)=>e==="empty"?"idle":t?"ok":"warn",ie=(e,t)=>`${tt[e]}${t?` · ${se(t)}`:""}`;function at(e,t,o){const r=e.querySelector(".pstatus .mark"),s=e.querySelector(".pstatus .sum");if(!o.length){r.className="dot dot--idle",s.textContent="No floors yet";return}if(o.length===1){const n=t.floors[0].verified;r.className=`dot dot--${le(o[0],n)}`;const c=ie(o[0],n);s.textContent=c.charAt(0).toUpperCase()+c.slice(1);return}const a=o.filter(n=>n==="styled").length;r.className="pips",r.innerHTML=o.map(n=>`<span class="pip${n==="styled"?" on":""}"></span>`).join(""),s.textContent=`${a} of ${o.length} rendered`,r.title=s.textContent}const st='<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M4 1.5h5.5L12 4v10.5H4z M9.5 1.5V4H12"/></svg>',ce='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3.5l2 2L6 12H4v-2z"/><path d="M9.5 4.5l2 2"/></svg>',de='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.6 8h4.8l.6-8"/></svg>',rt=(e,t)=>t?`Show ${e.floors.length} floor${e.floors.length>1?"s":""}`:"Hide floors",ue=(e,t,o)=>{e.textContent=rt(t,o),e.classList.toggle("is-said",o&&t.floors.length>1&&!t.archived)};async function me(e,t,o){{const r=t.find(l=>l.id===e.brandKitId)||t[0],s=e.floors.length<=1,a=s||e.archived||e.collapsed!==!1,n=document.createElement("section"),c=e.floors.length>1;n.className="panel"+(a?" collapsed":"")+(c?" panel--many":""),n.dataset.project=e.id;const h='<svg class="chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',u=s?"div":"button";n.innerHTML=`
+      <button class="projMenuBtn btn btn--quiet btn--icon" popovertarget="pm-${e.id}"
+              style="anchor-name: --pm-${e.id}" title="Project menu"
+              aria-label="Project menu, ${b(e.name)}"><span aria-hidden="true">···</span></button>
+      <${u} class="fold${s?" fold--one":""}"${s?"":` aria-expanded="${!a}"`}>
+        <span class="phead">
+          <span class="pname">${b(e.name)}</span>
+          <span class="pcount">${e.floors.length} floor${e.floors.length>1?"s":""}</span>
+        </span>
+        <span class="thumb thumb--empty" data-thumb>${st}No plan yet</span>
+        <!-- The status band is inside the disclosure button, and it can be:
+             pips, a summary and a chip are all text. Putting it here is what
+             lets the cue below it be the LAST thing in the button. -->
+        <span class="pstatus">
+          <span class="mark"></span>
+          <span class="sum"></span>
+          <span class="chip" title="Brand kit applied to every floor in this project">${b(r?.name||"no kit")}</span>
+          ${e.isSample?'<span class="chip warn" title="A demo plan, not your own work.">Sample</span>':""}
+        </span>
+        <!-- THE DISCLOSURE SAYS WHAT IT DOES, IN WORDS, AT THE FOOT.
+             A bare chevron at the top of the card told the user nothing about
+             what pressing it would produce — it is an icon for a state, not for
+             an outcome, and it sat where nothing else was interactive.
+             It now reads "Show 2 floors" and sits at the bottom of the card,
+             where actions live. The chevron stays beside the words as the state
+             indicator it always was.
+             It cannot go BELOW the next-action button: that button is a real
+             <button>, the disclosure is a real <button>, and one cannot be
+             nested in the other. So the card ends with its primary action and
+             the disclosure sits directly above it. -->
+        ${s?"":`<span class="foldcue">
+          <span class="foldtext"></span>
+          <span class="chevbox">${h}</span>
+        </span>`}
+      </${u}>
+      <!-- ADDING A FLOOR, WHERE THE FLOORS ARE. It was only in the project's
+           ··· menu, and a two-storey home is the ordinary case (the app review,
+           2026-09-30). The menu keeps its own for anyone who looks there.
+           On a single-floor card it takes the band the fold's cue has on the
+           others, with the floor's rename beside it, so the cards stay equal. -->
+      ${s&&e.floors.length?`<div class="onecue">
+        <button type="button" class="btn btn--quiet btn--sm addFloorRow">+ Add a floor</button>
+        <span class="onecue-acts">
+          <button type="button" class="fl-ren renFloor" title="Rename ${b(e.floors[0].name)}" aria-label="Rename ${b(e.floors[0].name)}">${ce}</button>
+          <button type="button" class="fl-del delFloor" title="Remove ${b(e.floors[0].name)}" aria-label="Remove ${b(e.floors[0].name)} from ${b(e.name)}">${de}</button>
+        </span>
+      </div>`:""}
+      <div class="nextup"></div>
+      ${s?"":`<div class="fold-body"><div>
+        <ul class="floorlist"></ul>
+        <button type="button" class="btn btn--quiet btn--sm addFloorRow">+ Add a floor</button>
+      </div></div>`}
+      <!-- Outside the fold: the menu's Project PDF reports here, and the menu
+           is reachable on a shut card now. -->
+      <div class="busy" role="status"></div>
+      <div class="projmenu" popover id="pm-${e.id}" style="position-anchor: --pm-${e.id}">
+        <div class="pm-head">${b(e.name)}<span class="pcount">${e.floors.length} floor${e.floors.length>1?"s":""}</span></div>
+        <button class="renameProj">Rename project…</button>
+        <button class="dlAll">Project PDF</button>
+        <button class="archiveBtn"></button>
+        <button class="settingsBtn">Project settings…</button>
+      </div>`,ot(n.querySelector("[data-thumb]"),e),s||ue(n.querySelector(".foldtext"),e,a);const f=n.querySelector(".floorlist"),i=l=>l==="empty"?["Upload plan","extract.html"]:l==="uploaded"?["Continue review","review.html"]:["Open Studio","studio.html"];let d=null;const $={},k=[];for(const l of e.floors){const A=l.verified,y=await Be(e.id,l.id),[w,Y]=i(y),z={empty:0,uploaded:1,confirmed:2,styled:3};if((!d||z[y]<z[d.stage])&&(d={stage:y,label:w,page:Y,floor:l}),$[y]=($[y]||0)+1,k.push(y),s)continue;const E=document.createElement("li");E.className="floorrow",E.dataset.floor=l.id;const C=document.createElement("a");C.className="floorlink",C.href=K(Y,e.id,l.id),C.innerHTML=`
+        <span class="dot dot--${le(y,A)}"></span>
+        <span class="fl-main">
+          <span class="fl-name">${b(l.name)}</span>
+          <span class="fl-meta">${ie(y,A)}</span>
+        </span>
+        <span class="fl-next">${w}${y==="empty"?"":re}</span>`,y==="empty"&&(C.href="#",C.title="Choose the plan file. If the sheet shows several floors, you will pick this floor on it.",C.onclick=Ne=>{Ne.preventDefault(),ke(e.id,l.id)}),E.append(C);const N=document.createElement("button");N.type="button",N.className="fl-ren",N.title=`Rename ${l.name}`,N.setAttribute("aria-label",`Rename ${l.name}`),N.innerHTML=ce,N.onclick=()=>P("floor",e,l),E.append(N);const T=document.createElement("button");T.type="button",T.className="fl-del",T.title=`Remove ${l.name}`,T.setAttribute("aria-label",`Remove ${l.name} from ${e.name}`),T.innerHTML=de,T.onclick=()=>we(e,l),E.append(T),f.append(E)}if(at(n,e,k),s){e.floors.length&&(n.querySelector(".renFloor").onclick=()=>P("floor",e,e.floors[0]),n.querySelector(".delFloor").onclick=()=>we(e,e.floors[0]));const l=n.querySelector(".fold--one");e.archived?l.classList.add("is-inert"):l.onclick=()=>n.querySelector(".nextbtn")?.click()}const L=async()=>{let l="Each floor gets its own plan, review and images. If one sheet shows several floors, upload it for each floor and pick that floor on it. A plain plan reads best: walls, doors, windows, names and dimensions. Furniture is fine; dense construction notes can be misread.",A=`Floor ${e.floors.length+1}`;for(;;){const y=await W({title:`Add a floor to "${e.name}"`,lead:l,label:"Floor name",value:A,confirm:"Add floor"});if(!y)return;if(e.floors.some(w=>w.name.trim().toLowerCase()===y.toLowerCase())){A=y,l=`Another floor of ${e.name} is already called ${y}.`;continue}p.addFloor(e.id,y),_("floor_added",{floors:e.floors.length+1}),g();return}};for(const l of n.querySelectorAll(".addFloorRow"))l.onclick=L;const S=e.floors.filter(l=>l.verified).length,j=n.querySelector(".dlAll");j.disabled=S===0,j.classList.toggle("btn--primary",S>0),j.innerHTML=`<span>Plan${c?"s":""} + verification report${c?"s":""} (PDF)</span><span class="pm-sub"></span>`,j.querySelector(".pm-sub").textContent=S===0?"Needs a confirmed floor":`${S} of ${e.floors.length} floor${c?"s":""} · two pages each`,j.title=S===0?"No floor is confirmed yet. Finish a review first.":"One PDF. Each floor gets its styled plan, then its verification report.",j.onclick=()=>ct(e,r,n);const x=n.querySelector("button.fold"),R=n.querySelector(".foldtext");x&&(x.onclick=()=>{const l=!n.classList.contains("collapsed");n.classList.toggle("collapsed",l),x.setAttribute("aria-expanded",String(!l)),ue(R,e,l),p.setProjectCollapsed(e.id,l)});const I=n.querySelector(".archiveBtn");I.innerHTML=e.archived?"Restore from archive":'<span>Archive</span><span class="pm-sub">You can undo this</span>',I.title=e.archived?"Move back into the working list":"Keep the project and its files, out of the working list",I.onclick=()=>{p.archiveProject(e.id,!e.archived),g()},n.querySelector(".settingsBtn").onclick=()=>{n.querySelector(".projmenu")?.hidePopover?.(),lt(e,r)},n.querySelector(".renameProj").onclick=()=>{n.querySelector(".projmenu")?.hidePopover?.(),P("project",e)};const F=n.querySelector(".nextup");if(e.archived){const l=document.createElement("button");l.className="btn btn--secondary nextbtn",l.textContent=`Restore ${e.name} from archive`,l.onclick=()=>{p.archiveProject(e.id,!1),g()},F.append(l)}else if(e.floors.length){if(d){const l=document.createElement("button");l.className="btn btn--secondary nextbtn",c?(l.textContent=`${nt(e,$)} · show floors`,l.onclick=()=>n.querySelector(".fold").click()):(l.textContent=`${d.label} · ${d.floor.name}`,d.stage!=="empty"&&l.insertAdjacentHTML("beforeend",re),l.onclick=()=>{d.stage==="empty"?ke(e.id,d.floor.id):location.href=K(d.page,e.id,d.floor.id)}),F.append(l)}}else{const l=document.createElement("button");l.className="btn btn--secondary nextbtn",l.textContent="Add a floor",l.onclick=L,F.append(l)}o.append(n)}}async function P(e,t,o=null){let r=e==="project"?t.name:o.name,s=e==="project"?"The new name is used on every floor’s images and files from now on. Images already downloaded keep the old one.":`A floor of ${t.name}. Its images and files take the new name from now on.`;for(;;){const a=await W({title:e==="project"?`Rename ${t.name}`:`Rename ${o.name}`,lead:s,label:e==="project"?"Project name":"Floor name",value:r,confirm:"Rename"});if(!a)return;const n=e==="project"?p.renameProject(t.id,a):p.renameFloor(t.id,o.id,a);if(n.ok){_(e==="project"?"project_renamed":"floor_renamed"),g();return}r=a,s=n.error}}function lt(e,t){const o=document.createElement("dialog");o.className="auth-dialog",o.innerHTML=`
+    <form method="dialog" class="auth-form">
+      <div class="ps-head"><h2>${b(e.name)}</h2><button type="button" class="btn btn--secondary btn--sm ps-rename">Rename</button></div>
+      <p class="subtle">${e.floors.length} floor${e.floors.length>1?"s":""}</p>
+      <!-- WHICH KIT, chosen here (the user-flow review, 2026-10-04). A project
+           kept the kit it was made with and nothing could change it; Studio
+           used the active kit instead, so it did not matter. Now Studio uses
+           the project's, so the project's has to be choosable. -->
+      <label class="ps-kit">Brand kit
+        <select class="ps-kitsel">${p.getKits().map(a=>`<option value="${b(a.id)}"${a.id===t?.id?" selected":""}>${b(a.name)}</option>`).join("")}</select>
+      </label>
+      <p class="subtle ps-kitnote">Its logo, name and colours go on every floor of this project.</p>
+      <div class="ps-floors"></div>
+      <div class="auth-actions">
+        <span class="act-aside"></span>
+        <button class="btn btn--secondary" value="close">Close</button>
+      </div>
+    </form>`;const r=o.querySelector(".ps-floors");o.querySelector(".ps-kitsel").onchange=a=>{const n=p.getProjects().find(c=>c.id===e.id)||e;n.brandKitId=e.brandKitId=a.target.value,p.saveProject(n),g()},o.querySelector(".ps-rename").onclick=async()=>{o.close(),await P("project",e)};for(const a of e.floors){const n=document.createElement("div");n.className="ps-row",n.innerHTML=`<span class="ps-floor">${b(a.name)}</span><span class="ps-acts"></span>`;const c=n.querySelector(".ps-acts"),h=(f,i)=>{const d=document.createElement("button");d.type="button",d.className="btn btn--secondary btn--sm",d.textContent=f,d.onclick=()=>{o.close(),i()},c.append(d)},u=document.querySelector(`[data-project="${e.id}"]`);if(h("Rename",()=>P("floor",e,a)),!a.verified){r.append(n);continue}h("Report",()=>dt(e,a,t,u,!0)),h("History",()=>mt(e,a)),h("Copy to project…",()=>ht(e,a,u)),r.append(n)}if(!e.floors.some(a=>a.verified)){const a=document.createElement("p");a.className="subtle",a.textContent="Reports, history and reuse appear here once a floor has been confirmed.",r.append(a)}const s=document.createElement("button");s.type="button",s.className="btn btn--destructive btn--sm",s.textContent="Delete project",s.onclick=()=>{o.close(),it(e)},o.querySelector(".act-aside").replaceWith(s),s.classList.add("act-aside"),o.addEventListener("close",()=>Te(o)),document.body.append(o),o.showModal()}async function it(e){const t=e.floors.length;await te({published:()=>be(e.floors),ask:o=>M({title:`Delete “${e.name}”?`,body:[`This removes ${t} floor${t>1?"s":""}, every uploaded plan and every render.`,ye(o.length,t),"It cannot be undone. To keep the files but clear the list, use Archive instead."],confirm:"Delete project",danger:!0}),takeDown:ge,commit:async()=>{const o=p.deleteProject(e.id);for(const r of o)await ee(r)},hold:o=>he({projectId:e.id,commit:o,title:`“${e.name}” deleted.`,sub:`Its ${t>1?`${t} floors`:"floor"} and renders go in a few seconds.`})})==="deleted"&&g()}const fe=8e3,O=Ve({delay:fe,onClear:()=>{pe().hidden=!0},onDone:()=>g()});async function he({projectId:e,floorId:t=null,title:o,sub:r,commit:s}){await O.hold({projectId:e,floorId:t,commit:s}),g();const a=pe();a.querySelector(".un-title").textContent=o,a.querySelector(".un-sub").textContent=r;const n=a.querySelector(".un-bar");n.style.transition="none",n.style.transform="scaleX(1)",a.hidden=!1,requestAnimationFrame(()=>requestAnimationFrame(()=>{n.style.transition=`transform ${fe}ms linear`,n.style.transform="scaleX(0)"})),a.querySelector(".un-undo").focus({preventScroll:!0})}function pe(){let e=document.getElementById("undoNotice");return e||(e=document.createElement("div"),e.id="undoNotice",e.className="undo-notice",e.setAttribute("role","status"),e.hidden=!0,e.innerHTML='<p><b class="un-title"></b> <span class="un-sub"></span></p><button type="button" class="btn btn--secondary btn--sm un-undo">Undo</button><span class="un-bar" aria-hidden="true"></span>',e.querySelector(".un-undo").onclick=()=>O.undo(),document.body.append(e),e)}async function be(e){const t=await We(e.map(o=>o.id));return t.floors?t.floors:(await M({title:"Nothing was deleted",body:["We could not check whether this is shared as a 3D view, so nothing was removed. Try again in a moment."],confirm:"Close",cancel:null}),null)}const ye=(e,t)=>t===1?"Its 3D view is shared. Deleting takes it down, and the link and any embed on your website stop working.":`The 3D view of ${e} of its floors is shared. Deleting takes ${e===1?"it":"them"} down, and the links and any embeds on your website stop working.`;async function ge(e){if(!e.length)return!0;let t;try{t=await Ge(e)}catch(o){t={error:o?.message||"unknown error"}}return t.error?(await M({title:"Nothing was deleted",body:[`The shared 3D view could not be taken down (${t.error}), so nothing was removed. Try again in a moment.`],confirm:"Close",cancel:null}),!1):!0}async function we(e,t){const o=!!t.verified;await te({published:()=>be([t]),ask:()=>M({title:`Remove “${t.name}”?`,body:[o?`This floor is confirmed. Removing it deletes its plan, its renders, and the sign-off${t.verified.confirmedBy?` by ${t.verified.confirmedBy}`:""} on ${se(t.verified)}.`:"This deletes its uploaded plan and any renders it has.",ye(1,1),"It is removed from your account too, on every device. It cannot be undone."],confirm:"Remove floor",danger:!0}),takeDown:ge,commit:async()=>{const r=p.removeFloor(e.id,t.id,{force:!0});r&&await ee(r)},hold:r=>he({projectId:e.id,floorId:t.id,commit:r,title:`“${t.name}” removed.`,sub:o?"Its plan, renders and sign-off go in a few seconds.":"Its plan and renders go in a few seconds."})})==="deleted"&&g()}let B=[],q=[];async function ct(e,t,o){const r=e.floors.filter(h=>h.verified),s=o.querySelector(".busy");if(!r.length){v(s,"No confirmed floors yet. Run Review first.","warn");return}B=[],q=[],v(s,"Composing floors…");const a=[];for(const h of r)a.push(...await ut(h,t,e)),v(s,`Composed ${h.name}…`);v(s,"Building PDF pack…");const n=await oe(a);$e(n,`${e.name.replaceAll(" ","-")}-plans-and-reports.pdf`);const c=(B.length?`  ⚠ Placeholder plan used for ${B.join(", ")}. Open each in Studio to style it first.`:"")+(q.length?`  ⚠ Your kit is set to ${t?.palette?.theme==="dark"?"dark":"light"}, but only the other look is rendered for ${q.join(", ")}.`:"");v(s,`Done. ${a.length} pages, ${r.length} floor${r.length>1?"s":""}, each with its room schedule and report.`+c,c?"warn":"done")}async function dt(e,t,o,r,s){const a=r.querySelector(".busy");v(a,"Rendering report…"),await ve(o);const n=t.verified?.artifactScope||H(e.id,t.id),c=await Promise.all(["light","dark"].map(async i=>({look:i,n:await ae(n,i).catch(()=>0)}))),h=o?.logoDataUrl?await D(o.logoDataUrl).catch(()=>null):null,u=ne({kit:o,projectName:e.name,floorName:t.name,verified:t.verified,edits:c,logo:h}),f=await oe([u]);$e(f,`${e.name.replaceAll(" ","-")}-${t.name.replaceAll(" ","-")}-verification.pdf`),v(a,"Report downloaded.","done")}function v(e,t,o){e.textContent=t,e.classList.toggle("is-done",o==="done"),e.classList.toggle("is-warn",o==="warn")}async function ut(e,t,o){await ve(t);const r=e.verified,s=r.artifactScope||H(o.id,e.id),a=t?.palette?.theme==="dark"?"dark":"light",n=await Z(s,a),c=n?.url||null;n&&n.theme&&!n.exact&&q.push(`${e.name} (${n.theme})`);const h=p.projectAppearance(o),u=Ze(t,n?.theme||a,h),f=h?.font||t?.font;f&&await Promise.all([400,600,700].map(w=>document.fonts.load(`${w} 20px "${f}"`)));const i=c?await D(c):Xe(u);if(c||B.push(e.name),n&&!n.theme&&c){const w=Oe(i);w&&w!==a&&q.push(`${e.name} (${w})`)}const d=Qe(u),$=t.logoDataUrl?await D(t.logoDataUrl):Je(d.footerInk),k={companyName:t.companyName,tagline:t.tagline,font:f,canvasBg:u.background,labelInk:d.labelInk,footerInk:d.footerInk,disclaimerOn:t.disclaimerOn!==!1,disclaimerText:t.disclaimerText||et,logo:$},L=c?await J(s,"wireframe").catch(()=>null):null,S=L?await D(L).catch(()=>null):null,j=n?.theme==="dark"?"light":"dark",x=S&&n?.theme?await Z(s,j):null,R=x?.theme===j?await D(x.url).catch(()=>null):null,I=Pe({planImage:i,labels:qe(r.labels.filter(w=>w.name),S,i,R?[R]:[]),brand:k,specs:r.specs,meta:{title:`${e.name} · ${o.name}`}}),F=I.portrait||Object.values(I)[0],l=t.logoDataUrl?$:null,A=ze({kit:t,projectName:o.name,floorName:e.name,verified:r,logo:l}),y=ne({kit:t,projectName:o.name,floorName:e.name,verified:r,logo:l,edits:n?.theme?[{look:n.theme,n:await ae(s,n.theme).catch(()=>0)}]:[]});return[F,A,y]}async function ve(e){await Promise.all(Ye.map(o=>document.fonts.load(o).catch(()=>null)));const t=e?.font;t&&await Promise.all([400,600,700].map(o=>document.fonts.load(`${o} 20px "${t}"`)))}const D=e=>new Promise((t,o)=>{const r=new Image;r.onload=()=>t(r),r.onerror=o,r.src=e});function $e(e,t){const o=document.createElement("a");o.href=URL.createObjectURL(e),o.download=t,o.click(),URL.revokeObjectURL(o.href)}function W({title:e,lead:t,label:o,value:r="",placeholder:s="",confirm:a="Create"}){const n=m("nameDlg"),c=m("nameField");return m("nameTitle").textContent=e,m("nameLead").textContent=t||"",m("nameLead").hidden=!t,m("nameLabel").textContent=o,m("nameGo").textContent=a,c.value=r,c.placeholder=s,new Promise(h=>{let u=null;m("nameCancel").onclick=()=>n.close(),m("nameGo").onclick=()=>{const f=c.value.trim();if(!f){c.focus();return}u=f,n.close()},n.onkeydown=f=>{f.key==="Enter"&&f.target===c&&(f.preventDefault(),m("nameGo").click()),f.key==="Escape"&&(f.preventDefault(),n.close())},n.addEventListener("close",()=>h(u),{once:!0}),n.showModal(),c.focus(),c.select()})}let U=null;function ke(e,t){U={projectId:e,floorId:t},m("planFile").value="",m("planFile").click()}m("planFile").onchange=async()=>{const e=m("planFile").files[0];if(!e||!U)return;const{projectId:t,floorId:o}=U;U=null,await He(H(t,o),"pending",e),location.href=K("extract.html",t,o)};function mt(e,t){const o=m("histDlg"),r=m("histList"),s=t.versions||[];m("histTitle").textContent=`${t.name} · ${e.name}`,m("histLead").textContent=s.length>1?"Newest first. Each sign-off shows what changed from the one before it.":"Newest first.";const a=i=>i?new Date(i).toLocaleString(void 0,{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"date unknown",n=s.map((i,d)=>({at:i.at,kind:"signoff",v:i,i:d})),c=t.verified?.openings?.confirmedAt;c&&n.push({at:c,kind:"openings"});const h={openings:"Windows and doors confirmed",published:"Shown on your website",updated:"Last updated on your website"},u=i=>{const d=document.createElement("div");if(d.className="hist-v",i.kind!=="signoff")return d.innerHTML=`<h4>${h[i.kind]}</h4><div class="when">${b(a(i.at))}</div>`,d;const{v:$,i:k}=i,L=k>0?Ue(s[k-1],$):[];return d.innerHTML=`<h4>Reviewed and confirmed · version ${k+1}${k===s.length-1?" (current)":""}</h4><div class="when">${b($.by||"the account holder")} · ${b(a($.at))}</div>`,k===0?d.innerHTML+='<div class="same">First sign-off.</div>':L.length?d.innerHTML+=`<ul>${L.map(S=>`<li>${b(S.text)}</li>`).join("")}</ul>`:d.innerHTML+='<div class="same">Re-confirmed with no change to the record.</div>',d},f=()=>r.replaceChildren(...n.map((i,d)=>({e:i,n:d,t:Date.parse(i.at)||0})).sort((i,d)=>d.t-i.t||d.n-i.n).map(({e:i})=>u(i)));f(),m("histClose").onclick=()=>o.close(),o.onkeydown=i=>{i.key==="Escape"&&(i.preventDefault(),o.close())},o.showModal(),m("histClose").focus(),ft(t.id).then(i=>{!i?.published_at||!o.open||(n.push({at:i.published_at,kind:"published"}),i.updated_at&&Date.parse(i.updated_at)-Date.parse(i.published_at)>6e4&&n.push({at:i.updated_at,kind:"updated"}),f())}).catch(()=>{})}async function ft(e){const t=await _e();if(!t)return null;const{data:o}=await t.auth.getUser();if(!o?.user)return null;const{data:r,error:s}=await t.from(Ke).select("published_at, updated_at").eq("floor_id",e).maybeSingle();return s?null:r}m("newProject").onclick=async()=>{if(!X().user){Ee("in","Sign in to start a project, so it is saved to your account.","info");return}const e=await W({title:"New project",lead:"One project is one home model. Its floors share a brand kit.",label:"Project name",placeholder:"e.g. The Aspen",confirm:"Create project"});e&&(p.createProject(e,p.getActiveKit()?.id),_("project_created"),g())};function ht(e,t,o){const r=m("reuseDlg"),s=m("reuseList"),a=m("reuseNew"),n=p.getProjects().filter(u=>u.id!==e.id&&!u.archived);m("reuseTitle").textContent=`Copy "${t.name}" to another project`,m("reuseLead").textContent="Put this confirmed floor into another project: the same model on a different lot. Its plan, labels and figures come with it. Nothing to upload, nothing to review again.",s.innerHTML="",a.value="";let c=null;const h=(u,f)=>{c=u,a.value="";for(const i of s.querySelectorAll(".reuse-opt"))i.setAttribute("aria-pressed","false");f&&f.setAttribute("aria-pressed","true")};if(m("reuseNewLabel").textContent=n.length?"Or start a new project":"Name the new project",!n.length){const u=document.createElement("p");u.className="reuse-empty",u.textContent="This is your only project so far.",s.append(u)}for(const u of n){const f=document.createElement("button");f.type="button",f.className="reuse-opt",f.setAttribute("aria-pressed","false");const i=u.floors.length;f.innerHTML=`<b>${b(u.name)}</b><span class="meta">${i} floor${i===1?"":"s"}</span>`,f.onclick=()=>h(u,f),s.append(f)}a.oninput=()=>{if(a.value.trim()){c=null;for(const u of s.querySelectorAll(".reuse-opt"))u.setAttribute("aria-pressed","false")}},m("reuseCancel").onclick=()=>r.close(),r.onkeydown=u=>{u.key==="Escape"&&(u.preventDefault(),r.close())},m("reuseGo").onclick=async()=>{const u=a.value.trim();if(!c&&!u){a.focus();return}r.close(),await pt(e,t,o,c,u)},r.showModal(),(s.querySelector(".reuse-opt")||a).focus()}async function pt(e,t,o,r,s){const a=o.querySelector(".busy")||o;v(a,"Copying the verified plan…");let n=r;if(!n){n=p.createProject(s,e.brandKitId);const d=n?.floors?.[0]?.id;d&&p.removeFloor(n.id,d)}if(!n){v(a,"Could not create that project.","warn");return}const c=await xe()||t.verified?.confirmedBy||p.getActiveKit()?.companyName,h=p.reuseFloor(e.id,t.id,n.id,c);if(!h){v(a,"Could not reuse that floor.","warn");return}const u=await Re(h.sourceScope,h.scope);if(!(n.brandKitId===e.brandKitId))for(const d of De)await Me(h.scope,d);await g();const i=document.querySelector(`[data-project="${n.id}"]`);if(i){i.classList.add("just-added"),i.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});const d=i.querySelector(".busy");d&&v(d,`"${t.name}" reused. ${u} image${u===1?"":"s"} copied, ready to style.`,"done")}}async function bt(){const e=new URLSearchParams(location.search),t=e.get("p"),o=e.get("f");if(!t)return;const r=p.getProjects().find(c=>c.id===t);if(!r)return;r.collapsed!==!1&&(p.setProjectCollapsed(t,!1),await g());const s=document.querySelector(`[data-project="${t}"]`);if(!s)return;s.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});const n=(o?s.querySelector(`.floorrow[data-floor="${o}"]`):null)||s;n.classList.add("just-added"),setTimeout(()=>n.classList.remove("just-added"),2400)}g().then(bt);const Se=()=>p.getProjects().map(e=>`${e.id}:${e.updatedAt||""}:${e.archived?1:0}:`+(e.floors||[]).map(t=>t.id).join(",")).join("|"),je=e=>`${e.sync?.ok??""}|${e.sync?.restored??""}`;let Le=je(X()),Ae=Se(),G=null,V=!1;const Ce=()=>{if(G){V=!0;return}G=Promise.resolve(g()).finally(()=>{G=null,V&&(V=!1,Ce())})};Ie(e=>{const t=je(e);if(t===Le)return;Le=t;const o=Se(),r=Number(e.sync?.restored||0)>0;o===Ae&&!r||(Ae=o,Ce())});
+</script>
+</body>
+</html>
