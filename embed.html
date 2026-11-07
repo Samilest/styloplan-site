@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Floor plan · StyloPlan</title>
+
+<script>try{var p=new URLSearchParams(location.search);document.documentElement.dataset.look=p.get("look")==="light"?"light":"dark"}catch(e){}</script>
+
+<link rel="modulepreload" href="./src/published-read.js">
+<link rel="modulepreload" href="./src/supabase-client.js">
+<link rel="modulepreload" href="./src/api-origin.js">
+<link rel="modulepreload" href="./src/artifacts.js">
+<link rel="modulepreload" href="./src/published-paths.js">
+<link rel="modulepreload" href="./src/floor-context.js">
+<link rel="modulepreload" href="./src/store.js">
+<link rel="modulepreload" href="./src/palettes.js">
+<link rel="modulepreload" href="./src/house-style.js">
+<link rel="modulepreload" href="./src/versions.js">
+<link rel="modulepreload" href="./src/model3d/theme3d.js">
+<link rel="preload" href="./src/vendor/supabase.js" as="script">
+<script>import('./src/supabase-client.js').then(function (m) { return m.getSupabase(); }).catch(function () {});</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap">
+<style>
+  
+  [hidden] { display: none !important; }
+  
+  :root { --ground: #1b1e23; --ink: #e6e9ee; --ink-soft: rgba(230,233,238,.6);
+          --chip: rgba(30,36,46,.86); --cta: #ffffff; --cta-ink: #211e19; }
+  :root[data-look="light"] { --ground: #f8f7f4; --ink: #211e19; --ink-soft: rgba(33,30,25,.6);
+          --chip: rgba(255,255,255,.86); --cta: #ffffff; --cta-ink: #211e19; }
+  html, body { margin: 0; height: 100%; background: var(--ground); }
+  body { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         overflow: hidden; -webkit-font-smoothing: antialiased; }
+  
+  #stage { position: relative; width: 100%; height: 100%; display: grid; place-items: center; }
+  
+  #poster { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain;
+            opacity: 0; transition: opacity .35s ease; }
+  #poster.in { opacity: 1; }
+  
+  #scrim { position: absolute; inset: 0; background: rgba(0,0,0,.26); opacity: 0;
+           transition: opacity .35s ease; pointer-events: none; }
+    
+  :root[data-look="light"] #scrim { background: radial-gradient(ellipse 34% 30% at 50% 50%, rgba(0,0,0,.14), rgba(0,0,0,0) 100%); }
+  #scrim.in { opacity: 1; }
+  
+  
+  #capCol { position: absolute; left: 14px; top: 12px; max-width: calc(100% - 28px);
+            display: flex; flex-direction: column; gap: 2px; pointer-events: none; }
+  #caption { font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+  #madeWith { pointer-events: auto; align-self: flex-start; font-size: 11px; font-weight: 500; letter-spacing: .01em;
+              color: inherit; text-decoration: none; opacity: .62; padding: 2px 0; }
+  #madeWith:hover, #madeWith:focus-visible { opacity: 1; text-decoration: underline; text-underline-offset: 2px; }
+  
+  #play { position: relative; display: inline-flex; align-items: center; gap: 10px;
+          height: 48px; padding: 0 22px 0 18px; border: 0; border-radius: 999px;
+          background: var(--cta); color: var(--cta-ink); font: inherit; font-weight: 600; font-size: 15px;
+          letter-spacing: .01em; cursor: pointer;
+          box-shadow: 0 2px 6px rgba(0,0,0,.18), 0 10px 30px rgba(0,0,0,.22);
+          transition: transform .18s ease, box-shadow .18s ease, opacity .25s ease;
+          opacity: 0; }
+  #play.in { opacity: 1; }
+  #play:hover, #play:focus-visible { transform: translateY(-1px) scale(1.03);
+          box-shadow: 0 3px 8px rgba(0,0,0,.22), 0 14px 36px rgba(0,0,0,.28); }
+  #play:focus-visible { outline: 3px solid #ADCFCA; outline-offset: 3px; }
+  #play:disabled { cursor: progress; transform: none; }
+  #play svg { width: 20px; height: 20px; flex: 0 0 auto; transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+  #play:hover svg, #play:focus-visible svg { transform: rotate(-12deg) scale(1.06); }
+  
+  @property --sweep { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+  :root { --ring: #D1B678; --ring-hi: #F3EBD9; }
+  :root[data-look="light"] { --ring: #211E19; --ring-hi: #D1B678; }
+  
+  #play::before, #play::after { content: ""; position: absolute; inset: -5px; border-radius: inherit; padding: 3px;
+    background:
+      conic-gradient(from var(--sweep), transparent 0deg, transparent 200deg,
+        color-mix(in srgb, var(--ring) 70%, transparent) 280deg, var(--ring) 330deg, var(--ring-hi) 356deg, transparent 360deg),
+      color-mix(in srgb, var(--ring) 40%, transparent);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+    animation: sweep 3.6s linear infinite; pointer-events: none; }
+  
+  #play::after { inset: -8px; padding: 6px; filter: blur(6px); opacity: .9;
+    background: conic-gradient(from var(--sweep), transparent 0deg, transparent 260deg,
+        color-mix(in srgb, var(--ring) 80%, transparent) 320deg, var(--ring-hi) 356deg, transparent 360deg); }
+  @keyframes sweep { to { --sweep: 360deg; } }
+  
+  #stage.ready { cursor: pointer; }
+  
+  #wordmark { position: absolute; left: 14px; bottom: 14px; display: inline-flex; align-items: center;
+              height: 32px; padding: 0 12px; border-radius: 10px; background: var(--chip);
+              -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+              font-family: Poppins, system-ui, sans-serif; font-weight: 600; font-size: 14px;
+              letter-spacing: .01em; color: var(--ink-soft); text-decoration: none;
+              transition: color .18s ease; }
+  #wordmark:hover, #wordmark:focus-visible { color: var(--ink); }
+  
+  #note { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px;
+          text-align: center; color: var(--ink-soft); font-size: 14px; max-width: 46ch; margin: 0 auto; }
+  @media (prefers-reduced-motion: reduce) {
+    #poster, #scrim, #play, #wordmark { transition: none; }
+    #play:hover, #play:focus-visible { transform: none; }
+    #play::before { animation: none; background: color-mix(in srgb, var(--ring) 60%, transparent); }
+    #play::after { display: none; }
+    #play:hover svg, #play:focus-visible svg { transform: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <img id="poster" alt="" decoding="async">
+  <div id="scrim"></div>
+  <div id="capCol"><div id="caption" hidden></div><a id="madeWith" href="index.html?ref=embed" target="_blank" rel="noopener">Made with StyloPlan</a></div>
+  <button id="play" type="button" aria-label="View this floor plan in 3D">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">
+      <path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/>
+      <path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>
+    </svg>
+    <span>View in 3D</span>
+  </button>
+  <a id="wordmark" href="index.html" target="_blank" rel="noopener" aria-label="StyloPlan: open the StyloPlan site">StyloPlan</a>
+  <div id="note" hidden></div>
+</div>
+<script type="module">import{readPublishedHome as S,webHref as A}from"./src/published-read.js";import{planTitleOf as U}from"./src/floor-context.js";import{THEMES as $}from"./src/model3d/theme3d.js";const o=e=>document.getElementById(e),h=new URLSearchParams(location.search),M=e=>`#${e.toString(16).padStart(6,"0")}`,f=new URLSearchParams(location.search);f.set("embed","1");const P=()=>`${new URL("view3d.html",location.href).href}?${f}`;let y=!1;function L(){if(y)return;y=!0;const e=o("play");e.disabled=!0,e.querySelector("span").textContent="Loading 3D…",location.replace(P())}const a=await S(h.get("p"),h.get("f"));if(a){const e=a.look==="light"?"light":"dark";f.set("look",e),document.documentElement.dataset.look=e,document.documentElement.style.setProperty("--ground",M($[e].bg));const c=U(a.ctx.project,a.ctx.floor),l=a.ctx.floor.brand;if(l){const t=o("wordmark");t.textContent=l.name;const n=A(l.website);if(n){t.href=n;let i=n;try{i=new URL(n).host}catch{}t.setAttribute("aria-label",`${l.name}: open ${i}`)}else t.removeAttribute("href"),t.removeAttribute("target"),t.removeAttribute("rel"),t.setAttribute("aria-label",l.name)}c&&h.get("title")!=="0"&&(o("caption").textContent=c,o("caption").hidden=!1),o("poster").alt=c?`${c}, 3D floor plan`:"3D floor plan",o("play").classList.add("in"),o("play").addEventListener("click",t=>{t.stopPropagation(),L()});const p=o("stage");p.classList.add("ready"),p.addEventListener("click",t=>{t.target.closest("#wordmark, #madeWith")||L()});const r=o("poster"),s={},u=(t,n)=>Math.abs(Math.log(t/n)),x=t=>a.posterAspect&&u(t,a.posterAspect)>u(t,1.25)?"5x4":"",k=(t,n)=>1-Math.min(t,n)/Math.max(t,n)<=.14?"cover":"contain";let m=null;const g=async()=>{const t=o("stage"),n=t.clientWidth/Math.max(1,t.clientHeight),i=x(n);i in s||(s[i]=await a.posterUrl(i).catch(()=>null)),!s[i]&&!(""in s)&&(s[""]=await a.posterUrl("").catch(()=>null));const v=!!(s[i]||s[""]),d=s[i]||s[""]||await a.renderUrl(e).catch(()=>null);if(!d)return;const b=()=>{r.style.objectFit=v?k(n,r.naturalWidth/r.naturalHeight):"contain"};if(d!==m){const E=!m;m=d,r.addEventListener("load",()=>{b(),E&&(r.classList.add("in"),o("scrim").classList.add("in"))},{once:!0}),r.src=d}else r.naturalWidth&&b()};await g();let w=null;addEventListener("resize",()=>{clearTimeout(w),w=setTimeout(g,150)})}else{o("play").hidden=!0,o("caption").hidden=!0;const e=o("note");e.textContent=h.get("p")?"This floor plan is not being shared. If it is yours, open it in StyloPlan and turn on “Share this plan”; otherwise ask whoever sent you this page.":"No floor was named.",e.hidden=!1}
+</script>
+</body>
+</html>

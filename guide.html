@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which plan to send · StyloPlan</title>
+<meta name="description" content="Which floor plan file to upload to StyloPlan: the formats that work, what the app turns away and why, with real examples.">
+<meta name="robots" content="index, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Archivo:wght@600;700&family=Lato:wght@400;700&family=IBM+Plex+Mono:wght@400&display=swap">
+<style>
+  :root {
+    --paper:#F2F0EA; --surface:#FBFAF7; --ink:#211E19; --ink-2:#5F5A50; --ink-3:#6E6759;
+    --line:#E3DFD6; --line-strong:#CBC4B6; --accent:#211E19; --gold:#D1B678; --pop:#9E8040;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+         font-family:Lato, system-ui, sans-serif; font-size:16px; line-height:1.65; }
+  a { color:var(--accent); text-decoration-color:#9E8040; text-underline-offset:2px; }
+  ::selection { background: color-mix(in oklab, var(--gold) 45%, transparent); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .wm { font-family:Poppins, system-ui, sans-serif; font-weight:600; }
+  .dsp { font-family:Archivo, system-ui, sans-serif; font-weight:700; letter-spacing:-0.02em; }
+  .num { font-family:'IBM Plex Mono', ui-monospace, Menlo, monospace; }
+  .sheet { max-width:1040px; margin:0 auto; padding:0 24px; }
+  header { border-bottom:1px solid var(--line-strong); }
+  header .bar { max-width:1440px; margin:0 auto; padding:0 24px;
+                height:78px; display:flex; align-items:center; gap:24px; }
+  h1 { margin:0; font-size:clamp(30px,5vw,44px); line-height:1.05; }
+  h2 { margin:0; font-size:24px; line-height:1.25; }
+  footer { border-top:1px solid var(--ink); margin-top:64px; }
+  .tap { display:inline-flex; align-items:center; min-height:44px; }
+  .lead { margin-top:20px; font-size:17px; color:var(--ink-2); max-width:62ch; }
+
+  
+  section { margin-top:56px; padding-top:28px; border-top:1px solid var(--line-strong); }
+  .an { font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); }
+  section > h2 { margin-top:8px; }
+  section > p { color:var(--ink-2); max-width:62ch; }
+
+  
+  .plans { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; margin-top:28px; }
+  .plans.two { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  figure { margin:0; }
+  .frame { aspect-ratio:4/3; background:#fff; border:1px solid var(--line-strong);
+           display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .frame img { width:100%; height:100%; object-fit:contain; display:block; }
+  .frame.photo img { object-fit:cover; }
+  .frame.pix img { image-rendering:pixelated; }
+  figcaption { margin-top:12px; font-size:15px; color:var(--ink-2); }
+  figcaption b { color:var(--ink); }
+  .verdict { display:inline-block; margin-bottom:6px; padding:3px 8px; border-radius:3px;
+             font:600 11px/1.3 'IBM Plex Mono', ui-monospace, monospace; letter-spacing:.08em; text-transform:uppercase; }
+  .verdict.ok { background:var(--gold); color:var(--ink); }
+  .verdict.no { background:var(--ink); color:#fff; }
+  .verdict.warn { background:transparent; color:var(--ink); box-shadow:inset 0 0 0 1px var(--ink); }
+  
+  .says { margin-top:10px; padding:10px 12px; border-left:2px solid var(--pop); background:var(--surface);
+          font-size:13px; line-height:1.5; color:var(--ink); }
+  .says .an { display:block; margin-bottom:2px; }
+  .made { font-size:12.5px; color:var(--ink-3); }
+
+  
+  .nots { list-style:none; margin:20px 0 0; padding:0; max-width:66ch; }
+  .nots li { display:grid; grid-template-columns:20px minmax(0,1fr); gap:8px; padding:8px 0;
+             border-bottom:1px solid var(--line); color:var(--ink-2); }
+  .nots li::before { content:'–'; color:var(--ink-3); }
+  .nots b { color:var(--ink); }
+
+  @media (max-width: 860px) {
+    .plans, .plans.two { grid-template-columns:minmax(0,1fr); gap:36px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="bar">
+    <a href="index.html" class="wm tap" style="font-size:21px;color:var(--ink);text-decoration:none">StyloPlan</a>
+    <span style="flex-grow:1"></span>
+    <a href="index.html" class="tap" style="font-size:15px">&larr; Back to the site</a>
+  </div>
+</header>
+
+<main class="sheet" style="padding-top:56px;padding-bottom:24px">
+  <h1 class="dsp">Which plan to send</h1>
+  <p class="lead">
+    The plan your architect gave you is usually the right one. This page shows what works,
+    what the app turns away before anything is spent, and what you do not need to do.
+  </p>
+
+  <section aria-labelledby="h-file">
+    <div class="an">01 · The file</div>
+    <h2 class="dsp" id="h-file">Send the file, not a picture of it</h2>
+    <p>
+      <b>PDF, PNG, JPG or WebP.</b> From CAD, such as a DWG, print the sheet to PDF.
+      If the PDF has several pages, you pick the page. If one sheet shows more than one floor,
+      you pick the floor on the sheet. An image needs <span class="num">800px</span> or more on its short side.
+    </p>
+  </section>
+
+  <section aria-labelledby="h-works">
+    <div class="an">02 · What works</div>
+    <h2 class="dsp" id="h-works">Presentation plan or construction sheet, both work</h2>
+    <p>
+      Room names and sizes are copied from the drawing as it writes them, and you confirm each one
+      before anything renders. Nothing is measured or calculated.
+    </p>
+    <div class="plans">
+      <figure>
+        <div class="frame"><img src="assets/guide/good-presentation.webp" width="1200" height="896" loading="lazy"
+          alt="A one-storey presentation floor plan with room names and sizes printed in each room."></div>
+        <figcaption><span class="verdict ok">Works</span><br>
+          <b>A presentation plan with sizes in each room.</b> Each size is read for you to confirm.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/guide/good-inches.webp" width="1200" height="1363" loading="lazy"
+          alt="A floor plan whose room sizes are written in inches, such as 144 by 164 inches."></div>
+        <figcaption><span class="verdict ok">Works</span><br>
+          <b>Sizes written in inches.</b> They are copied as your plan writes them, not converted.</figcaption>
+      </figure>
+      <figure>
+        <div class="frame"><img src="assets/guide/good-construction.webp" width="1200" height="1200" loading="lazy"
+          alt="A construction sheet with dimension chains along every wall, furniture drawn in, and few room sizes."></div>
+        <figcaption><span class="verdict ok">Works</span><br>
+          <b>A construction sheet with dimension chains.</b> A room with no size printed stays blank until you type one in.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-not">
+    <div class="an">03 · What gets stopped</div>
+    <h2 class="dsp" id="h-not">What the app turns away, in its own words</h2>
+    <p>
+      The upload is checked on your computer before anything is sent or spent. These two examples
+      were made from the first plan above; the messages are the ones the app shows for them.
+    </p>
+    <div class="plans two">
+      <figure>
+        <div class="frame pix"><img src="assets/guide/bad-small.webp" width="1200" height="900" loading="lazy"
+          alt="A close-up of the same plan saved at 640 by 478 pixels: the master bedroom's size, 18 feet, is blurred enough to look like 10."></div>
+        <figcaption><span class="verdict no">Turned away</span><br>
+          <b>A small copy, such as one saved from a listing or an email.</b> Up close, the bedroom’s 18′-0″ can pass for 10′-0″.
+          <div class="says"><span class="an">The app says</span>This image is too small (640×478). Upload the original export, or a scan at least 800px on its short side.</div>
+          <span class="made">Example made from our sample plan.</span></figcaption>
+      </figure>
+      <figure>
+        <div class="frame photo"><img src="assets/guide/bad-photo.webp" width="1200" height="900" loading="lazy"
+          alt="A phone photo of the printed plan lying on a desk, at an angle, with a shadow across one corner."></div>
+        <figcaption><span class="verdict warn">Warned</span><br>
+          <b>A phone photo of the printed sheet.</b> Straight walls lean with the angle, and the shadow hides lines.
+          Ask your architect for the PDF instead.
+          <div class="says"><span class="an">The app says</span>This does not look like a floor plan. You can carry on, but the result may be poor.</div>
+          <span class="made">Example made from our sample plan.</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section aria-labelledby="h-skip">
+    <div class="an">04 · What you can skip</div>
+    <h2 class="dsp" id="h-skip">What you do not need to do</h2>
+    <ul class="nots">
+      <li><span><b>Clean up the drawing.</b> Notes, dimension chains, furniture and hatching can stay; the review screen is where you fix what the tracing gets wrong.</span></li>
+      <li><span><b>Ask for a special export.</b> The sheet as your architect issued it is the one to send.</span></li>
+      <li><span><b>Send a bigger file.</b> Past <span class="num">800px</span> on the short side, a larger image is not read better.</span></li>
+      <li><span><b>Add sizes the plan does not show.</b> Leave them blank, or type them on the review screen if you have them from your architect.</span></li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="h-next">
+    <div class="an">05 · Next</div>
+    <h2 class="dsp" id="h-next">You check it before anything is spent</h2>
+    <p>
+      After upload, every room and size is on the review screen for you to confirm or correct, for free.
+      The only paid step is the render. <a href="index.html#a01">See how it works</a>.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <div class="sheet num" style="padding:22px 24px;font-size:11.5px;color:var(--ink-3);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+    <span>© <span data-year>2026</span> StyloPlan</span><script>/* The year turns over by itself; never earlier than the year this was written. */document.querySelectorAll("[data-year]").forEach(function(e){e.textContent=Math.max(2026,new Date().getFullYear())})</script>
+    <a href="index.html" style="color:var(--ink-3);display:inline-flex;align-items:center;
+      min-height:44px;padding:0 4px;margin:-13px -4px">styloplan</a>
+  </div>
+</footer>
+</body>
+</html>

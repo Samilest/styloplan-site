@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<meta name="description" content="An example builder's page with a StyloPlan floor plan image and 3D view on it. The builder is invented.">
+<title>The Star · Northgate Homes</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Manrope:wght@400;500;600;700&display=swap">
+<style>
+  :root { --bg:#F4F1EB; --card:#FFFFFF; --ink:#1A1D1B; --ink-2:#5A5F5B; --line:#E2DDD3; --deep:#1F2A38; --deep-2:#33465C;
+          --copper:#A85F34; --on-dark:#EDEAE3; --on-dark-2:#A9B3AE; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.6 Manrope, system-ui, sans-serif; position: relative; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1240px; margin: 0 auto; padding: 0 40px; }
+  .eyebrow { font: 700 12px/1 Manrope, sans-serif; letter-spacing: .16em; text-transform: uppercase; color: var(--copper); }
+  .serif { font-family: Newsreader, Georgia, serif; font-weight: 400; letter-spacing: -.01em; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; height: 48px; padding: 0 22px; border-radius: 2px;
+         font: 600 15px/1 Manrope, sans-serif; border: 1px solid transparent; }
+  .btn.solid { background: var(--deep); color: #fff; }
+  .btn.line { border-color: var(--ink); }
+
+  
+  .util { background: var(--deep); color: var(--on-dark-2); font-size: 13px; }
+  .util .wrap { display: flex; justify-content: space-between; height: 36px; align-items: center; }
+  .util b { color: var(--on-dark); font-weight: 600; }
+  header { background: var(--card); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; gap: 48px; height: 80px; }
+  .logo { display: flex; align-items: center; gap: 12px; }
+  .logo svg { width: 34px; height: 34px; }
+  .logo span { display: grid; line-height: 1.05; }
+  .logo b { font: 600 22px/1 Newsreader, Georgia, serif; letter-spacing: .01em; }
+  .logo i { font: 700 9.5px/1 Manrope, sans-serif; letter-spacing: .32em; font-style: normal; color: var(--ink-2); margin-top: 4px; }
+  nav { display: flex; gap: 32px; font-size: 15px; font-weight: 500; color: var(--ink-2); margin-left: auto; }
+  nav a.on { color: var(--ink); box-shadow: inset 0 -2px 0 var(--copper); padding-bottom: 4px; }
+  header .btn { height: 42px; }
+  .menu { display: none; }
+
+  
+  .hero { display: grid; grid-template-columns: 5fr 7fr; gap: 56px; align-items: center; padding: 48px 0 40px; }
+  .crumb { font-size: 13px; color: var(--ink-2); margin-bottom: 28px; }
+  .crumb span { margin: 0 8px; color: #B8B2A6; }
+  h1 { font: 400 76px/1 Newsreader, Georgia, serif; letter-spacing: -.02em; margin: 16px 0 20px; }
+  .hero p { color: var(--ink-2); font-size: 17px; max-width: 34em; margin: 0 0 28px; }
+  .hero .acts { display: flex; gap: 12px; }
+  .hero figure { margin: 0; background: #23262A; padding: 20px; box-shadow: 0 30px 60px -30px rgba(20,25,35,.45); }
+  .hero figure img { display: block; width: 100%; height: auto; }
+  .hero figure.ext { background: none; padding: 0; box-shadow: none; }
+  .hero figure.ext img { aspect-ratio: 3 / 2; object-fit: cover; border-radius: 2px; box-shadow: 0 30px 60px -30px rgba(20,25,35,.45); }
+  .hero figure.ext figcaption { margin-top: 10px; font-size: 12px; color: var(--ink-2); }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+  .stats > div { padding: 22px 24px 24px 0; }
+  .stats > div + div { padding-left: 24px; border-left: 1px solid var(--line); }
+  .stats b { display: block; font: 400 40px/1.1 Newsreader, Georgia, serif; }
+  .stats small { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); }
+
+  section { padding: 88px 0 0; }
+  .head { display: flex; align-items: end; justify-content: space-between; gap: 40px; margin-bottom: 28px; }
+  h2 { font: 400 44px/1.1 Newsreader, Georgia, serif; letter-spacing: -.01em; margin: 12px 0 0; }
+  .lede { color: var(--ink-2); margin: 10px 0 0; max-width: 36em; }
+  .tabs { display: inline-flex; border: 1px solid var(--line); background: var(--card); padding: 4px; gap: 4px; font-size: 14px; font-weight: 600; }
+  .tabs button { font: inherit; border: 0; background: none; cursor: pointer; padding: 8px 16px; color: var(--ink-2); }
+  .tabs button.on { background: var(--deep); color: #fff; }
+  .plan { margin: 0; background: var(--card); border: 1px solid var(--line); padding: 28px; }
+  .plan img { display: block; width: 100%; height: auto; }
+  .fine { font-size: 13px; color: var(--ink-2); margin: 12px 0 0; }
+
+  
+  .band { background: var(--deep); color: var(--on-dark); margin-top: 96px; padding: 80px 0 88px; }
+  .band .eyebrow { color: #D49A73; }
+  .band .lede { color: var(--on-dark-2); }
+  .three { margin-top: 8px; }
+          color: var(--on-dark-2); font-size: 18px; gap: 12px; background: rgba(255,255,255,.04); }
+
+  .incl { display: grid; grid-template-columns: 4fr 8fr; gap: 56px; }
+  .incl ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+  .incl li { padding: 16px 0 16px 32px; border-top: 1px solid var(--line); position: relative; }
+  .incl li::before { content: ""; position: absolute; left: 2px; top: 23px; width: 12px; height: 7px; border-left: 2px solid var(--copper); border-bottom: 2px solid var(--copper); transform: rotate(-45deg); }
+  .others { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .card { background: var(--card); border: 1px solid var(--line); }
+  .card .pic { aspect-ratio: 800 / 496; background: #E9E5DC; overflow: hidden; }
+  .card .pic img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .card .txt { padding: 20px 22px 22px; }
+  .card h3 { font: 400 26px/1.1 Newsreader, Georgia, serif; margin: 0 0 6px; }
+  .card p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .card .go { display: inline-block; margin-top: 14px; font-weight: 600; font-size: 14px; color: var(--deep); }
+  .cta-band { margin-top: 96px; border-top: 1px solid var(--ink); padding: 56px 0 64px; display: flex; justify-content: space-between; align-items: center; gap: 32px; }
+  .cta-band h2 { margin: 0; }
+  footer { background: #161A20; color: var(--on-dark-2); font-size: 14px; padding: 48px 0; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 32px; }
+  footer b { color: var(--on-dark); font-weight: 600; }
+  .bar, .brochure { display: none; }
+
+  @media (max-width: 600px) {
+    .wrap { padding: 0 20px; }
+    .util .wrap > span:first-child { display: none; } .util .wrap { justify-content: center; }
+    header .wrap { height: 64px; gap: 12px; }
+    .logo svg { width: 28px; height: 28px; } .logo b { font-size: 19px; } .logo i { font-size: 8px; }
+    nav, header .btn { display: none; }
+    .menu { display: grid; place-items: center; margin-left: auto; width: 42px; height: 42px; border: 1px solid var(--line); background: #fff; }
+    .hero { grid-template-columns: 1fr; gap: 28px; padding: 28px 0 28px; }
+    .crumb { margin-bottom: 18px; }
+    h1 { font-size: 54px; margin: 12px 0 14px; }
+    .hero p { font-size: 16px; }
+    .hero .acts .btn { flex: 1; justify-content: center; padding: 0 12px; }
+    .hero figure { padding: 10px; }
+    .stats { grid-template-columns: 1fr 1fr; }
+    .stats > div, .stats > div + div { padding: 16px 0 18px; border-left: 0; }
+    .stats > div:nth-child(even) { padding-left: 16px; border-left: 1px solid var(--line); }
+    .stats > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+    .stats b { font-size: 32px; }
+    section { padding-top: 56px; }
+    .head { display: block; }
+    .tabs { margin-top: 16px; }
+    h2 { font-size: 34px; }
+    .plan { padding: 12px; }
+    .band { margin-top: 64px; padding: 56px 0 60px; }
+    .incl, .incl ul, .others { grid-template-columns: 1fr; gap: 0; }
+    .others { gap: 16px; }
+    .cta-band { display: block; margin-top: 64px; } .cta-band .btn { margin-top: 20px; }
+    footer .wrap { display: block; } footer .wrap > div + div { margin-top: 16px; }
+    footer { padding-bottom: 96px; }
+    .bar { display: grid; grid-template-columns: 1fr 1.4fr; position: fixed; left: 0; right: 0; bottom: 0; z-index: 4; height: 56px; }
+    .bar a { display: grid; place-items: center; font-weight: 600; font-size: 15px; }
+    .bar a:first-child { background: #fff; border-top: 1px solid var(--line); }
+    .bar a:last-child { background: var(--deep); color: #fff; }
+  }
+
+  
+  @media (max-width: 600px) {
+    .util, .crumb, .hero .btn.line { display: none; }
+    
+    .hero figure.ext { order: -1; margin: -32px -20px 0; }
+    .hero figure.ext img { border-radius: 0; box-shadow: none; }
+    .hero figure.ext figcaption { padding: 0 20px; }
+    .hero { padding: 32px 0 24px; }
+    .eyebrow { font-size: 11px; letter-spacing: .14em; }
+    .hero .eyebrow .long { display: none; }
+    h1 { font-size: 52px; margin: 10px 0 12px; }
+    .hero p { font-size: 15px; margin-bottom: 22px; }
+    .hero .acts { display: block; }
+    .hero .acts .btn { width: 100%; justify-content: center; }
+    .brochure { display: block; margin-top: 14px; text-align: center; font-size: 14px; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+    .stats { grid-template-columns: repeat(3, 1fr); }
+    .stats > div, .stats > div + div, .stats > div:nth-child(even) { padding: 14px 0 16px 14px; border-left: 1px solid var(--line); border-top: 0; }
+    .stats > div:first-child { padding-left: 0; border-left: 0; }
+    .stats > div:last-child { grid-column: 1 / -1; padding: 14px 0 16px; border-left: 0; border-top: 1px solid var(--line); }
+    .stats b { font-size: 30px; }
+    .stats small { margin-top: 2px; }
+    section { padding-top: 48px; }
+    .head { display: flex; align-items: end; gap: 16px; margin-bottom: 18px; }
+    .tabs { margin-top: 0; flex: none; font-size: 13px; } .tabs button { padding: 6px 12px; }
+    h2 { font-size: 30px; }
+    .band { margin-top: 56px; padding: 48px 0 52px; }
+    .band .lede { font-size: 15px; }
+    .incl ul { margin-top: 18px; }
+    .incl li { padding: 12px 0 12px 30px; font-size: 15px; }
+    .incl li::before { top: 18px; }
+    .head .btn.line { display: none; }
+    .others { display: flex; overflow-x: auto; gap: 14px; margin: 0 -20px; padding: 0 20px 4px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+    .others .card { flex: 0 0 78%; scroll-snap-align: start; }
+    .card .txt { padding: 16px 18px 18px; }
+    .card h3 { font-size: 23px; }
+    .cta-band { margin-top: 56px; padding: 40px 0 48px; }
+    footer { padding: 36px 0 96px; }
+  }
+  
+  .xbar { background: #111418; color: #C9CED6; font-size: 13px; padding: 10px 40px; display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+  .xbar b { color: #fff; font-weight: 600; }
+  .xbar a { color: #fff; text-decoration: underline; text-underline-offset: 3px; white-space: nowrap; font-weight: 600; }
+  @media (max-width: 600px) { .xbar { padding: 10px 20px; font-size: 12px; } }
+
+  
+  .status { display: inline-flex; align-items: center; gap: 8px; font: 700 12px/1 Manrope, sans-serif; letter-spacing: .12em;
+            text-transform: uppercase; color: var(--copper); }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--copper); box-shadow: 0 0 0 4px rgba(168,95,52,.18); }
+  .addr { font-size: 15px !important; color: var(--ink) !important; margin: -8px 0 16px !important; font-weight: 500; }
+  .price { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin: 0 0 28px; padding-top: 18px; border-top: 1px solid var(--line); }
+  .price b { font: 400 40px/1 Newsreader, Georgia, serif; }
+  .price span { font-size: 13px; color: var(--ink-2); }
+  .facts { display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--ink); border-bottom: 1px solid var(--line); }
+  .facts > div { padding: 20px 20px 22px 0; }
+  .facts > div + div { padding-left: 20px; border-left: 1px solid var(--line); }
+  .facts b { display: block; font: 400 38px/1.1 Newsreader, Georgia, serif; }
+  .facts small { display: block; margin-top: 6px; font-size: 13px; color: var(--ink-2); }
+  .asof { margin: 0; font-size: 13px; color: var(--ink-2); }
+  .rail { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); counter-reset: s; }
+  .rail li { position: relative; padding: 28px 12px 0 0; }
+  .rail li::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 4px; background: var(--line); }
+  .rail li::after { content: ""; position: absolute; left: 0; top: 2px; width: 16px; height: 16px; border-radius: 50%; background: var(--bg); border: 2px solid #C9C2B4; box-sizing: border-box; }
+  .rail li.done::before, .rail li.now::before { background: var(--deep); }
+  .rail li.now::before { background: linear-gradient(90deg, var(--deep) 50%, var(--line) 50%); }
+  .rail li.done::after { background: var(--deep); border-color: var(--deep); }
+  .rail li.now::after { background: var(--copper); border-color: var(--copper); box-shadow: 0 0 0 5px rgba(168,95,52,.2); }
+  .rail b { display: block; font-size: 15px; font-weight: 600; }
+  .rail small { display: block; font-size: 13px; color: var(--ink-2); margin-top: 2px; }
+  .rail li.now b { color: var(--copper); }
+  .why { display: grid; grid-template-columns: 4fr 8fr; gap: 56px; }
+  .why ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0 40px; }
+  .why li { padding: 16px 0; border-top: 1px solid var(--line); color: var(--ink-2); font-size: 15px; }
+  .why li b { display: block; color: var(--ink); font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .planrow { display: grid; grid-template-columns: 8fr 4fr; gap: 32px; align-items: start; }
+  .rooms { margin: 0; }
+  .rooms div { display: flex; justify-content: space-between; gap: 16px; padding: 12px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .rooms div:last-child { border-bottom: 1px solid var(--line); }
+  .rooms dt { color: var(--ink); font-weight: 500; }
+  .rooms dd { margin: 0; color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .locrow { display: grid; grid-template-columns: 8fr 4fr; gap: 32px; align-items: start; }
+  .map { margin: 0; background: var(--card); border: 1px solid var(--line); padding: 12px; }
+  .map svg { display: block; width: 100%; height: auto; }
+  .map figcaption { font-size: 12px; color: var(--ink-2); margin-top: 8px; }
+  .near { list-style: none; margin: 0; padding: 0; }
+  .near li { display: flex; justify-content: space-between; gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); font-size: 15px; }
+  .near li:last-child { border-bottom: 1px solid var(--line); }
+  .near span { color: var(--ink-2); white-space: nowrap; }
+  .howrow { display: grid; grid-template-columns: 8fr 4fr; gap: 32px; align-items: start; }
+  .how ol { list-style: none; margin: 0; padding: 0; counter-reset: h; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  .how ol li { counter-increment: h; color: var(--ink-2); font-size: 15px; border-top: 1px solid var(--ink); padding-top: 16px; }
+  .how ol li::before { content: counter(h, decimal-leading-zero); display: block; font: 400 30px/1 Newsreader, Georgia, serif; color: var(--copper); margin-bottom: 12px; }
+  .how ol li b { display: block; color: var(--ink); font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .contact { background: var(--card); border: 1px solid var(--line); padding: 24px; }
+  .contact .who { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .contact .av { width: 48px; height: 48px; border-radius: 50%; background: var(--deep); color: #fff; display: grid; place-items: center; font-weight: 700; }
+  .contact .who b { display: block; font-size: 16px; } .contact .who small { color: var(--ink-2); font-size: 13px; }
+  .contact .btn { width: 100%; justify-content: center; }
+  .contact p { margin: 16px 0 0; font-size: 14px; color: var(--ink-2); }
+  .contact .hours { font-size: 13px; }
+  @media (max-width: 960px) {
+    .facts { grid-template-columns: repeat(3, 1fr); }
+    .facts > div:nth-child(4) { border-left: 0; padding-left: 0; }
+    .facts > div:nth-child(n+4) { border-top: 1px solid var(--line); }
+    .rail { grid-template-columns: repeat(3, 1fr); row-gap: 20px; }
+    .why, .planrow, .locrow, .howrow { grid-template-columns: 1fr; gap: 24px; }
+    .why ul { grid-template-columns: 1fr; }
+    .how ol { grid-template-columns: 1fr; gap: 20px; }
+  }
+  @media (max-width: 600px) {
+    .facts b { font-size: 28px; }
+    .price b { font-size: 34px; }
+    .rail { grid-template-columns: repeat(2, 1fr); }
+    .prog .head { display: block; } .asof { margin-top: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="xbar"><span><b>Example page.</b> Northgate Homes is invented. The floor plan images and the 3D view were made in StyloPlan.</span><a href="index.html#a03">Back to StyloPlan</a></div>
+<div class="util"><div class="wrap"><span>Ridgeview show home open <b>Saturday and Sunday, 12 to 5</b></span><span>Talk to us: <b>604-555-0142</b></span></div></div>
+<header>
+  <div class="wrap">
+    <a class="logo" href="#"><svg viewBox="0 0 34 34" aria-hidden="true"><path d="M3 16 L17 4 L31 16" fill="none" stroke="#1F2A38" stroke-width="2.4" stroke-linejoin="round"/><path d="M8 13 V30 H26 V13" fill="none" stroke="#1F2A38" stroke-width="2.4"/><path d="M17 30 V20 M12 20 H22" stroke="#A85F34" stroke-width="2.4"/></svg>
+      <span><b>Northgate</b><i>HOMES</i></span></a>
+    <nav><a href="#">Communities</a><a href="#" class="on">Home designs</a><a href="#">Move-in ready</a><a href="#">How we build</a><a href="#">About</a></nav>
+    <a class="btn solid" href="#">Book a visit</a>
+    <button class="menu" aria-label="Menu"><svg width="18" height="14" viewBox="0 0 18 14"><path d="M0 1h18M0 7h18M0 13h18" stroke="#1A1D1B" stroke-width="2"/></svg></button>
+  </div>
+</header>
+
+<main>
+  
+  <div class="wrap">
+    <div class="hero">
+      <div>
+        <div class="crumb">Communities<span>/</span>Ridgeview<span>/</span>Lot 12</div>
+        <div class="status"><i></i>Under construction · Move-in spring 2027</div>
+        <h1>The Star</h1>
+        <p class="addr">1184 Ridgeview Crescent, Maple Ridge, BC · Lot 12</p>
+        <p>Four bedrooms on one level around an open living and dining room, with a breakfast nook off the kitchen and a covered porch at the front door.</p>
+        <div class="price"><b>$849,900</b><span>All-in, house and lot · plus GST · as of 20 Oct 2026</span></div>
+        <div class="acts"><a class="btn solid" href="#ask">Ask about this home</a><a class="btn line" href="#">Download the brochure</a></div>
+        <a class="brochure" href="#">Download the brochure</a>
+      </div>
+      <figure class="ext"><img src="assets/example/star-exterior.webp" width="1200" height="800" fetchpriority="high" alt="The Star from the street: a single-storey home with a double garage on the right">
+        <figcaption>Artist&rsquo;s rendering. Exterior finishes may vary.</figcaption></figure>
+    </div>
+
+    <div class="facts">
+      <div><b>4</b><small>Bedrooms</small></div>
+      <div><b>3</b><small>Bathrooms</small></div>
+      <div><b>1</b><small>Level, no stairs</small></div>
+      <div><b>2</b><small>Car garage</small></div>
+      <div><b>7,850</b><small>Sq ft lot</small></div>
+    </div>
+
+    <section class="prog" aria-labelledby="progT">
+      <div class="head"><div><div class="eyebrow">Build progress</div><h2 id="progT">Framing is up</h2></div>
+        <p class="asof">Updated 15 Oct 2026 by the site team</p></div>
+      <ol class="rail">
+        <li class="done"><b>Lot ready</b><small>Jun 2026</small></li>
+        <li class="done"><b>Foundation</b><small>Aug 2026</small></li>
+        <li class="now"><b>Framing</b><small>Under way</small></li>
+        <li><b>Roof and windows</b><small>Nov 2026</small></li>
+        <li><b>Interior</b><small>Winter</small></li>
+        <li><b>Move-in</b><small>Spring 2027</small></li>
+      </ol>
+    </section>
+
+    <section class="why">
+      <div><div class="eyebrow">This lot</div><h2>Why lot 12</h2></div>
+      <ul>
+        <li><b>Backs onto green space</b>No neighbours behind; the yard looks onto the park.</li>
+        <li><b>South-facing back yard</b>Sun on the deck and in the living room all afternoon.</li>
+        <li><b>Walk to school</b>Ridgeview Elementary is four minutes on foot.</li>
+        <li><b>Room for an RV</b>A wide side yard with its own gate.</li>
+      </ul>
+    </section>
+
+    <section>
+      <div class="head">
+        <div><div class="eyebrow">Floor plan</div><h2>The main floor</h2></div>
+        <div class="tabs" role="group" aria-label="Look of the plan"><button type="button" class="on" aria-pressed="true" data-src="assets/example/star-light.webp">Light</button><button type="button" aria-pressed="false" data-src="assets/example/star-dark.webp">Dark</button></div>
+      </div>
+      <div class="planrow">
+        <figure class="plan"><img id="planImg" src="assets/example/star-light.webp" width="1600" height="1199" loading="lazy" alt="The Star, main floor plan, light"></figure>
+        <dl class="rooms">
+          <div><dt>Master bedroom</dt><dd>18'-0" × 16'-0"</dd></div>
+          <div><dt>Bedrooms 1, 2 and 3</dt><dd>12'-0" × 14'-0"</dd></div>
+          <div><dt>Open living</dt><dd>26'-0" × 18'-0"</dd></div>
+          <div><dt>Open dining</dt><dd>14'-0" × 18'-0"</dd></div>
+          <div><dt>Kitchen</dt><dd>18'-0" × 18'-0"</dd></div>
+          <div><dt>Garage</dt><dd>32'-0" × 22'-0"</dd></div>
+          <div><dt>Covered porch</dt><dd>6'-0" × 24'-0"</dd></div>
+        </dl>
+      </div>
+      <p class="fine">Floor plans and dimensions are approximate and may vary in construction.</p>
+    </section>
+  </div>
+
+  <div class="band">
+    <div class="wrap">
+      <div class="head w3">
+        <div><div class="eyebrow">In 3D</div><h2>Walk through The Star</h2>
+        <p class="lede">Turn the model, look into every room, and see how the rooms fit together before a wall goes up.</p></div>
+      </div>
+      <div class="three" id="three">
+
+<div style="display:block;width:100%;max-width:100%;height:100%;margin:0 auto">
+  <div style="position:relative;display:block;width:100%;height:100%;aspect-ratio:1.79 / 1;min-height:340px;max-height:760px;border-radius:12px;overflow:hidden">
+    <iframe src="embed.html?p=proj-itwhdqki&amp;f=floor-e6oxg17z&amp;look=light" title="Main Floor in 3D"
+      style="position:absolute;inset:0;width:100%;height:100%;border:0"
+      loading="lazy" allowfullscreen></iframe>
+  </div>
+</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="loc">
+      <div class="head"><div><div class="eyebrow">Location</div><h2>Ridgeview, Maple Ridge</h2></div></div>
+      <div class="locrow">
+        <figure class="map" aria-label="A map of Ridgeview with lot 12 marked">
+          <svg viewBox="0 0 640 420" role="img" aria-hidden="true">
+            <rect width="640" height="420" fill="#ECE7DC"/>
+            <path d="M0 330 C 160 300 260 380 420 340 S 640 300 640 300 L640 420 L0 420 Z" fill="#D9E2D3"/>
+            <path d="M-10 336 C 160 306 260 386 420 346 S 650 306 650 306" fill="none" stroke="#9DB5C2" stroke-width="6"/>
+            <path d="M40 70 h170 v110 h-170 z" fill="#D9E2D3"/>
+            <text x="125" y="130" text-anchor="middle" font-size="12" fill="#55705A" font-family="Manrope, sans-serif">Ridgeview Park</text>
+            <path d="M470 40 h130 v80 h-130 z" fill="#E4DCCB" stroke="#C9BFAA"/>
+            <text x="535" y="85" text-anchor="middle" font-size="12" fill="#6E6150" font-family="Manrope, sans-serif">Elementary</text>
+            <path d="M0 225 C 150 225 220 200 330 200 S 520 230 640 220" fill="none" stroke="#fff" stroke-width="16"/>
+            <path d="M330 0 V 420" fill="none" stroke="#fff" stroke-width="12"/>
+            <path d="M232 160 C 260 120 400 120 428 160" fill="none" stroke="#fff" stroke-width="10"/>
+            <g fill="#F8F5EF" stroke="#C9BFAA">
+              <rect x="238" y="168" width="22" height="18"/><rect x="264" y="160" width="22" height="18"/><rect x="290" y="156" width="22" height="18"/>
+              <rect x="342" y="156" width="22" height="18"/><rect x="368" y="160" width="22" height="18"/><rect x="394" y="168" width="22" height="18"/>
+              <rect x="244" y="250" width="22" height="18"/><rect x="270" y="250" width="22" height="18"/><rect x="296" y="250" width="22" height="18"/>
+              <rect x="350" y="250" width="22" height="18"/><rect x="402" y="252" width="22" height="18"/>
+            </g>
+            <rect x="376" y="250" width="22" height="18" fill="#A85F34"/>
+            <circle cx="387" cy="259" r="20" fill="none" stroke="#A85F34" stroke-width="2" opacity=".5"><animate attributeName="r" values="14;26;14" dur="2.4s" repeatCount="indefinite"/><animate attributeName="opacity" values=".6;0;.6" dur="2.4s" repeatCount="indefinite"/></circle>
+            <g font-family="Manrope, sans-serif" font-size="12" font-weight="700">
+              <rect x="408" y="276" width="104" height="24" rx="2" fill="#1F2A38"/>
+              <text x="460" y="292" text-anchor="middle" fill="#fff">Lot 12 · The Star</text>
+            </g>
+            <text x="340" y="215" font-size="11" fill="#8A8172" font-family="Manrope, sans-serif">Ridgeview Crescent</text>
+            <circle cx="300" cy="300" r="5" fill="#1F2A38"/><text x="312" y="304" font-size="11" fill="#1F2A38" font-family="Manrope, sans-serif">Show home</text>
+            <text x="560" y="350" font-size="11" fill="#5B7A8A" font-family="Manrope, sans-serif">Creek trail</text>
+            <g transform="translate(600 390)" font-family="Manrope, sans-serif" font-size="10" fill="#6E6150"><path d="M0 -14 L5 0 L0 -4 L-5 0 Z" fill="#6E6150"/><text y="12" text-anchor="middle">N</text></g>
+          </svg>
+          <figcaption>Map is illustrative and not to scale.</figcaption>
+        </figure>
+        <ul class="near">
+          <li><b>Ridgeview Elementary</b><span>4 min walk</span></li>
+          <li><b>Creek trail</b><span>2 min walk</span></li>
+          <li><b>Ridgeview Park</b><span>3 min walk</span></li>
+          <li><b>Groceries and coffee</b><span>6 min drive</span></li>
+          <li><b>Highway 7</b><span>5 min drive</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="incl">
+      <div><div class="eyebrow">Every Northgate home</div><h2>What is included</h2></div>
+      <ul>
+        <li>Fibre-cement siding with the elevation shown</li>
+        <li>Insulated steel garage doors</li>
+        <li>Quartz counters in the kitchen and baths</li>
+        <li>Engineered hardwood through the living areas</li>
+        <li>Interior finishes chosen in one design-centre visit</li>
+        <li>New-home warranty through a licensed builder</li>
+      </ul>
+    </section>
+
+    <section class="how" id="ask">
+      <div class="head"><div><div class="eyebrow">Buying this home</div><h2>Three steps to the keys</h2></div></div>
+      <div class="howrow">
+        <ol>
+          <li><b>Ask about it</b>You get the current stage, what has been chosen for it so far, and a walk through the site.</li>
+          <li><b>Reserve it</b>A deposit takes it off the market the same day. Finishes not yet chosen are still yours to pick.</li>
+          <li><b>Move in</b>Your mortgage starts on keys day, on a finished home with its new-home warranty.</li>
+        </ol>
+        <div class="contact">
+          <div class="who"><span class="av">AL</span><div><b>Ana Lindqvist</b><small>New-home sales, Ridgeview</small></div></div>
+          <a class="btn solid" href="#">Ask about this home</a>
+          <p>604-555-0142<br>ana@northgatehomes.example</p>
+          <p class="hours">Show home open Saturday and Sunday, 12 to 5</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="head"><div><div class="eyebrow">Other designs</div><h2>Compare the line-up</h2></div><a class="btn line" href="#">All home designs</a></div>
+      <div class="others">
+        <div class="card"><div class="pic"><img src="assets/example/aspen.webp" width="800" height="496" loading="lazy" alt="The Aspen, front elevation"></div>
+          <div class="txt"><h3>The Aspen</h3><p>3 bed · 2 bath · two storey</p><a class="go" href="#">View design →</a></div></div>
+        <div class="card"><div class="pic"><img src="assets/example/harbour.webp" width="800" height="496" loading="lazy" alt="The Harbour, front elevation"></div>
+          <div class="txt"><h3>The Harbour</h3><p>4 bed · 3 bath · two storey</p><a class="go" href="#">View design →</a></div></div>
+        <div class="card"><div class="pic"><img src="assets/example/linden.webp" width="800" height="496" loading="lazy" alt="The Linden, front elevation"></div>
+          <div class="txt"><h3>The Linden</h3><p>2 bed · 2 bath · single storey</p><a class="go" href="#">View design →</a></div></div>
+      </div>
+    </section>
+
+    <div class="cta-band">
+      <div><div class="eyebrow">Lot 12 is still open</div><h2>See The Star at Ridgeview</h2></div>
+      <a class="btn solid" href="#">Book a visit</a>
+    </div>
+  </div>
+</main>
+<footer><div class="wrap">
+  <div><b>Northgate Homes</b><br>Ridgeview show home · 1200 Ridgeview Drive</div>
+  <div>604-555-0142 · hello@northgatehomes.example</div>
+</div></footer>
+<div class="bar"><a href="#">Call</a><a href="#">Book a visit</a></div>
+
+<script>
+// the plan's two looks
+for (const b of document.querySelectorAll('.tabs button')) b.addEventListener('click', () => {
+  for (const o of document.querySelectorAll('.tabs button')) { o.classList.toggle('on', o === b); o.setAttribute('aria-pressed', String(o === b)); }
+  document.getElementById('planImg').src = b.dataset.src;
+});
+// The chip on the 3D carries the publisher's brand; this example's builder is invented.
+const f = document.querySelector('#three iframe');
+const name = () => { const w = f.contentDocument?.getElementById('wordmark'); if (w && w.textContent !== 'Northgate Homes') { w.textContent = 'Northgate Homes'; w.removeAttribute('href'); } };
+// On load, and now too: a lazy frame that was already in view can finish
+// loading before this script runs, and then no load event is left to hear.
+let watched = null;
+const watch = () => {
+  const d = f.contentDocument;
+  if (!d?.body || d === watched || d.location.href === 'about:blank') return;
+  watched = d; name();
+  new MutationObserver(name).observe(d.body, { subtree: true, childList: true, characterData: true });
+};
+f.addEventListener('load', watch);
+watch();
+</script>
+</body>
+</html>
