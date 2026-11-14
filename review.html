@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>(function(){try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Review · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Roboto:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=97">
+<script>try{var t=localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>
+  
+  body { --page-max: 1600px; }
+
+  
+  #roomTableBody { overflow-x: auto; }
+  .roomtable { width: 100%; border-collapse: collapse; margin: 8px 0 10px; font-size: 13px; }
+  .roomtable th { text-align: left; font-weight: 600; font-size: 11px; letter-spacing: .04em;
+                  text-transform: uppercase; color: var(--ink-3); padding: 0 0 6px;
+                  border-bottom: 1px solid var(--line); white-space: nowrap; }
+  .roomtable td { padding: 6px 0; border-bottom: 1px solid var(--line);
+                  vertical-align: top; }
+  .roomtable td + td, .roomtable th + th { padding-left: 10px; }
+  .roomtable td .dim { font-size: 12px; margin-top: 1px; }
+  .roomtable .num { text-align: right; white-space: nowrap; }
+  .roomtable .muted { color: var(--ink-3); }
+  .roomtable-sum { display: flex; justify-content: space-between; gap: 12px; align-items: baseline;
+                   font-weight: 600; font-size: 13px; margin-bottom: 4px; }
+  
+  .roomtable-sum .num { white-space: nowrap; }
+  
+  main { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: var(--s-5); padding: 8px 24px 32px;
+         align-items: start; }
+  
+  #toolColumn { position: sticky; top: calc(var(--s-8) + var(--s-2));
+                max-height: calc(100dvh - var(--s-8) - var(--s-5)); overflow-y: auto;
+                overscroll-behavior: contain; }
+  body.docked #toolColumn { max-height: calc(100dvh - var(--s-8) - var(--s-5) - 84px); }
+  #toolColumn > .panel + .panel { margin-top: var(--s-4); }
+  #toolColumn > .panel.intro-once[hidden] + .panel { margin-top: 0; }
+  .intro-once h3 { margin: 0 0 8px; font-size: 15px; }
+  .intro-once p { margin: 0 0 12px; color: var(--ink-2); font-size: 13px; line-height: 1.55; }
+  .finding-list { margin: .4em 0 0 1.1em; }
+  .finding-list li { margin: 0 0 .45em; }
+  .finding-list li.on { color: var(--ink); }
+  .show-room { background: none; border: 0; padding: 0 2px; font: inherit; font-weight: 600; color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  @media (pointer: coarse) { .show-room { min-height: 44px; padding: 0 8px; } }
+  .steps-folded { display: none; width: 100%; align-items: center; justify-content: space-between; gap: var(--s-2);
+                  padding: 8px 0; background: none; border: 0; font: inherit; color: var(--ink); cursor: pointer; text-align: left; }
+  .steps-folded .sf-show { color: var(--accent); font-size: var(--t-12); font-weight: 600; }
+  #toolColumn.fixing #checkPanel > :not(#stepsFolded) { display: none !important; }
+  #toolColumn.fixing #stepsFolded { display: flex; }
+  
+  #toolPanel > .tool { margin: 0 0 var(--s-4); padding: 0; background: none; border-radius: 0; }
+  
+  #toolPanel > .more { margin-top: 0; border-top: 0; padding-top: 0; }
+  #toolPanel > .tool.open ~ .more { border-top: 1px solid var(--line); padding-top: var(--s-2); }
+  #toolPanel > .more > summary { display: grid; grid-template-columns: auto 1fr; align-items: baseline;
+    column-gap: var(--s-2); row-gap: var(--s-1); min-height: 44px; padding: var(--s-1) 0;
+    color: var(--ink); }
+  #toolPanel > .more > summary::before { margin: 0; color: var(--ink-2); }
+  #toolPanel > .more > summary .fold-title { font-size: var(--t-15); font-weight: 600;
+    letter-spacing: -0.005em; line-height: 1.3; }
+  #toolPanel > .more > summary .fold-title #fixSummary { font-size: var(--t-12); font-weight: 400; }
+  #toolPanel > .more > summary .fold-hint { grid-column: 2; font-size: var(--t-12); color: var(--ink-2); line-height: 1.4; }
+  #toolPanel > .more[open] > summary .fold-hint { display: none; }
+  #toolPanel > .more[open] > summary { margin-bottom: var(--s-2); }
+  
+  #stairHeading { gap: var(--s-1); }
+  
+  .stage { position: relative; overflow: hidden; width: 100%; height: 360px;
+           border: 1px solid var(--line); border-radius: var(--r-ctl);
+           background: #fff; touch-action: none; user-select: none; -webkit-user-select: none; }
+  .stage > canvas { position: absolute; left: 0; top: 0; display: block; }
+  .stage.can-pan, .stage.can-pan > canvas { cursor: grab; }
+  .stage.panning, .stage.panning > canvas { cursor: grabbing; }
+  
+  .stage-tag { position: absolute; top: var(--s-2); z-index: 3; pointer-events: none;
+               padding: 0 var(--s-2); border-radius: var(--r-chip);
+               font-size: var(--t-12); font-weight: 600; line-height: 24px;
+               background: rgba(255,255,255,.92); color: #211e19;
+               box-shadow: 0 0 0 1px rgba(33,30,25,.16); }
+  .stage-tag--l { left: var(--s-2); }
+  .stage-tag--r { right: var(--s-2); }
+  .stage .sweep-handle { z-index: 2; }
+  
+  .stage > canvas#rings { z-index: 1; pointer-events: none; }
+  .sweep-handle.marks-shown .sweep-hint { display: none; }
+  
+  
+  .stage-bar { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
+               gap: var(--s-2) var(--s-4); margin-bottom: var(--s-3); }
+  
+  .stage-pick { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2) var(--s-4); flex: 1 1 0; min-width: 0; }
+  
+  .stage-pick { min-width: min-content; }
+  .stage-pick > .segmented { flex: none; }
+  
+  .stage-pick, #reviewActions { min-height: 48px; }
+  .review-side { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-2); margin-left: auto; }
+  #reviewActions { display: flex; align-items: center; justify-content: flex-end; gap: var(--s-2); flex-wrap: wrap; }
+  .stage-bar .zoom { display: inline-flex; align-items: center; gap: var(--s-1); }
+  .stage-bar .zoom .btn { min-width: 32px; padding-inline: var(--s-2); }
+  
+  @media (pointer: coarse) { .stage-bar .zoom .btn { min-width: 44px; } }
+  .stage-foot { display: flex; align-items: center; flex-wrap: wrap; gap: var(--s-2) var(--s-3);
+                margin-top: var(--s-2); }
+  .stage-foot .stage-note { flex: 1 1 24ch; min-width: 0; margin: 0; }
+  #labelInfo { margin: var(--s-3) 0 0; }
+  
+  .pinToggle { white-space: nowrap; margin: 0; }
+  
+  
+  
+  .steps { list-style: none; margin: 0; padding: 0; }
+  .step__head {
+    display: grid; grid-template-columns: 24px 1fr auto; column-gap: 8px; align-items: center;
+    width: 100%; min-height: 36px; padding: 8px 0; margin: 0;
+    background: none; border: 0; border-bottom: 1px solid var(--line); border-radius: 0;
+    font: inherit; text-align: left; color: var(--ink); cursor: pointer;
+  }
+  @media (pointer: coarse) { .step__head { min-height: 44px; } }
+  .step__head:disabled { cursor: default; color: var(--ink-3); }
+  .step__head:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .step__mark {
+    width: 20px; height: 20px; border-radius: 50%; display: grid; place-items: center;
+    font-size: var(--t-11); border: 1px solid var(--line-strong); color: var(--ink-3);
+  }
+  .step__name { font-size: var(--t-13); font-weight: 600; }
+  .step__state { font-size: var(--t-12); color: var(--ink-2); }
+  
+  .step.is-done .step__mark { border-color: var(--ok); color: var(--ok); }
+  .step.is-done .step__state { color: var(--ok); }
+  .step.is-open .step__mark { border-color: var(--accent); color: var(--accent); font-weight: 700; }
+  .step.is-open .step__head { border-bottom: 0; padding-bottom: 4px; }
+  .step.is-stuck .step__mark { border-color: var(--err); color: var(--err); }
+  .step.is-stuck .step__state { color: var(--err); }
+  
+  #doneCard { margin-top: 12px; }
+  #stepsBelow:not(:empty) { margin-top: 12px; border-top: 1px solid var(--line); }
+  .donemark { font-size: 15px; font-weight: 700; color: var(--ok); margin-bottom: 4px; }
+  #checklist { list-style: none; margin: 0; padding: 0 0 0 32px; }
+  #checklist li { padding: 0; border-bottom: 0; }
+  
+  #checklist .row { display: grid; grid-template-columns: 20px 1fr; column-gap: 8px; align-items: start; }
+  
+  #checklist .row { grid-template-columns: 1fr; }
+  #checklist .state { display: none; }
+  #checklist .label, #checklist li .actions { grid-column: 1; }
+  #checklist .state {
+    grid-column: 1; grid-row: 1;
+    font-size: 13px; line-height: 1.5;   
+    text-align: center; color: var(--ink-3);
+  }
+  
+  #checklist .label { grid-column: 2; grid-row: 1; font-size: 13px; line-height: 1.5; }
+  #checklist li .actions { grid-column: 2; grid-row: 2; display: flex; gap: 8px; flex-wrap: wrap; }
+  #checklist li .actions:not(:empty) { margin-top: 12px; }
+  
+  #checklist li.confirmed .state { color: var(--ok); }
+  #checklist .state.warn { color: var(--warn); }
+  #checklist .state.err  { color: var(--err); }
+  .tool { margin-top: 12px; padding: 16px; background: var(--paper); border-radius: var(--r-ctl); display: none; }
+  .tool.open { display: block; }
+  .tool h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .09em;
+             text-transform: uppercase; color: var(--accent); }
+  .tool label { display: block; font-size: 11.5px; margin: 12px 0 4px; color: var(--ink-2); }
+  
+  .crop {
+    display: block; width: 100%; height: auto; max-width: 100%;
+    border: 1px solid var(--line); border-radius: 6px; background: var(--paper);
+  }
+  
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .pair > div { min-width: 0; }
+  .btnrow { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .spec-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin: 12px 0 8px; }
+  .spec-grid label { font-size: 11.5px; color: var(--ink-2); display: block; margin-bottom: 4px; }
+  .spec-grid input { font-family: var(--mono); }
+  
+  .spec-level { display: flex; align-items: center; gap: 12px; }
+  
+  .spec-switches { display: grid; gap: 16px; margin: 24px 0 20px; }
+  .spec-level span { cursor: pointer; }
+  
+  .gate { font-size: 12px; color: var(--ink-2); }
+  .gate.done { color: var(--ok); }
+  
+  .bounced { display: flex; align-items: flex-start; gap: var(--s-2);
+             margin-bottom: var(--s-3); padding: var(--s-3);
+             border: 1px solid var(--line); border-left: 3px solid var(--accent);
+             border-radius: var(--r-ctl); background: var(--surface);
+             font-size: var(--t-13); color: var(--ink-2); }
+  .bounced p { margin: 0; flex: 1; }
+  .bounced b { color: var(--ink); font-weight: 600; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  
+  
+  .more h4 { margin-top: 16px; }
+  
+  #labelName { text-transform: uppercase; }
+  .eq-group { font-size: 10.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase;
+              color: var(--ink-3); margin: 12px 0 4px; }
+  .eq-list { display: flex; flex-wrap: wrap; gap: 4px; }
+  .eq-list button { padding: 4px 8px; font-size: 11.5px; font-family: var(--mono); }
+  
+  .eq-list button.active { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  
+  
+  
+  .trace-more { display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-2); }
+  .stage-pick #attemptRow { margin: 0; gap: var(--s-1); }
+  #attemptRow .btn { color: var(--ink-2); }
+  #attemptRow .btn.on { color: var(--ink); border-color: var(--ink-3); background: var(--surface-2); }
+  
+  .render-info { contain: inline-size; min-width: 0; align-self: stretch; border: 1px solid var(--line);
+                 border-radius: var(--r-ctl); background: var(--surface-2); }
+  .render-info > summary { display: flex; align-items: center; gap: var(--s-2);
+                           padding: var(--s-1) var(--s-3); min-height: 32px; cursor: pointer;
+                           font-size: var(--t-12); color: var(--ink-2); list-style: none; }
+  .render-info > summary::-webkit-details-marker { display: none; }
+  .render-info > summary:hover { color: var(--ink); }
+  .render-info > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+  .ri-icon { position: relative; flex: none; display: inline-grid; place-items: center;
+             width: 16px; height: 16px; border-radius: 50%; border: 1px solid currentColor;
+             font: 700 10px/1 var(--sans); }
+  .ri-label { flex: 1; }
+  .ri-chev { width: 7px; height: 7px; border-right: 1.5px solid currentColor; border-bottom: 1.5px solid currentColor;
+             transform: translateY(-2px) rotate(45deg); transition: transform var(--d-micro) var(--ease); }
+  .render-info[open] .ri-chev { transform: translateY(1px) rotate(-135deg); }
+  .ri-body { padding: 0 var(--s-3) var(--s-2); font-size: var(--t-12); line-height: 1.5; color: var(--ink-2); }
+  .ri-body #retraceMsg { margin: var(--s-2) 0 0; color: var(--ink); }
+  @media (pointer: coarse) { .render-info > summary { min-height: 44px; } }
+  @media (prefers-reduced-motion: reduce) { .ri-chev { transition: none; } }
+  .trace-more { align-self: stretch; align-items: stretch; }
+  @media (max-width: 900px) { .review-side { flex-basis: 100%; align-items: stretch; } .render-info { min-width: 0; } }
+  
+  @media (max-width: 600px) {
+    #reviewActions > #traceProgress { flex-basis: 100%; }
+    #reviewActions > .btn { flex: 1 1 0; }
+  }
+  #traceProgress { display: inline-flex; align-items: center; gap: 8px; }
+  #traceProgress[hidden] { display: none; }
+  #traceProgress .loadbar { width: 96px; }   
+  
+  
+  .toolzone { margin: var(--s-3) 0 var(--s-2); display: grid; gap: var(--s-2); }
+  .historyzone { display: grid; gap: 0; }
+  .toolzone .btnrow, .historyzone .btnrow { margin-top: 0; }
+  .actionbar { padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+               padding-block: 0 var(--s-3); }
+  .replaced-note { padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+                   margin: 0 0 var(--s-3); color: var(--warn); }
+  .actionbar .actions { display: flex; align-items: center; gap: var(--s-3);
+                        flex-wrap: wrap; }
+  
+  .actionbar .gate { flex: 1 1 12ch; min-width: 0; }
+  
+  .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40;
+          background: var(--chrome);
+          -webkit-backdrop-filter: blur(14px) saturate(1.5);
+          backdrop-filter: blur(14px) saturate(1.5);
+          border-top: 1px solid var(--line); }
+  
+  .dock-in { padding-block: var(--s-3);
+             padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2);
+             display: flex; align-items: center; gap: 16px; }
+  .dock .actions { margin-left: auto; display: flex; align-items: center;
+                   gap: 12px; flex-wrap: wrap; }
+  
+  .dock { transform: translateY(0); transition: transform .22s cubic-bezier(.32,.72,0,1); }
+  .dock[data-leaving] { transform: translateY(100%); }
+  
+  body.docked main { padding-bottom: 84px; }
+  @media (prefers-reduced-transparency: reduce) {
+    .dock { background: var(--surface); -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .dock { transition: none; }
+  }
+  
+  @media (max-width: 1080px) {
+    main { padding: 8px 16px 32px; }
+  }
+  @media (max-width: 720px) {
+    main { grid-template-columns: 1fr; }
+    
+    
+    main > * { min-width: 0; }
+    .dock-in { padding: 12px 16px; }
+    .dock .gate { display: none; }   
+  }
+  
+  @media (max-width: 900px) {
+    .dock #statusLine { display: none; }
+    .dock #reviewActions { flex: 1 1 auto; margin-left: 0; flex-wrap: nowrap; }
+    .dock #reviewActions > .btn { flex: 1 1 0; min-width: 0; }
+  }
+  
+  @media (max-width: 900px) {
+    
+    #toolColumn { display: contents; }
+    #stagePanel { order: -2; }
+    #checkPanel { order: -1; }
+    #toolPanel { order: 0; }
+  }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/ask.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/fit-cache.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/build-id.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/read-cache.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/glide.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/chrome.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/state.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/dim-shape.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/room-schedule.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/doc-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/label-frame.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/plan-trim.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/ink.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sweep-fit.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/registration.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/equipment.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/aspect.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/anchors.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/direction-letters.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/eraser.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/retrace.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sheet-part.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/inventory.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/inventory-kinds.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/place-match.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/openings.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/extrude.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/outline.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/window-read.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/rooms.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/geometry.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/calibrate.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/doors.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/door-symbols.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/fireplace.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/closets.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/fixtures.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/garage.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/level.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/compositor.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/formats.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/footer.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/spec-strip.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/patch.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/recolour.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/text-runs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/xmp.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/shorten.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/style-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/text-guard.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/credit-jobs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/baked-text.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/crosscheck.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/dim-source.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/note-shape.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/sign-off.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/stage-math.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/l1-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-plan.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-l1.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sample-project.js" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1>Review &amp; verify</h1>
+  <span id="status" class="sub" role="status"></span>
+</div>
+
+<p id="replacedNote" class="subtle replaced-note" hidden></p>
+
+<div class="actionbar" id="actionRow">
+  <div class="actions" id="statusLine">
+    
+    <span id="gateNote" class="gate"></span>
+  </div>
+</div>
+
+<div class="dock" id="actionDock" hidden><div class="dock-in"></div></div>
+<main id="main" tabindex="-1">
+  
+  <div id="bouncedNote" class="bounced" hidden role="status"></div>
+  
+  <aside id="toolColumn">
+  
+  <section class="panel intro-once" id="reviewIntro" hidden>
+    <h3>This is our drawing of your plan</h3>
+    <p>We traced your plan into a clean drawing, and the marketing image is made from it. So what is right here is right in the image. Check each room and size against your plan. Checking costs nothing, and neither do the tools that fix the drawing.</p>
+    <button type="button" class="btn btn--secondary btn--sm" id="reviewIntroOk">Got it</button>
+  </section>
+  <section class="panel" id="checkPanel" aria-label="Verification steps">
+    
+    
+    <button type="button" class="steps-folded" id="stepsFolded" aria-controls="checkPanel"></button>
+    <ol id="stepsAbove" class="steps" aria-label="Verification steps"></ol>
+    <ul id="checklist"></ul>
+
+    <div id="specCard" hidden>
+      <div class="subtle">Auto-counted suggestions. Only figures you confirm are printed.</div>
+    <div class="spec-grid">
+      <div><label for="specBeds">Bedrooms</label><input type="number" id="specBeds" min="0"></div>
+      
+      <div>
+        <label for="specBaths" title="A powder room counts as half a bathroom">Bathrooms</label>
+        <input type="number" id="specBaths" min="0" step="0.5"
+               title="Half steps are allowed. A powder room is 0.5">
+      </div>
+      
+      <div><label for="specSqft">Total sqft</label>
+        <input type="number" id="specSqft" min="0" placeholder="optional"></div>
+    </div>
+    <div class="subtle" id="sqftNote"></div>
+    
+    
+    <div class="spec-switches">
+    <div class="spec-level">
+      <button id="specSuite" class="switch" role="switch" aria-checked="false"
+              aria-labelledby="specSuiteLabel"></button>
+      <span id="specSuiteLabel">The home has a suite (prints &ldquo;+ SUITE&rdquo; after the bedrooms)</span>
+    </div>
+    <div class="spec-level">
+      <button id="specBelow" class="switch" role="switch" aria-checked="false"
+              aria-labelledby="specBelowLabel"></button>
+      <span id="specBelowLabel">This floor is a basement (below ground)</span>
+    </div>
+    </div>
+
+    
+    <details id="roomTable" class="more">
+      <summary>Room dimensions and areas <span id="roomTableCount" class="subtle"></span></summary>
+      <div id="roomTableBody"></div>
+    </details>
+    <div class="btnrow"><button id="specConfirm" class="btn btn--secondary btn--sm">Confirm specs</button><span id="specState" class="subtle"></span></div>
+    </div>
+
+    <ol id="stepsBelow" class="steps" aria-label="Steps still to do"></ol>
+
+    <div id="doneCard" hidden>
+      <div class="donemark">All steps confirmed</div>
+      <div class="subtle">Your plan is ready to style. Open any step above to look at it again.</div>
+    </div>
+
+
+    
+    <div id="saveState" class="subtle" style="margin-top:12px"></div>
+  </section>
+  <section class="panel" id="toolPanel" aria-label="Fix the drawing">
+    
+    <div class="tool" id="labelTool">
+      <h4 id="labelToolHead">Label</h4>
+      <label id="labelNameLabel" for="labelName">Room name</label><input type="text" id="labelName" autocomplete="off">
+      <button class="btn btn--secondary btn--sm" id="labelShorten" hidden></button>
+      <div id="labelDimRow">
+        
+        
+        <div class="pair">
+          <div><label>On your plan</label><canvas id="srcCrop" class="crop"></canvas></div>
+          <div><label>On our drawing</label><canvas id="wfCrop" class="crop"></canvas></div>
+        </div>
+        <div class="subtle" id="srcCropNote" style="margin:4px 0 2px"></div>
+        <label for="labelDim">Dimensions, exactly as written on your plan</label>
+        <input type="text" id="labelDim" autocomplete="off" spellcheck="false" placeholder='e.g. 13&#39;-0" x 11&#39;-6"'>
+      </div>
+      <div class="btnrow">
+        
+        <button class="btn btn--secondary btn--sm" id="labelToEquip"></button>
+        <button class="btn btn--secondary btn--sm" id="labelDelete">Delete label</button>
+        <button class="btn btn--secondary btn--sm" id="labelClose">Done</button>
+      </div>
+    </div>
+
+    <div class="tool" id="stairTool">
+      <h4>Staircase</h4>
+      
+      
+      <label id="stairPrinted-l">Direction arrow on the image</label>
+      <div class="btnrow" id="stairPrinted" role="group" aria-labelledby="stairPrinted-l" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-printed="0">Off</button>
+        <button class="btn btn--secondary btn--sm" data-printed="1">Print it</button>
+      </div>
+      <div class="subtle" id="stairPrintedWhy" style="margin-top:6px"></div>
+
+      
+      <div id="stairShapeRow">
+      <label id="stairLenLabel">Marker length</label>
+      <div class="btnrow" id="stairLen" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-len="short">Short</button>
+        <button class="btn btn--secondary btn--sm" data-len="medium">Medium</button>
+        <button class="btn btn--secondary btn--sm" data-len="long">Long</button>
+      </div>
+      </div>
+      
+      <label id="stairHeading-l">Which way the stair runs</label>
+      <div class="btnrow" id="stairHeading" role="group" aria-labelledby="stairHeading-l" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-heading="up" title="Straight, runs up the plan" aria-label="Straight, runs up the plan">↑</button>
+        <button class="btn btn--secondary btn--sm" data-heading="right" title="Straight, runs right" aria-label="Straight, runs right">→</button>
+        <button class="btn btn--secondary btn--sm" data-heading="down" title="Straight, runs down the plan" aria-label="Straight, runs down the plan">↓</button>
+        <button class="btn btn--secondary btn--sm" data-heading="left" title="Straight, runs left" aria-label="Straight, runs left">←</button>
+        <button class="btn btn--secondary btn--sm" data-turn="cw" title="Round, turns clockwise going up" aria-label="Round, turns clockwise going up">↻</button>
+        <button class="btn btn--secondary btn--sm" data-turn="ccw" title="Round, turns counterclockwise going up" aria-label="Round, turns counterclockwise going up">↺</button>
+      </div>
+      <div class="subtle" id="stairTurnWhy" style="margin-top:6px"></div>
+      
+      <label id="stairDir-l">Climbs</label>
+      <div class="btnrow" id="stairDir" role="group" aria-labelledby="stairDir-l" style="margin-top:0">
+        <button class="btn btn--secondary btn--sm" data-direction="up" title="Goes up to the floor above">UP</button>
+        <button class="btn btn--secondary btn--sm" data-direction="down" title="Goes down to the floor below">DN</button>
+      </div>
+      <div class="subtle warn" id="stairDirWhy" hidden style="margin-top:6px"></div>
+      <div class="btnrow">
+        <button class="btn btn--secondary btn--sm" id="stairClose">Done</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">Drag the marker to reposition it.</div>
+      <div class="btnrow">
+        <button class="btn btn--secondary btn--sm" id="stairDelete">Delete</button>
+      </div>
+    </div>
+    
+    
+    <details class="more" id="fixTools">
+      <summary><span class="fold-title">Fix the drawing <span id="fixSummary"></span></span>
+        <span class="fold-hint">Remove what the tracing added, or add what it missed.</span></summary>
+    <div class="toolzone">
+    
+    <div class="btnrow" style="align-items:center; gap:8px">
+      
+      <button class="btn btn--secondary btn--sm" id="eraseMode">Erase</button>
+      <button class="btn btn--secondary btn--sm" id="wallMode">Close a wall</button>
+      
+      <button class="btn btn--secondary btn--sm" id="doorMode">Add a door</button>
+      <button class="btn btn--secondary btn--sm" id="windowMode">Add a window</button>
+      
+      <button class="btn btn--secondary btn--sm" id="addLabelBtn">Add a room label</button>
+      <button class="btn btn--secondary btn--sm" id="addStairBtn">Add a staircase</button>
+    </div>
+    
+    <div class="subtle" id="eraseNote" style="margin-top:8px"></div>
+    <div class="subtle" id="fixtureNote" style="margin-top:8px">Built-in fixtures come from each room&rsquo;s label. Rename a room to change it.</div>
+    
+    
+    <div id="copyRow" class="btnrow" style="margin-top:8px; align-items:center; gap:8px" hidden>
+      <button class="btn btn--secondary btn--sm" id="copyFlipX" title="Hinge at the other end">Flip ↔</button>
+      <button class="btn btn--secondary btn--sm" id="copyFlipY" title="Open into the other room">Flip ↕</button>
+      
+      <span class="subtle" style="margin-left:4px">Nudge</span>
+      <button class="btn btn--secondary btn--sm" id="copyLess" title="Move 1 pixel back along the wall (or use the arrow keys)" aria-label="Move one pixel back along the wall">‹</button>
+      <button class="btn btn--secondary btn--sm" id="copyMore" title="Move 1 pixel on along the wall (or use the arrow keys)" aria-label="Move one pixel on along the wall">›</button>
+    </div>
+    
+    <div id="swingRow" style="margin-top:8px" hidden>
+      
+      <div class="segmented" role="radiogroup" aria-label="Kind of door" id="leafPicks" style="margin:0 0 8px; width:max-content">
+        <button type="button" role="radio" aria-checked="true" data-leaf="swing">Hinged</button>
+        <button type="button" role="radio" aria-checked="false" data-leaf="bifold">Bifold</button>
+      </div>
+      <label for="swingPicks" style="display:block; margin:0 0 4px">Which way the door opens</label>
+      <div class="btnrow" id="swingPicks" style="margin-top:0"></div>
+    </div>
+    
+    <div id="drawInstead" style="margin-top:12px" hidden>
+      <button type="button" class="link" id="copyMode">Or copy one that is drawn right on the plan</button>
+    </div>
+    </div>
+
+    <div class="historyzone">
+    
+    <div class="btnrow" style="margin-top:8px; align-items:center; gap:8px">
+      <button class="btn btn--secondary btn--sm" id="eraseUndo" hidden>Undo</button>
+      <button class="btn btn--secondary btn--sm" id="eraseClear" hidden>Restore all</button>
+      
+      <span class="subtle" id="eraseCount"></span>
+    </div>
+    <div class="msg warn" id="eraseGuard" style="margin-top:8px" hidden></div>
+
+    
+    <div class="subtle" id="styleNote" style="margin-top:8px" hidden></div>
+    </div>
+
+    
+    <details class="more" id="equipMore" style="margin-top:12px">
+      <summary>Advanced: equipment codes (WH, A/C, F/S…)</summary>
+      <div id="equipPicker"></div>
+      <div class="subtle" style="margin-top:8px">A code marks a fitting rather than a space: a water heater, a furnace, a stacked washer. It is annotation, so it never counts as a room.</div>
+    </details>
+    </details>
+
+  </section>
+  </aside>
+  <section class="panel" id="stagePanel" aria-label="Your plan and our drawing">
+    
+    
+    <div class="stage-bar">
+      <div class="stage-pick">
+      <div class="segmented" role="tablist" id="viewWhich" aria-label="What the stage shows">
+        <button type="button" role="tab" aria-selected="false" data-view="src">Your plan</button>
+        <button type="button" role="tab" aria-selected="true" data-view="cmp" id="viewCmp">Compare</button>
+        <button type="button" role="tab" aria-selected="false" data-view="wf">Our drawing</button>
+      </div>
+      
+      <label class="check pinToggle"><input type="checkbox" id="showPins" checked> Room numbers</label>
+      
+      <span class="zoom" role="group" aria-label="Zoom">
+        <button type="button" class="btn btn--secondary btn--sm" id="zoomOut" aria-label="Zoom out">&minus;</button>
+        <button type="button" class="btn btn--secondary btn--sm" id="zoomFit">Fit</button>
+        <button type="button" class="btn btn--secondary btn--sm" id="zoomIn" aria-label="Zoom in">+</button>
+      </span>
+      
+      <div class="btnrow" id="attemptRow" role="group" aria-label="Which tracing" hidden></div>
+      </div>
+      
+      <div class="review-side" id="reviewSide">
+        <div class="actions" id="reviewActions">
+        
+        <span id="traceProgress" hidden>
+          <span class="loadbar"></span>
+          <span id="traceElapsed" class="subtle"></span>
+        </span>
+        <button class="btn btn--secondary" id="retraceBtn">Trace it again</button>
+        <button id="confirmBtn" class="btn btn--primary" disabled>Confirm &amp; style</button>
+            </div>
+      
+      <div class="trace-more" id="traceMore">
+        <details class="render-info" id="traceInfo">
+          <summary>
+            <span class="ri-icon" aria-hidden="true">i</span>
+            <span class="ri-label" id="traceInfoLabel">About tracing again</span>
+            <span class="ri-chev" aria-hidden="true"></span>
+          </summary>
+          <div class="ri-body"><div id="retraceNote"></div><p id="retraceMsg" hidden></p></div>
+        </details>
+      </div>
+          </div>
+    </div>
+    <div class="stage" id="stage">
+      <canvas id="edit"></canvas>
+      <canvas id="xray"></canvas>
+      <canvas id="rings" aria-hidden="true"></canvas>
+      <span class="stage-tag stage-tag--l" id="tagSrc" hidden>Your plan</span>
+      <span class="stage-tag stage-tag--r" id="tagWf" hidden>Our drawing</span>
+      
+      <div id="sweepHandle" class="sweep-handle" hidden role="slider" tabindex="0"
+           aria-label="Sweep across to compare your plan with our drawing"
+           aria-valuemin="0" aria-valuemax="100" aria-valuenow="50">
+        <span class="sweep-grip" aria-hidden="true">‹›</span>
+        <span class="sweep-hint" aria-hidden="true">Drag to compare</span>
+      </div>
+    </div>
+    
+    <div class="stage-foot">
+      <div class="subtle stage-note" id="stageNote"></div>
+      
+      <button type="button" class="btn btn--info" id="labelInfoBtn"
+              aria-expanded="false" aria-controls="labelInfo">
+        <span aria-hidden="true">?</span>
+        <span class="btn--info-label">What are these labels for</span>
+        <span class="btn--info-chev" aria-hidden="true">›</span>
+      </button>
+    </div>
+    <div class="infonote" id="labelInfo" hidden>
+      <p><b>The gold chips are your labels. The names underneath them are from the
+      tracing and will not appear on the final image.</b></p>
+      <p>Text is added to the render afterwards, from what you confirm here. So a
+      chip may sit over a name that already looks right, and moving a chip moves
+      the text on the render.</p>
+      <p>Type over a wrong name. Drag a chip that is in the wrong room. Studio uses
+      the same positions if you want to fine-tune them later.</p>
+    </div>
+
+  </section>
+
+</main>
+
+<dialog id="doneDialog">
+  <h3 style="margin-top:0">Confirmed ✓</h3>
+  
+  <dl id="doneText" class="facts" style="margin:12px 0 16px"></dl>
+  <p class="subtle">Your sign-off is recorded and appears on the verification report.</p>
+  <button id="toStudio" class="btn btn--primary">Continue to Studio <span class="go" aria-hidden="true">→</span></button>
+  <button onclick="this.closest('dialog').close()" class="btn btn--secondary">Close</button>
+</dialog>
+
+<script type="module">{const e="pr.reviewIntroSeen";let t=!1;try{t=localStorage.getItem(e)==="1"}catch{}const n=document.getElementById("reviewIntro");n&&!t&&(n.hidden=!1,document.getElementById("reviewIntroOk").onclick=()=>{n.hidden=!0;try{localStorage.setItem(e,"1")}catch{}})}import{askConfirm as qt}from"./src/ask.js";import{cachedFit as nt}from"./src/fit-cache.js";import{glide as Bn,arrive as Rn,afterPaint as Wn}from"./src/glide.js";const Ie=e=>String(e??"").replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[t]);import{renderChrome as jn,refreshSteps as Fn}from"./src/chrome.js";import{track as Hn}from"./src/events.js";import{floorHref as ot}from"./src/floor-context.js";import{signOffName as qn}from"./src/auth.js";import*as d from"./src/review/state.js";import*as ae from"./src/store.js";import{register as Ot}from"./src/review/registration.js";import{frameForModel as On}from"./src/aspect.js";import{snapLabelsToWireframe as zt,resnapSeeds as zn}from"./src/review/anchors.js";import{applyDabs as ze,erasedFraction as Un,eraseLeftovers as Yn,erasesFingerprint as Ut,rect as st,isEmptyRect as at,wallStyleAt as Yt,snapToWall as _n,wallSource as Kn,diagonalWallFill as Xn,sourceOpening as Gn,targetWall as Vn,cloneMark as Jn,pickSymbolAt as Qn,plateWallThickness as Zn,PAPER as le,WALL as ne}from"./src/review/eraser.js";import{retrace as eo,addAttempt as to,attemptsNote as no,MAX_ATTEMPTS as _t}from"./src/review/retrace.js";import{postAI as oo}from"./src/api.js";import{inventoryFlags as so,inventoryNote as ao,tileGrid as Kt,worthTiling as Xt,mergeInventories as io,agreedSource as ro,disputedNote as lo}from"./src/review/inventory.js";import{confirmByPlace as co}from"./src/review/place-match.js";import{medianWallThickness as Re}from"./src/model3d/openings.js";import{belowGrade as uo}from"./src/model3d/level.js";import{layoutLabels as fo,spiralArrowClockwise as ho}from"./src/compositor.js";import{EQUIPMENT_GROUPS as mo,CUSTOM_EQUIPMENT as it,CUSTOM_PLACEHOLDER as po}from"./src/review/equipment.js";import{suggestShortName as go}from"./src/review/shorten.js";import{applyHouseStyle as wo,collapseMerges as bo}from"./src/house-style.js";import{scheduleRows as yo,scheduleTotals as ko}from"./src/room-schedule.js";const xo={short:.042,medium:.07,long:.105};import{bakedTextBoxes as Gt,paintCover as vo}from"./src/style-client.js";import{crossCheckDimensions as So,normalizeName as Vt,normalizeDim as Jt}from"./src/review/crosscheck.js";import{suspectDims as Co}from"./src/review/dim-shape.js";import{dimsNotUnderName as $o}from"./src/review/dim-source.js";import{textBoxes as Eo}from"./src/review/text-guard.js";import{suspectNames as rt}from"./src/review/note-shape.js";import{sourceFingerprint as St}from"./src/versions.js";import{signOffRecord as Io,studioSnapshot as Lo,createAutosave as Mo}from"./src/review/sign-off.js";import{planContentBox as Po}from"./src/plan-trim.js";import{sweepFit as To}from"./src/sweep-fit.js";import{OVERLAY_MIN as Ao,sourceRect as Qt,sourceBoxInWire as Do,boxRect as Ct,union as No,stageHeight as Bo,clampView as Ro,fitView as lt,zoomAt as Zt,panBy as en,placeRect as Wo,backingScale as tn}from"./src/review/stage-math.js";import{runL1 as nn}from"./src/l1-client.js";import{getArtifact as Se,getArtifactUrl as on,putArtifact as $t,moveScope as jo,scopeFor as Fo,DRAFT as Ho,STYLED_KINDS as qo}from"./src/artifacts.js";const i=e=>document.getElementById(e),ct=e=>new Promise((t,n)=>{const s=new Image;s.onload=()=>t(s),s.onerror=n,s.src=e});function sn(e){const t=document.getElementById("status");t&&(t.textContent="This plan could not be opened. Try uploading it again."),console.error("Review boot failed:",e)}addEventListener("error",e=>sn(e.error||e.message)),addEventListener("unhandledrejection",e=>sn(e.reason));let O,S,We,oe,dt=!1;const{ctx:_}=await jn();try{const e=sessionStorage.getItem("bounced");if(e){sessionStorage.removeItem("bounced");const t=JSON.parse(e),n=document.getElementById("bouncedNote");n&&t?.message&&(!t.floor||t.floor===_?.floor?.id)&&(n.innerHTML=`<p><b>Studio is not open yet.</b> ${t.message}</p>`,n.hidden=!1)}}catch{}const P=_?{projectId:_.project.id,floorId:_.floor.id}:null;let X=_?_.scope:Ho,ce={beginPan(){},notes(){},toDrawing(){},compare(){},refit(){}},je=[],ut=[],Fe=-1,an=!1;async function Oo(){const e=_?.floor?.verified?.artifactScope||X;for(const t of qo)if(await Se(e,t)){an=!0;break}Wt(),ce.notes()}const rn=sessionStorage.getItem("l1result");let z;const[ln,cn]=await Promise.all([on(X,"source"),on(X,"wireframe")]);if(ln&&cn){if(z=rn?JSON.parse(rn):null,!z||z.scope&&z.scope!==X){const e=await Se(X,"extraction"),t=_?.floor?.verified;if(e)z=JSON.parse(await e.text());else if(t?.extraction)z={scope:X,extraction:t.extraction,readBack:null,mock:!1};else{if(P)throw location.replace(ot("extract.html",P.projectId,P.floorId)),new Error("redirecting to upload");z=await nn(null,"mock",()=>{}),dt=!0}}z.sourceUrl=ln,z.wireframeUrl=cn}else{if(_)throw location.replace(ot("extract.html",P.projectId,P.floorId)),new Error("redirecting to upload");z=await nn(null,"mock",()=>{}),dt=!0,await $t(X,"source",z.sourceUrl),await $t(X,"wireframe",z.wireframeUrl)}O=await ct(z.sourceUrl),S=await ct(z.wireframeUrl);const ft=zt(z.extraction.spaces.map(e=>({name:e.name,dim:e.dim,x:e.anchor.x,y:e.anchor.y})),S);z.extraction.spaces=z.extraction.spaces.map((e,t)=>({...e,anchor:{x:ft.labels[t].x,y:ft.labels[t].y,model:e.anchor.model||{x:e.anchor.x,y:e.anchor.y},fitWidth:ft.labels[t].fitWidth,fitBox:ft.labels[t].fitBox}}));const Ue=z.readBack?So(z.extraction.spaces,z.readBack):null;d.createProject(z);const Ye=!!_?.floor?.verified?.labels?.length;{const e=ae.replacedSignOff(_?.floor);if(e){const t=e.at?` on ${new Date(e.at).toLocaleDateString(void 0,{day:"numeric",month:"short",year:"numeric"})}`:"";i("replacedNote").textContent=`This floor has a new plan. The one before it was confirmed${e.by?` by ${e.by}`:""}${t}, and that sign-off stays in the floor’s history. Check this plan and confirm it.`,i("replacedNote").hidden=!1}}Ye&&(d.restoreLabels(_.floor.verified.labels),Oo(),d.restoreConfirmed(_.floor.verified)),_?.floor?.verified?.erases?.length&&d.restoreErases(_.floor.verified.erases);const Ce=!Ye&&P?ae.getReviewDraft(P.projectId,P.floorId):null;Ce&&(Ce.labels?.length&&d.restoreLabels(Ce.labels),d.restoreDraft(Ce),Ce.erases?.length&&d.restoreErases(Ce.erases));function zo(){if(Ye||Ce)return;const e=ae.houseStyleOf(ae.kitOf(_?.project)),t=d.getProject().labels.map(u=>({...u})),n=wo(t,e),{labels:s,collapsed:a}=bo(n.labels,e);if(!(n.renamed+n.hidden+a))return;d.restoreLabels(s);const c=[];n.renamed&&c.push(`${n.renamed} renamed`),n.hidden&&c.push(`${n.hidden} unlabelled`),a&&c.push(`${a} merged`);const o=i("styleNote");o.hidden=!1,o.innerHTML=`Your house style changed ${c.join(", ")}. `;const r=document.createElement("button");r.className="btn btn--secondary btn--sm",r.textContent="Use the plan’s own wording",r.onclick=()=>{d.restoreLabels(t),o.hidden=!0,K(null)},o.append(r)}function dn(e=d.getProject()){const t=e.labels.filter(d.isRoom),n=t.filter(a=>a.name).length,s=t.length-n;i("status").textContent=`${dt||z.mock?"Sample plan · ":""}`+(t.length?`${t.length} space${t.length===1?"":"s"}, `+(s?`${s} unnamed`:t.length===1?"named":"all named"):"No spaces found yet")}dn(),We=(await nt("register",[O,S],()=>Ot(O,S))).value;const un=await ct(On(O).canvas.toDataURL("image/png"));oe=(await nt("register",[un,S],()=>Ot(un,S))).value;let de=null;async function fn(){try{const e=(await nt("sweepFit:score",[S,O],()=>To(S,O,{score:!0}))).value,t=e.by==="registered"?e.fit:e.box;de=Number.isFinite(t)&&t>=Ao?{T:e.T,score:t}:null}catch{de=null}}await fn();let Et=[];try{Et=$o(d.getProject().labels,Eo(O,{floorBySheet:!0}),We?.transform)}catch{Et=[]}const ue=i("xray"),Le=900;let Me=0,Pe=1,hn=null,_e=null;function mn(e,t,n,s,a){if(hn!==O)try{hn=O,_e=null;const l=(getComputedStyle(document.documentElement).getPropertyValue("--sheet-paper").trim().match(/[0-9a-f]{2}/gi)||[]).map(p=>parseInt(p,16)),c=document.createElement("canvas");c.width=200,c.height=Math.max(1,Math.round(O.naturalHeight*(200/O.naturalWidth)));const o=c.getContext("2d",{willReadFrequently:!0});o.drawImage(O,0,0,c.width,c.height);const r=o.getImageData(0,0,c.width,c.height).data,u=new Map;for(let p=0;p<r.length;p+=4){if(r[p+3]<200||r[p]+r[p+1]+r[p+2]<540)continue;const g=r[p]>>2<<12|r[p+1]>>2<<6|r[p+2]>>2;u.set(g,(u.get(g)||0)+1)}const f=[...u.entries()].sort((p,g)=>g[1]-p[1])[0];if(l.length===3&&f){const p=[(f[0]>>12)*4+2,(f[0]>>6&63)*4+2,(f[0]&63)*4+2],g=l.map((b,v)=>Math.min(255,Math.round(255*b/Math.max(1,p[v]))));g.some(b=>b<254)&&(_e=`rgb(${g.join(",")})`)}}catch{_e=null}_e&&(e.save(),e.globalCompositeOperation="multiply",e.fillStyle=_e,e.fillRect(t,n,s,a),e.restore())}function ht(){Me=Math.round(O.naturalHeight*(Le/O.naturalWidth));const e=Math.round(Le*Pe),t=Math.round(Me*Pe);(ue.width!==e||ue.height!==t)&&(ue.width=e,ue.height=t);const n=ue.getContext("2d");n.setTransform(Pe,0,0,Pe,0,0),n.imageSmoothingQuality="high",n.drawImage(O,0,0,Le,Me),mn(n,0,0,Le,Me),i("showPins")?.checked&&Uo(n,Le,Me)}function Uo(e,t=Le,n=Me,s=1,a=0,l=0){const c=d.getProject().labels.filter(r=>r.name),o=de?.T||We.transform;c.forEach((r,u)=>{const f=o?o.dx+r.x*o.sx:r.x,p=o?o.dy+r.y*o.sy:r.y,g=a+f*t*s,b=l+p*n*s;if(!isFinite(g)||!isFinite(b))return;const v=12,x=3,E=r.fitBox&&o?r.fitBox.h*o.sy*n*s/2:0,Y=E?E+v+x:0,L=b-Y<v?b+Y:b-Y;e.beginPath(),e.arc(g,L,v,0,Math.PI*2),e.fillStyle="rgba(255,255,255,0.85)",e.fill(),e.fillStyle="#D1B678",e.fill(),e.lineWidth=2,e.strokeStyle="#211E19",e.stroke(),e.fillStyle="#211E19",e.font="600 13px Inter, system-ui, sans-serif",e.textAlign="center",e.textBaseline="middle",e.fillText(String(u+1),g,L+.5)}),e.textAlign="start",e.textBaseline="alphabetic"}d.setGeometry({ok:oe.ok,aspectDev:oe.aspectDev??0,deviation:oe.deviation??0});{const e=_?.floor?.verified?.registration,t=(s,a)=>typeof s=="number"&&typeof a=="number"&&Math.abs(s-a)<1e-9;Ye&&!oe.ok&&e?.acknowledgedAt&&t(e.deviation,oe.deviation??0)&&t(e.aspectDev,oe.aspectDev??0)&&d.acknowledgeGeometry(e.acknowledgedAt);const n=Ce?.geometry;!Ye&&!oe.ok&&n?.acknowledgedAt&&t(n.deviation,oe.deviation??0)&&t(n.aspectDev,oe.aspectDev??0)&&d.acknowledgeGeometry(n.acknowledgedAt)}i("showPins").onchange=()=>{ht(),ce.notes()},ht();const D=i("edit"),h=D.getContext("2d");let C=null,be=null,He=[];const I=900;let N=0,pe=1;const Yo={get width(){return I},get height(){return N},getContext:()=>h};function _o(e){const t=I/(S?.naturalWidth||I);return fo(e.labels||[],{scale:t,planW:I,measure:(n,s,a)=>{h.save(),h.font=`${a} ${s}px Inter`;const l=h.measureText(n).width;return h.restore(),l},textOf:n=>n.name||""})}let mt=null,pt=[],It=null;const pn=e=>`${Qe}|${Ut(e.erases||[])}|${(e.labels||[]).length}`;function gn(e){const t=document.createElement("canvas");t.width=S.naturalWidth,t.height=S.naturalHeight;const n=t.getContext("2d");return n.drawImage(S,0,0),ze(n,t.width,t.height,e.erases||[]),t}function Ko(e){const t=pn(e);return t===mt||(pt=Gt(gn(e),e.labels||[]).letters,mt=t),pt}async function Xo(e){const t=pn(e);if(t===mt||!S)return;const n=e.labels||[],s=gn(e),{value:a}=await nt("bakedText:"+JSON.stringify(n),[s],()=>Gt(s,n));pt=a.letters,mt=t}function B(){N=Math.round(S.naturalHeight*(I/S.naturalWidth));const e=Math.round(I*pe),t=Math.round(N*pe);(D.width!==e||D.height!==t)&&(D.width=e,D.height=t),h.setTransform(pe,0,0,pe,0,0),h.imageSmoothingQuality="high",h.clearRect(0,0,I,N),h.drawImage(S,0,0,I,N),He=[];const n=d.getProject();ze(h,I,N,n.erases||[]);const s=i("rings");(s.width!==D.width||s.height!==D.height)&&(s.width=D.width,s.height=D.height);const a=s.getContext("2d");a.setTransform(1,0,0,1,0,0),a.clearRect(0,0,s.width,s.height),a.setTransform(pe,0,0,pe,0,0),a.lineWidth=1.5,a.strokeStyle="#c0392b";const l=Tt();for(const o of l)a.beginPath(),a.arc((o.x0+o.x1)/2*I,(o.y0+o.y1)/2*N,Math.max(9,(o.x1-o.x0+o.y1-o.y0)/2*I),0,2*Math.PI),a.stroke();if(i("sweepHandle").classList.toggle("marks-shown",l.length>0),Ve&&k?.stage==="pick"&&!R){const o=Ve;h.save(),h.lineWidth=1,h.setLineDash([3,3]),h.strokeStyle="rgba(33,30,25,.6)",h.strokeRect(o.x0*I,o.y0*N,(o.x1-o.x0)*I,(o.y1-o.y0)*N),h.restore()}if(R?.to&&w===se){const o=st(R.from,R.to,ne),r=o.x0*I,u=o.y0*N,f=(o.x1-o.x0)*I,p=(o.y1-o.y0)*N;h.save(),h.lineWidth=1,h.setLineDash([4,4]),h.strokeStyle="#ffffff",h.strokeRect(r,u,f,p),h.lineDashOffset=4,h.strokeStyle="#211E19",h.strokeRect(r,u,f,p),h.restore()}else if(R?.to){let o=st(R.from,R.to,w===le?le:ne);if(w===ne&&!at(o)&&(o=yn(o)),w===Z||w===G){const{m:r,w:u,h:f}=Ae();o={...Lt(o),style:w},w===G&&(o.swing=Ke,Xe==="bifold"&&(o.leaf="bifold")),o.lw=Math.max(8e-4,(Re(r,u,f)||2)*.5/u)}ze(h,I,N,[o]),h.save(),h.strokeStyle="#3b6ea5",h.lineWidth=1,o.poly?(h.beginPath(),o.poly.forEach(([r,u],f)=>f?h.lineTo(r*I,u*N):h.moveTo(r*I,u*N)),h.closePath(),h.stroke()):h.strokeRect(o.x0*I,o.y0*N,(o.x1-o.x0)*I,(o.y1-o.y0)*N),h.restore()}if(k?.stage==="place"){h.save(),h.strokeStyle="#3b6ea5",h.lineWidth=1,h.setLineDash([4,3]);const o=k.box;if(h.strokeRect(o.x0*I,o.y0*N,(o.x1-o.x0)*I,(o.y1-o.y0)*N),h.restore(),k.mark){ze(h,I,N,[k.mark]);const r=k.mark;h.save(),h.strokeStyle="#3b6ea5",h.lineWidth=1,h.strokeRect(r.x0*I,r.y0*N,(r.x1-r.x0)*I,(r.y1-r.y0)*N),h.restore()}}h.textAlign="center",vo(Yo,Ko(n));const c=_o(n);for(const o of n.labels){const r=o.x*I,u=o.y*N,f=C?.kind==="label"&&C.id===o.id,p=o.hidden?`· ${o.name||"unlabeled"} · not printed`:o.name||"· unlabeled ·",g=o.kind==="equipment",b=c.get(o.id),v=o.name?Math.max(g?6:9,b?.size??12):12,x=Math.max(8,v*.55);h.font=`600 ${v}px Inter`;const E=o.name?b?.lines?.length?b.lines:[p]:[p],Y=v*.95;let L=Math.max(...E.map(J=>h.measureText(J).width));o.dim&&!g&&(h.font=`400 ${x}px Inter`,L=Math.max(L,h.measureText(o.dim).width)),L+=g?10:16;const j=5,H=u-(E.length-1)*Y/2,U=H+(E.length-1)*Y;let T=H-v*.78-j,M=U+(o.dim&&!g?v*.85+x*.3:v*.22)+j;!o.fitBox&&o.fitWidth&&!g&&(L=Math.max(L,o.fitWidth*I+16));const A=M-T,F=Math.max(A,18),$=Math.max(L,34);h.fillStyle=f?"#FBEDE4":"#F3EBD9",h.strokeStyle=f?"#c2571f":"#211E19",h.lineWidth=1.2,h.beginPath(),h.roundRect(r-L/2,T,L,A,5),h.fill(),h.stroke(),h.fillStyle=f?"#c2571f":"#211E19",h.font=`600 ${v}px Inter`,E.forEach((J,ie)=>h.fillText(J,r,H+ie*Y)),o.dim&&!g&&(h.font=`400 ${x}px Inter`,h.fillText(o.dim,r,U+v*.85)),He.push({kind:"label",id:o.id,rect:{x:r-$/2,y:u-F/2,w:$,h:F}})}if(je.length){const o=i("rings").getContext("2d");o.save(),o.setTransform(pe,0,0,pe,0,0),o.lineWidth=2,o.strokeStyle="#2F6FED",o.fillStyle="rgba(47, 111, 237, 0.12)";for(const r of ut)o.beginPath(),o.roundRect(r[0]*I-6,r[1]*N-6,(r[2]-r[0])*I+12,(r[3]-r[1])*N+12,6),o.fill(),o.stroke();if(!ut.length)for(const r of He){if(r.kind!=="label")continue;const u=n.labels.find(f=>f.id===r.id);!u||!je.includes((u.name||"").trim().toUpperCase())||(o.beginPath(),o.roundRect(r.rect.x-5,r.rect.y-5,r.rect.w+10,r.rect.h+10,8),o.fill(),o.stroke())}o.restore()}n.staircases.forEach((o,r)=>{const u=o.position.x*I,f=o.position.y*N,p=C?.kind==="stair"&&C.id===o.id,g=o.printed!==!1;h.strokeStyle=h.fillStyle=p?"#c2571f":"#211E19",h.globalAlpha=g?1:.35,h.setLineDash(g?[]:[5,4]),h.lineWidth=2.5;const b=N*xo[o.length??"medium"],[v,x]=d.headingVector(o.heading??(o.direction==="up"?"up":"down")),E=-x,Y=v,L=o.kind==="spiral";if(L){const T=b*.8,M=ho(o),A=M?Math.PI*.75:Math.PI*.25,F=Math.PI*1.5*(M?1:-1);h.beginPath(),h.arc(u,f,T,A,A+F,!M),h.stroke();const $=A+F,J=u+Math.cos($)*T,ie=f+Math.sin($)*T,ve=-Math.sin($)*(M?1:-1),Ee=Math.cos($)*(M?1:-1);h.beginPath(),h.moveTo(J-ve*9-Ee*7,ie-Ee*9+ve*7),h.lineTo(J,ie),h.lineTo(J-ve*9+Ee*7,ie-Ee*9-ve*7),h.stroke()}else{const T=u+v*b,M=f+x*b;h.beginPath(),h.moveTo(u-v*b,f-x*b),h.lineTo(T,M),h.stroke(),h.beginPath(),h.moveTo(T-v*9+E*7,M-x*9+Y*7),h.lineTo(T,M),h.lineTo(T-v*9-E*7,M-x*9-Y*7),h.stroke()}h.font="600 11px Inter",h.textAlign="center";const j=L?b*.8:Math.abs(x)*b;h.fillText(g?En(o.direction):"not printed",u,f+j+14),h.globalAlpha=1,h.setLineDash([]);const H=(L?b*.8:Math.abs(v)*b)+18,U=j+18;He.push({kind:"stair",id:o.id,rect:{x:u-H,y:f-U,w:H*2,h:U*2}})})}let w=null,gt=0;const Z="window",G="door",se="copy";let k=null,R=null,Ke=0,Xe="swing",ye=null;const wn=e=>e===le||e===ne||e===Z||e===G||e===se&&k?.stage==="pick",Te=()=>(d.getProject().erases||[]).slice(-1)[0]||null,Lt=e=>{const{m:t,w:n,h:s}=Ae();return _n(t,n,s,e,{thickness:Re(t,n,s)})};let Ge=null;function $e(){if(Ge)return Ge;const e=S.naturalWidth,t=S.naturalHeight,n=document.createElement("canvas");n.width=e,n.height=t;const s=n.getContext("2d",{willReadFrequently:!0});s.drawImage(S,0,0);const a=s.getImageData(0,0,e,t).data,l=new Uint8Array(e*t),c=new Uint8Array(e*t);for(let o=0,r=0;o<a.length;o+=4,r++){const u=(a[o]+a[o+1]+a[o+2])/3;l[r]=u<128?1:0,c[r]=u<230?1:0}return Ge={m:l,soft:c,w:e,h:t,T:0},Ge}function bn(e){const{m:t,w:n,h:s}=Ae(),a=$e(),l=(Re(t,n,s)||2)*(a.w/n),c=Xn(a.m,a.w,a.h,e,{thickness:l});return c?{...e,...c,style:"wallshift"}:null}function yn(e){const{m:t,w:n,h:s}=Ae(),a=Yt(t,n,s,e),l=Math.max(8e-4,(Re(t,n,s)||2)*.5/n),c=Math.max(e.x1-e.x0,(e.y1-e.y0)*s/n)<1.5*Math.min(e.x1-e.x0,(e.y1-e.y0)*s/n);if(c){const r=bn(e);if(r)return r}const o=Lt(e);if(o!==e){const r=$e(),u=Kn(r.m,r.w,r.h,o);if(u){const f=u.horizontal?{x0:u.from,x1:u.to}:{y0:u.from,y1:u.to};return{...o,...f,style:"wallcopy",base:a,src:u.src,lw:l}}}if(!c){const r=bn(e);if(r)return r}return{...e,style:a,lw:l}}function kn(){const{m:e,w:t,h:n}=Ae();return(Re(e,t,n)||2)*($e().w/t)}function xn(e,t,n,s,a,l,c,o){const r=Math.round(Math.min(a,l))+1,u=Math.round(Math.max(a,l))-1,f=b=>{for(let v=r;v<=u;v++){const x=s?b:v,E=s?v:b;if(x<0||E<0||x>=t||E>=n||e[E*t+x])return!1}return!0};if(c=Math.round(c),!f(c))return 0;let p=c,g=c;for(;g-c<o&&f(g+1);)g++;for(;c-p<o&&f(p-1);)p--;return g-p+1}function Go(){const e=k;if(!e||e.stage!=="place"||!e.p)return;e.misfit=null;const t=$e(),n={x:e.p.x*t.w,y:e.p.y*t.h},s=kn(),a=Math.max((e.box.x1-e.box.x0)*t.w,(e.box.y1-e.box.y0)*t.h),l=e.src.horizontal?t.h:t.w,c=Math.round(e.src.c1*l)-Math.round(e.src.c0*l),o=Vn(t.m,t.w,t.h,n,a,s,c);if(!o){e.mark=null,e.refused="nowall";return}o.horizontal?n.x+=e.nudge:n.y+=e.nudge;const r=Jn(t.w,t.h,e.box,e.src,o,n,{fx:e.fx,fy:e.fy});e.refused=r.refused||null;const u=e.src.horizontal?t.h:t.w,f=e.src.horizontal?(e.box.x0+e.box.x1)/2*t.w:(e.box.y0+e.box.y1)/2*t.h,p=xn(t.m,t.w,t.h,e.src.horizontal,e.src.c0*u,e.src.c1*u,f,a),g=xn(t.m,t.w,t.h,o.horizontal,o.c0,o.c1,o.horizontal?n.x:n.y,a);e.misfit=p>0&&g>0&&Math.abs(p-g)>Math.max(3,.15*g)?p>g?"wider":"narrower":null,r.autoFlipped&&(e[r.autoFlipped]=!e[r.autoFlipped]),e.mark=r.refused?null:r}function vn(e,t){const n=$e();return n.T||(n.T=Zn(n.soft,n.w,n.h)),Qn(n.m,n.w,n.h,{x:e*n.w,y:t*n.h},{soft:n.soft,wallThickness:n.T})}function Vo(e){const t=$e(),n=e&&Gn(t.m,t.w,t.h,e,kn(),t.soft);n?k={stage:"place",box:e,src:n,fx:!1,fy:!1,p:null,nudge:0,mark:null,refused:null}:k&&(k.failed=!0)}let Ve=null,Mt=!1;function Jo(e,t){Mt||(Mt=!0,requestAnimationFrame(()=>{if(Mt=!1,k?.stage!=="pick"||R){Ve=null;return}Ve=vn(e,t),B()}))}const Qo={nowall:"Point at a wall: the copy goes into the wall nearest the pointer.",thickness:"This wall is drawn thicker or thinner than the one you copied from. Pick a door or window from a wall like this one, or draw one instead.",box:"Draw the box round the whole door or window."};let Pt={key:null,boxes:[]};function Tt(){const e=d.getProject()?.erases||[];if(!e.length||!S)return[];const t=`${S.src}|${Ut(e)}`;if(t!==Pt.key){const{m:n,w:s,h:a}=$e();Pt={key:t,boxes:Yn(n,s,a,e)}}return Pt.boxes}let Je=null;function Ae(){if(Je)return Je;const e=400,t=Math.max(1,Math.round(S.naturalHeight*e/S.naturalWidth)),n=document.createElement("canvas");n.width=e,n.height=t;const s=n.getContext("2d",{willReadFrequently:!0});s.drawImage(S,0,0,e,t);const a=s.getImageData(0,0,e,t).data,l=new Uint8Array(e*t);for(let c=0,o=0;c<a.length;c+=4,o++)l[o]=(a[c]+a[c+1]+a[c+2])/3<128?1:0;return Je={m:l,w:e,h:t},Je}function V(){const e=(d.getProject().erases||[]).length;i("eraseMode").classList.toggle("on",w===le),i("wallMode").classList.toggle("on",w===ne),i("windowMode").classList.toggle("on",w===Z),i("doorMode").classList.toggle("on",w===G);for(const[g,b]of[["eraseMode",le],["wallMode",ne],["windowMode",Z],["doorMode",G]])i(g).classList.toggle("active",w===b);i("doorMode").textContent=w===G||w===se&&ye===G?"Done":"Add a door",i("doorMode").classList.toggle("active",w===G||w===se&&ye===G),i("windowMode").classList.toggle("active",w===Z||w===se&&ye===Z),i("copyMode").textContent=w===se?"Draw one instead":"Or copy one that is drawn right on the plan",i("copyRow").hidden=k?.stage!=="place";const t=w===Z||w===G;i("drawInstead").hidden=!(w===se||t),i("copyFlipX").classList.toggle("active",!!k?.fx),i("copyFlipY").classList.toggle("active",!!k?.fy),i("swingRow").hidden=w!==G&&Te()?.style!=="door",i("swingRow").hidden||ns(),i("eraseMode").textContent=w===le?"Done":"Erase",i("wallMode").textContent=w===ne?"Done":"Close a wall",(w!==se||ye!==Z)&&(i("windowMode").textContent=w===Z?"Done":"Add a window"),i("eraseUndo").hidden=!e,i("eraseClear").hidden=!e,i("eraseNote").textContent=w===le?"Drag a box over anything our drawing added that is not on your plan. It is erased when you let go.":w===ne?"Drag a box over the opening, the way you would drag a selection.":w===Z?"Drag a box along the wall, from one side of the window to the other.":w===G?"Pick which way it opens, then drag a box along the wall, across the doorway.":w===se&&k?.stage==="pick"?k.failed?"No door or window in a wall was found there. Click on the door or window itself, or drag a box round it, or draw one instead.":"Click a door or window that is drawn right. Or drag a box round one, with a little wall either side.":w===se?k.refused?Qo[k.refused]:k.misfit?`This copy is ${k.misfit} than the opening here, and a copy keeps its own width. Press Draw one instead: a drawn one takes the width you drag.`:k.placed?"Placed. Flip or nudge it here, or click another wall for another copy.":"Click the wall where it goes. It follows the pointer until you do.":e?"Your corrections are part of this floor and travel with it.":"Click a label to fix its name or size. Drag it onto the right room. Exact placement comes later, in Studio.",D.style.cursor=w?"crosshair":"";const{m:n,w:s,h:a}=Ae(),l=d.getProject().erases||[],c=Un(n,s,a,l.filter(g=>g.c!==ne)),o=c>0&&c<.005?"<1":Math.round(c*100);let r="";if(e){const g=l.filter(x=>x.kind==="rect"&&x.c!==le),b=x=>g.filter(x).length,v=[`${o}% of the drawing erased`];for(const[x,E,Y]of[[b(L=>L.style!=="window"&&L.style!=="door"&&L.style!=="clone"),"wall fill","wall fills"],[b(L=>L.style==="clone"),"copied door or window","copied doors or windows"],[b(L=>L.style==="window"),"window","windows"],[b(L=>L.style==="door"),"door","doors"]])x&&v.push(`${x} ${x>1?Y:E}`);i("eraseCount").textContent=v.join(" · "),r=v.slice(1).join(" · ")}else i("eraseCount").textContent="";const u=c>.15,f=Tt();i("eraseGuard").hidden=!u&&!f.length,f.length&&!u&&(i("eraseGuard").textContent=`${f.length===1?"A small piece is":`${f.length} small pieces are`} left at the edge of your erases, ringed on the drawing. Erase it too: the render can turn a scrap like this into a wall or a door.`);const p=i("fixTools");i("fixSummary").textContent=r?`· ${r}`:"",i("fixSummary").className=u?"flag":"subtle",(w||e||u)&&(p.open=!0),u&&(i("eraseGuard").textContent=`About ${Math.round(c*100)}% of the drawing has been erased. That is a lot more than one door or closet. Check this is what you meant, or use Restore all.`)}i("labelInfoBtn").onclick=()=>{const e=i("labelInfo"),t=e.hidden;e.hidden=!t,i("labelInfoBtn").setAttribute("aria-expanded",String(t))},i("eraseMode").onclick=()=>{k=null,w=w===le?null:le,fe(null),K(null),V(),B(),w&&ce.toDrawing()},i("wallMode").onclick=()=>{k=null,w=w===ne?null:ne,fe(null),K(null),V(),B(),w&&ce.toDrawing()},i("windowMode").onclick=()=>{const e=w===Z||w===se&&ye===Z;k=null,ye=Z,w=e?null:Z,fe(null),K(null),V(),B(),w&&ce.toDrawing()};const Zo=["↖","↗","↘","↙"],es=e=>e?[3,0,1,2]:[3,2,1,0],ts=()=>{const e=Te();return e?.style==="door"?e.x1-e.x0>=e.y1-e.y0:!0};function ns(){const e=i("swingPicks"),t=Te()?.style==="door",n=t?Te().leaf==="bifold"?"bifold":"swing":Xe;for(const l of i("leafPicks").children)l.setAttribute("aria-checked",String(l.dataset.leaf===n));const s=t?Te().swing|0:Ke,a=es(ts());if(!e.childElementCount)for(let l=0;l<4;l++){const c=document.createElement("button");c.className="btn btn--secondary btn--sm",c.onclick=()=>ss(Number(c.dataset.swing)),e.append(c)}[...e.children].forEach((l,c)=>{const o=a[c];l.dataset.swing=String(o),l.textContent=Zo[c],l.title=`Opens ${["up and left","up and right","down and right","down and left"][c]}`,l.classList.toggle("active",o===s)})}function os(e){Xe=e==="bifold"?"bifold":"swing",Te()?.style==="door"&&d.updateLastErase({leaf:Xe==="bifold"?"bifold":void 0}),V(),B()}for(const e of document.querySelectorAll("#leafPicks button"))e.onclick=()=>os(e.dataset.leaf);function ss(e){Ke=((e|0)%4+4)%4,Te()?.style==="door"&&d.updateLastErase({swing:Ke}),V(),B()}i("doorMode").onclick=()=>{const e=w===G||w===se&&ye===G;k=null,ye=G,w=e?null:G,fe(null),K(null),V(),B(),w&&ce.toDrawing()},i("copyMode").onclick=()=>{w!==se?(ye=w===Z?Z:G,w=se,k={stage:"pick"}):(w=ye,k=null),fe(null),K(null),V(),B(),ce.toDrawing()};const At=()=>{Go(),k?.placed&&k.mark&&d.updateLastErase({...k.mark}),V(),B()},qe=e=>{!k||k.stage!=="place"||(e(k),At())};i("copyFlipX").onclick=()=>qe(e=>{e.fx=!e.fx}),i("copyFlipY").onclick=()=>qe(e=>{e.fy=!e.fy}),i("copyLess").onclick=()=>qe(e=>{e.nudge-=1}),i("copyMore").onclick=()=>qe(e=>{e.nudge+=1});function as(){k?.mark&&(d.addErase([{...k.mark,s:++gt}]),k.placed=!0,V(),B())}document.addEventListener("keydown",e=>{k?.stage!=="place"||!k.mark||e.target.closest?.("input, textarea")||((e.key==="ArrowLeft"||e.key==="ArrowUp")&&(qe(t=>{t.nudge-=1}),e.preventDefault()),(e.key==="ArrowRight"||e.key==="ArrowDown")&&(qe(t=>{t.nudge+=1}),e.preventDefault()))}),document.addEventListener("keydown",e=>{e.key!=="Escape"||e.target.closest?.("input, textarea, select")||!w&&!k&&!be&&!R||(w=null,k=null,R=null,fe(null),V(),B(),e.preventDefault())}),i("eraseUndo").onclick=()=>{d.undoErase(),V(),B()},i("eraseClear").onclick=()=>{d.clearErases(),V(),B()};let ge=[{url:S.src,label:"First drawing"}],Qe=0;function wt(e){const t=i("retraceMsg");t.textContent=e||"",t.hidden=!e,e&&(i("traceInfo").open=!0)}function Dt(){i("retraceNote").textContent=no(ge.length),i("retraceBtn").disabled=ge.length>=_t;const e=Math.max(0,_t-ge.length);i("traceInfoLabel").textContent=e?`Tracing again: ${e} free attempt${e===1?"":"s"} left`:"No free attempts left",e||(i("traceInfo").open=!0);const t=i("attemptRow");t.hidden=ge.length<2,t.innerHTML="",ge.forEach((n,s)=>{const a=document.createElement("button");a.className="btn btn--secondary btn--sm"+(s===Qe?" on":""),a.textContent=n.label,a.onclick=()=>Sn(s),t.append(a)})}const is=600*1e3;async function rs(){const e=P&&ae.getFloor(P.projectId,P.floorId).floor?.verified;if(!e)return;const t=await St(await Se(X,"wireframe"));if(!t?.sha)return;if(e.drawing?.sha){t.sha!==e.drawing.sha&&Nt();return}const{artifactTimes:n}=await import("./src/cloud-artifacts.js"),s=await n(X),a=Date.parse(s?.wireframe||""),l=Date.parse(e.confirmedAt||"");if(!(!Number.isFinite(a)||!Number.isFinite(l))){if(a>l+is){Nt();return}ae.setFloorVerified(P.projectId,P.floorId,{...e,drawing:t})}}function Nt(){const e=P&&ae.getFloor(P.projectId,P.floorId).floor?.verified;e&&ae.supersedeSignOff(P.projectId,P.floorId);const t=["spaces","stairs","nothingAdded"].filter(n=>d.getProject().checklist[n]);for(const n of t)d.unconfirmItem(n);if(e&&!t.length&&xt?.schedule(d.getProject()),t.length||e){const n=i("retraceMsg").hidden?"":`${i("retraceMsg").textContent} `;wt(`${n}This is a new drawing, so its steps are open again: check the room count, the staircases and that nothing was added, then confirm it.`)}}async function Sn(e){const t=e!==Qe;if(Qe=e,t&&(d.getProject().erases||[]).length){const n=d.getProject().erases.length;d.clearErases(),wt(`Your ${n} correction mark${n===1?"":"s"} belonged to the previous drawing, so they were cleared. Make them again on this one.`)}t&&Nt(),S=await ct(ge[e].url),Je=null,Ge=null,await $t(X,"wireframe",ge[e].url),ls(),Dt(),await fn(),ht(),B(),ce.refit()}function ls(){const e=d.getProject().labels||[];if(!e.length)return;const t=zt(zn(e,d.getProject().extraction),S);e.forEach((n,s)=>{const a=t.labels[s];a&&d.updateLabel(n.id,{x:a.x,y:a.y,fitWidth:a.fitWidth,fitBox:a.fitBox,ink:{x:a.x,y:a.y}})})}i("retraceBtn").onclick=async()=>{const e=i("retraceBtn");e.disabled=!0,wt("");const t=e.textContent,n=document.createElement("span");n.className="working",n.textContent="Drawing…",e.replaceChildren(n);const s=Date.now();let a=null;i("traceProgress").hidden=!1;const l=setInterval(()=>{i("traceElapsed").textContent=`${Math.round((Date.now()-s)/1e3)}s`},250);try{const c=await Se(X,"source"),{url:o}=await eo(c,z?.houseBox||null);ge=to(ge,{url:o,label:`Attempt ${ge.length+1}`}),await Sn(ge.length-1)}catch(c){a=`Could not trace again: ${c.message}`}finally{clearInterval(l),i("traceProgress").hidden=!0,i("traceElapsed").textContent="",e.textContent=t,Dt(),a&&wt(a)}};let W={state:"idle",flags:[],checked:0,error:""};function Cn(e=d.getProject()){const t=[...new Set(d.roomLabels().map(n=>(n.name||"").trim()).filter(Boolean))].sort();return`pr.inventory5:${X}:${Qe}:${t.join("|")}`}function cs(){try{const e=JSON.parse(localStorage.getItem(Cn())||"null");return e?.state==="done"?e:null}catch{return null}}async function $n(){const e=d.getProject(),t=[...new Set(d.roomLabels().map(n=>(n.name||"").trim()).filter(Boolean))];if(!t.length)return W={state:"done",flags:[],checked:0,error:""},ke();W={state:"running",flags:[],checked:t.length,error:"",done:0,total:0},ke();try{const n=j=>new Promise((H,U)=>{const T=new FileReader;T.onload=()=>H(String(T.result)),T.onerror=()=>U(new Error("could not read the image")),T.readAsDataURL(j)});let s=null;const a=async(j,H,U=null)=>{const[,T]=/^data:([^;]+);/.exec(j)||[,"image/png"],M=await oo("/api/room-inventory",JSON.stringify({imageBase64:j.split(",")[1],mimeType:T,rooms:t,phrasing:H}));if(W.done++,ke(),s&&Array.isArray(M.found)){const A=U||{x:0,y:0,w:1,h:1};for(const F of M.found){const $=F.box_2d;!Array.isArray($)||$.length!==4||!$.every(Number.isFinite)||s.push({kind:String(F.kind||""),room:String(F.room||"").trim().toUpperCase(),box:[A.x+$[1]/1e3*A.w,A.y+$[0]/1e3*A.h,A.x+$[3]/1e3*A.w,A.y+$[2]/1e3*A.h]})}}return M.rooms||[]},l=async(j,H)=>{const U=await n(j),T=await new Promise(($,J)=>{const ie=new Image;ie.onload=()=>$(ie),ie.onerror=()=>J(new Error("image failed to load")),ie.src=U}),M=T.naturalWidth,A=T.naturalHeight;if(!Xt(M,A))return a(U,H);const F=[];for(const $ of Kt(M,A)){const J=document.createElement("canvas");J.width=$.w,J.height=$.h,J.getContext("2d").drawImage(T,$.x,$.y,$.w,$.h,0,0,$.w,$.h),F.push(await a(J.toDataURL("image/png"),H,{x:$.x/M,y:$.y/A,w:$.w/M,h:$.h/A}))}return io(F)},c=await Se(X,"source");let o=await Se(X,"wireframe");const r=d.getProject().erases||[];if(o&&r.length){const j=document.createElement("canvas");j.width=S.naturalWidth,j.height=S.naturalHeight;const H=j.getContext("2d");H.drawImage(S,0,0),ze(H,j.width,j.height,r),o=await new Promise(U=>j.toBlob(T=>U(T||o),"image/png"))}const u=async j=>{try{const H=await n(j),U=await new Promise((A,F)=>{const $=new Image;$.onload=()=>A($),$.onerror=F,$.src=H}),T=U.naturalWidth,M=U.naturalHeight;return Xt(T,M)?Kt(T,M).length:1}catch{return 1}};W.total=await u(c)*2+await u(o)*2,ke();const f=await l(c);s=[];const p=await l(c,"b"),g=s;s=null;const{rows:b,disputed:v,stairsOf:x,kindsOf:E}=ro(f,p),Y=await l(o);s=[],await l(o,"b");const L=s;s=null,W={state:"done",checked:t.length,error:"",disputed:v,found:L,flags:co(so(b,Y,{exclude:v,stairsSource:x,kindsSource:E}),g,L).flags};try{localStorage.setItem(Cn(),JSON.stringify(W))}catch(j){console.warn("closet check not kept:",j)}}catch(n){W={state:"error",flags:[],checked:t.length,error:n.message}}ke()}const ds=e=>e.item||(e.stairs?"stairs":"closets");document.addEventListener("click",e=>{const t=e.target.closest?.(".show-room");if(!t)return;const n=Number(t.dataset.i),s=W.flags?.[n];if(!s)return;const a=String(s.room||"").trim().toUpperCase();if(Fe=Fe===n?-1:n,je=Fe<0?[]:[a],ut=Fe<0?[]:s.boxes?.length?s.boxes:s.kind!=="added"?[]:(W.found||[]).filter(l=>l.room===a&&l.kind===ds(s)).map(l=>l.box),ce.toDrawing(),je.length){const l=document.querySelector("header.app-header")?.offsetHeight||56;i("stagePanel").style.scrollMarginTop=`${l+8}px`,i("stagePanel").scrollIntoView({block:"nearest",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})}B(),ke()});function us(){if(W.state==="running")return'<br><span class="subtle">Comparing your plan with our drawing'+(W.total>1?`. This is ${W.total} reads of the drawing, one at a time`:"")+"…</span>";if(W.state==="error")return`<br><span class="subtle">Could not compare: ${W.error}. Look at the drawing yourself. That is what this row is for.</span>`;if(W.state!=="done")return"";const e=ao(W.flags,W.checked)+lo(W.disputed);return W.flags.length?`<br><span class="subtle">${e}</span><ul class="subtle finding-list">`+W.flags.map((t,n)=>{const s=Fe===n;return`<li${s?' class="on"':""}>${Ie(t.note)} <button type="button" class="show-room" data-i="${n}" aria-pressed="${s}">${s?"Shown":"Show"}</button></li>`}).join("")+"</ul>":`<br><span class="subtle">${e}</span>`}Dt();let we=null;D.addEventListener("pointerdown",e=>{const t=D.getBoundingClientRect(),n=(e.clientX-t.left)*(I/t.width),s=(e.clientY-t.top)*(N/t.height);if(k?.stage==="place"){k.placed=!1,k.p={x:n/I,y:s/N},k.nudge=0,k.dragging=!0,D.setPointerCapture(e.pointerId),At();return}if(wn(w)){R={from:{x:n/I,y:s/N},to:null},D.setPointerCapture(e.pointerId);return}if(be){const l=n/I,c=s/N;if(be==="label"){const o=d.addLabel(l,c);K({kind:"label",id:o.id})}else if(be==="equipment"){const o=tt===it,r=d.addLabel(l,c,{name:o?po:tt,kind:"equipment"});K({kind:"label",id:r.id}),o&&(i("labelName").focus(),i("labelName").select())}else if(be==="stair"){const o=d.addStaircase(l,c);K({kind:"stair",id:o.id})}fe(null);return}const a=[...He].reverse().find(l=>n>=l.rect.x&&n<=l.rect.x+l.rect.w&&s>=l.rect.y&&s<=l.rect.y+l.rect.h);a?(K(a),we={kind:a.kind,id:a.id,moved:!1},D.setPointerCapture(e.pointerId)):(K(null),ce.beginPan(e))}),D.addEventListener("pointermove",e=>{if(k?.stage==="place"&&(e.pointerType==="mouse"||k.dragging)){k.placed&&(k.placed=!1);const a=D.getBoundingClientRect();k.p={x:(e.clientX-a.left)/a.width,y:(e.clientY-a.top)/a.height},k.nudge=0,At();return}if(k?.stage==="pick"&&!R&&e.pointerType==="mouse"){const a=D.getBoundingClientRect();Jo((e.clientX-a.left)/a.width,(e.clientY-a.top)/a.height)}if(R){const a=D.getBoundingClientRect();R.to={x:(e.clientX-a.left)/a.width,y:(e.clientY-a.top)/a.height},B();return}if(!we)return;const t=D.getBoundingClientRect(),n=(e.clientX-t.left)/t.width,s=(e.clientY-t.top)/t.height;we.moved=!0,we.kind==="stair"?d.updateStaircase(we.id,{position:{x:n,y:s}}):d.updateLabel(we.id,{x:n,y:s})}),D.addEventListener("pointerup",()=>{if(k?.dragging&&(k.dragging=!1,k.stage==="place")){as(),we=null;return}if(R&&w===se){const e=R.to?st(R.from,R.to,ne):null,t=$e(),n=!e||(e.x1-e.x0)*t.w<6&&(e.y1-e.y0)*t.h<6,s=R.from;R=null,Ve=null,Vo(n?vn(s.x,s.y):at(e)?null:e),V(),B(),we=null;return}if(R){if(R.to){let e=st(R.from,R.to,w===le?le:ne);if((w===Z||w===G)&&(e=Lt(e)),w===le)at(e)||d.addErase([{...e,s:++gt}]);else if(!at(e)){const{m:t,w:n,h:s}=Ae();if(w===ne){d.addErase([{...yn(e),s:++gt}]),R=null,V(),B(),we=null;return}const a=wn(w)&&w!==ne?w:Yt(t,n,s,e),l=Math.max(8e-4,(Re(t,n,s)||2)*.5/n);d.addErase([{...e,s:++gt,style:a,lw:l,...a==="door"?{swing:Ke,...Xe==="bifold"?{leaf:"bifold"}:{}}:{}}])}}R=null,V(),B()}we=null});function Ze(){const e=document.querySelector(".tool.open")||i("edit");if(!e)return;const t=!matchMedia("(prefers-reduced-motion: reduce)").matches;e.scrollIntoView({block:"center",behavior:t?"smooth":"auto"})}function K(e){C=e?{kind:e.kind,id:e.id}:null;for(const t of["labelTool","stairTool"])i(t).classList.remove("open");if(C?.kind==="label"){const t=d.getProject().labels.find(s=>s.id===C.id),n=t.kind==="equipment";i("labelToolHead").textContent=n?"Equipment":"Label",i("labelNameLabel").textContent=n?"Code":"Room name",i("labelDimRow").hidden=n,i("labelName").value=t.name||"",i("labelDim").value=t.dim||"",n?i("labelShorten").hidden=!0:Bt(t),n||(hs(t),ms(t)),i("labelDelete").textContent=n?"Delete":"Delete label",i("labelToEquip").textContent=n?"This is a room":"Not a room (water heater, A/C…)",i("labelTool").classList.add("open")}else C?.kind==="stair"&&(et(d.getProject().staircases.find(t=>t.id===C.id)),i("stairTool").classList.add("open"));B(),C&&fs()}function fs(){const e=i("toolColumn"),t=document.querySelector(".tool.open");if(!t||getComputedStyle(e).overflowY!=="auto")return;const n=e.getBoundingClientRect(),s=t.getBoundingClientRect(),a=i("actionDock"),l=Math.max(n.top,0),c=Math.min(n.bottom,a.hidden?innerHeight:a.getBoundingClientRect().top);if(s.top>=l&&s.bottom<=c)return;const o=!matchMedia("(prefers-reduced-motion: reduce)").matches;e.scrollTo({top:e.scrollTop+(s.top-l)-8,behavior:o?"smooth":"auto"})}const he=640,me=260;function hs(e){const t=i("srcCrop"),n=i("srcCropNote"),s=t.getContext("2d");if(t.width=he,t.height=me,s.fillStyle="#fff",s.fillRect(0,0,he,me),!O?.naturalWidth){n.textContent="";return}const a=We?.transform,l=a?a.dx+e.x*a.sx:e.x,c=a?a.dy+e.y*a.sy:e.y,o=O.naturalWidth,r=O.naturalHeight,u=o*.26,f=u*(me/he);let p=l*o-u/2,g=c*r-f*.34;p=Math.max(0,Math.min(o-u,p)),g=Math.max(0,Math.min(r-f,g)),s.imageSmoothingQuality="high",s.drawImage(O,p,g,u,f,0,0,he,me),mn(s,0,0,he,me);const b=(l*o-p)/u*he,v=(c*r-g)/f*me;s.strokeStyle="#211E19",s.lineWidth=2,s.setLineDash([5,4]),s.strokeRect(b-he*.16,v-me*.1,he*.32,me*.3),s.setLineDash([]);const x=e.name?`Editing ${Ie(e.name)}. `:"";n.innerHTML=a?`<b>${x}</b>Check the name above matches, then type the size exactly as printed. If none is printed, leave it empty.`:`<b>${x}</b>Approximate position: our drawing could not be lined up with your plan.`}function ms(e){const t=i("wfCrop"),n=t.getContext("2d");if(t.width=he,t.height=me,n.fillStyle="#fff",n.fillRect(0,0,he,me),!S?.naturalWidth)return;const s=We?.transform,a=S.naturalWidth,l=S.naturalHeight,c=a*.26/(s?.sx||1),o=c*(me/he);let r=e.x*a-c/2,u=e.y*l-o*.34;r=Math.max(0,Math.min(a-c,r)),u=Math.max(0,Math.min(l-o,u)),n.imageSmoothingQuality="high",n.drawImage(S,r,u,c,o,0,0,he,me)}function Bt(e){const t=i("labelShorten"),n=e.name?go(e.name):null;t.hidden=!n||n===e.name,t.hidden||(t.textContent=`Shorten to “${n}”`,t.dataset.short=n)}i("labelShorten").onclick=()=>{if(!C)return;d.updateLabel(C.id,{name:i("labelShorten").dataset.short});const e=d.getProject().labels.find(t=>t.id===C.id);i("labelName").value=e.name,Bt(e)},i("labelName").oninput=()=>{C&&(d.updateLabel(C.id,{name:i("labelName").value||null}),Bt(d.getProject().labels.find(e=>e.id===C.id)))},i("labelDim").oninput=()=>C&&d.updateLabel(C.id,{dim:i("labelDim").value||null}),i("labelToEquip").onclick=()=>{if(!C)return;const e=d.getProject().labels.find(t=>t.id===C.id);e&&(d.updateLabel(C.id,e.kind==="equipment"?{kind:"room",size:null}:{kind:"equipment",dim:null,size:null}),K({kind:"label",id:C.id}))},i("labelDelete").onclick=()=>{C&&(d.deleteLabel(C.id),K(null))},i("labelClose").onclick=()=>K(null);const bt=()=>d.getProject().staircases.find(e=>e.id===C?.id);function En(e){return e==="up"?"UP":e==="down"?"DN":"set direction"}i("stairDir").addEventListener("click",e=>{const t=e.target.closest("button[data-direction]");!t||!C||(d.updateStaircase(C.id,{direction:t.dataset.direction}),et(bt()))}),i("stairLen").addEventListener("click",e=>{const t=e.target.closest("button[data-len]");!t||!C||(d.updateStaircase(C.id,{length:t.dataset.len}),et(bt()))}),i("stairHeading").addEventListener("click",e=>{const t=e.target.closest("button[data-heading], button[data-turn]");!t||!C||(d.updateStaircase(C.id,t.dataset.turn?{kind:"spiral",turn:t.dataset.turn}:{kind:"straight",heading:t.dataset.heading}),et(bt()))}),i("stairPrinted").addEventListener("click",e=>{const t=e.target.closest("button[data-printed]");!t||!C||(d.updateStaircase(C.id,{printed:t.dataset.printed==="1"}),et(bt()))});function et(e){const t=e?.kind??"straight",n=e?.printed!==!1;for(const o of i("stairPrinted").querySelectorAll("button[data-printed]"))o.classList.toggle("active",o.dataset.printed==="1"===n);i("stairPrintedWhy").textContent=n?"An arrow and UP or DN will be drawn on your image.":"Your plan’s own arrow is kept in the render, but its UP and DN lettering is not. Look at the render: print this only if no arrow survived.",i("stairShapeRow").style.display=n?"":"none";const s=e?.heading??(e?.direction==="up"?"up":"down");for(const o of i("stairHeading").querySelectorAll("button"))o.classList.toggle("active",t==="spiral"?o.dataset.turn===e?.turn:o.dataset.heading===s);const a=t==="spiral"&&e?.turn!=="cw"&&e?.turn!=="ccw";i("stairTurnWhy").style.display=a?"":"none",i("stairTurnWhy").textContent=a?"This stair is round. Pick the circle that matches how it turns going up. Until you do, the 3D view turns it clockwise.":"",i("stairLenLabel").textContent=t==="spiral"?"Marker size":"Marker length";for(const o of i("stairLen").querySelectorAll("button[data-len]"))o.classList.toggle("active",o.dataset.len===(e?.length??"medium"));const l=e?.direction;for(const o of i("stairDir").querySelectorAll("button[data-direction]"))o.classList.toggle("active",o.dataset.direction===l);const c=l!=="up"&&l!=="down";i("stairDirWhy").hidden=!c,i("stairDirWhy").textContent=c?"Which way does this stair go? The word on your plan was not read. The 3D view stands a stair only once you have said.":""}i("stairDelete").onclick=()=>{C&&(d.deleteStaircase(C.id),K(null))},i("stairClose").onclick=()=>K(null);let tt=null;function fe(e,t=null){be=e,tt=e==="equipment"?t:null,e&&w&&(w=null,V(),B()),e&&(i("fixTools").open=!0),e&&ce.toDrawing(),i("addLabelBtn").classList.toggle("active",e==="label"),i("addStairBtn").classList.toggle("active",e==="stair");for(const n of i("equipPicker").querySelectorAll("button"))n.classList.toggle("active",e==="equipment"&&n.dataset.code===t);D.style.cursor=e?"crosshair":""}i("addLabelBtn").onclick=()=>fe(be==="label"?null:"label"),i("addStairBtn").onclick=()=>fe(be==="stair"?null:"stair");for(const{group:e,items:t}of mo){const n=document.createElement("div");n.className="eq-group",n.textContent=e;const s=document.createElement("div");s.className="eq-list";for(const a of t){const l=document.createElement("button");l.className="btn btn--secondary btn--sm",l.textContent=a.code,l.dataset.code=a.code,l.title=a.name,l.onclick=()=>fe(be==="equipment"&&tt===a.code?null:"equipment",a.code),s.append(l)}i("equipPicker").append(n,s)}{const e=document.createElement("div");e.className="eq-list",e.style.marginTop="var(--s-2)";const t=document.createElement("button");t.className="btn btn--secondary btn--sm",t.id="eqCustom",t.textContent="Custom…",t.style.fontFamily="inherit",t.title="Place a label and type your own text",t.dataset.code=it,t.onclick=()=>fe(be==="equipment"&&tt===it?null:"equipment",it),e.append(t),i("equipPicker").append(e)}window.addEventListener("keydown",e=>{const t=e.target;if(!(t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName||"")))){if(e.key==="Delete"&&C){C.kind==="label"&&d.deleteLabel(C.id),C.kind==="stair"&&d.deleteStaircase(C.id),K(null);return}if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&(e.key==="z"||e.key==="Z")){if(!(d.getProject().erases||[]).length)return;e.preventDefault(),d.undoErase(),V(),B()}}});const ps=[{key:"spaces",text:e=>{const t=e.labels.filter(d.isRoom),n=t.filter(l=>!l.name).length,s=rt(e.labels);if(s.length){const l=s.map(c=>Ie(c.name)).join("</b>, <b>");return`<b style="color:var(--err)">${s.length} label${s.length>1?"s read":" reads"} as a note, not a room</b>: <b>${l}</b>. ${s[0].reason} Rename or delete each, then confirm the count.`}const a=t.length-n;return n?`<b>${t.length}</b> space${t.length===1?"":"s"} found, <b>${a}</b> pinned on your plan. <b>${n}</b> came back without a name, so ${n>1?"they are":"it is"} not pinned yet. Name ${n>1?"them":"it"} first.`:`<b>${t.length}</b> space${t.length===1?"":"s"} found, all pinned on your plan. Look for a room on your plan with <b>no pin</b>.`},compare:!0,fixWhen:e=>rt(e.labels).length>0||e.labels.some(t=>!t.name),fix:()=>{const e=d.getProject().labels,t=rt(e)[0],n=t&&e.find(s=>s.id===t.id)||e.find(s=>!s.name);n&&(K({kind:"label",id:n.id}),Ze())},fixLabel:e=>{const t=rt(e.labels).length;if(t)return`Fix ${t} label${t>1?"s":""}`;const n=e.labels.filter(s=>d.isRoom(s)&&!s.name).length;return`Name ${n} space${n>1?"s":""}`}},{key:"nothingAdded",text:()=>"Compare our drawing with your plan and look for a <b>wall, door or closet that is not on your plan</b>. Our drawing sometimes adds one, usually beside a dimension line or in a bedroom with no closet. Use <b>Erase</b> or <b>Close a wall</b> below to remove it. Erase any <b>dimension lines, north arrow or title</b> left outside the building too: the render leaves them out."+us(),compare:!0,auto:!0,probe:{label:()=>W.state==="running"?W.total?`Checking ${W.done+1} of ${W.total}`:"Checking…":"Check again",disabled:()=>W.state==="running",run:$n}},{key:"stairs",text:e=>{if(!e.staircases.length)return"No staircase detected. Add one if the plan has stairs";const t=e.staircases.length,n=e.staircases.filter(a=>a.printed!==!1).length,s=e.staircases.filter(a=>a.direction!=="up"&&a.direction!=="down").length;return`<b>${t}</b> staircase${t>1?"s":""}: `+e.staircases.map(a=>`<b>${En(a.direction)}</b>`).join(" · ")+(s?`<br>Set UP or DN on <b>${s}</b> of them. Until you do, the 3D view shows ${s>1?"them":"it"} going up (down on an upper floor), and you can turn ${s>1?"them":"it"} round there too.`:"")+"<br>Your plan’s own stair arrow stays in the render; its UP and DN lettering does not. "+(n?`Printing our arrow on <b>${n}</b> of them. Turn it off for any stair that already shows one.`:"Look at the render, and print ours only on a stair that lost its arrow.")},fix:()=>{const e=d.getProject().staircases[0];e?(K({kind:"stair",id:e.id}),Ze()):(fe("stair"),Ze())},fixLabel:e=>e.staircases.length?"Edit staircase":"Add staircase"},{key:"dims",block:e=>{const t=Oe(e).length;return t?`Check ${t} dimension${t>1?"s":""} against your plan, then keep, retype or clear ${t>1?"them":"it"}.`:null},resolve:[{label:e=>Oe(e).length>1?"These match my plan":"It matches my plan",run:()=>{const e=Oe(d.getProject()),t=e.map(n=>`${n.name||"an unlabelled space"}: ${n.dim}`);qt({title:e.length>1?"Keep these figures as they are?":"Keep this figure as it is?",body:[...t,"Confirming records that you checked each of these against your own plan."],confirm:"I checked them"}).then(n=>{if(n)for(const s of e)d.keepDim(s.id)})}},{label:"Clear them",run:()=>{for(const e of Oe(d.getProject()))d.updateLabel(e.id,{dim:null})}}],text:e=>{const t=e.labels.filter(s=>s.dim).length;if(!t)return"No dimensions on this plan. Add them by hand, or confirm as is.";const n=Oe(e);if(n.length){const s=n.map(r=>Ie(r.name||"an unlabelled space")).join(", "),l=n.some(r=>r.kind)?`${n.length} dimension${n.length>1?"s do":" does"} not look like a room size`:`${n.length} dimension${n.length>1?"s need":" needs"} a look`,c=[...new Set(n.map(r=>r.reason))],o=c.length===1?`<b>${s}</b>. ${Ie(c[0])}`:n.map(r=>`<b>${Ie(r.name||"An unlabelled space")}</b>: ${Ie(r.reason)}`).join(" ");return`<b style="color:var(--err)">${l}</b>: ${o} Keep each one that matches your plan, or retype or clear it.`}return Ue?`<b>${Ue.agreed}</b> dimensions confirmed by two readings`+(Ue.unverified?` · <b>${Ue.unverified}</b> not cross-checked`:""):`<b>${t}</b> dimensions transcribed. Spot-check against your plan`},fix:()=>{const e=d.getProject().labels,t=Oe(d.getProject())[0],n=t&&e.find(s=>s.id===t.id)||e.find(s=>s.dim)||e.find(s=>s.name);n?(K({kind:"label",id:n.id}),Ze()):(fe("label"),Ze())},fixLabel:()=>"Check a dimension"}],gs={geometry:"Same outline as your plan",spaces:"Room count",nothingAdded:"No extra walls or doors",stairs:"Staircases",dims:"Dimensions",specs:"Beds, baths and size"};let De=null;function Oe(e){const t=Co(e.labels),n=new Set(t.map(l=>l.id)),s=new Set((e.labels||[]).filter(l=>l.dim).map(l=>l.id));for(const l of Et)!n.has(l.id)&&s.has(l.id)&&(t.push(l),n.add(l.id));for(const l of Ue?.rows||[]){if(l.status!=="disagree")continue;const c=(e.labels||[]).find(o=>o.dim&&!n.has(o.id)&&Vt(o.name)===Vt(l.name));!c||Jt(c.dim)!==Jt(l.extracted)||(t.push({id:c.id,name:c.name,dim:c.dim,reason:`We read ${l.extracted} on your plan and ${l.wireframe} on our drawing. Type the figure printed on your plan.`}),n.add(c.id))}const a=new Map((e.labels||[]).map(l=>[l.id,l.dimKept]));return t.filter(l=>{const c=(e.labels||[]).find(o=>o.id===l.id);return!(c&&a.get(l.id)&&a.get(l.id)===c.dim)})}const ws=(e=d.getProject())=>{const t=ps.map(n=>({key:n.key,check:n}));return t.push({key:"specs",specs:!0}),e.geometry&&!e.geometry.ok&&t.unshift({key:"geometry",geo:!0}),t},In=(e,t)=>e.geo?!!t.geometry?.acknowledged:e.specs?!!t.specs?.confirmed:!!t.checklist[e.key];{const e=document.getElementById("fixTools"),t=document.getElementById("toolColumn");let n=!1;const s=()=>{t.classList.contains("fixing")||(t.classList.add("fixing"),Ln(),requestAnimationFrame(()=>e.scrollIntoView({block:"nearest",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"})))};e.querySelector("summary").addEventListener("click",()=>{n=!0}),e.querySelector(".toolzone").addEventListener("click",a=>{a.isTrusted&&e.open&&a.target.closest("button")&&s()}),e.addEventListener("toggle",()=>{e.open&&n&&s(),e.open||t.classList.remove("fixing"),n=!1}),document.getElementById("stepsFolded").onclick=()=>{e.open=!1}}function Ln(){const e=document.querySelectorAll("#stepsAbove .step, #stepsBelow .step"),t=document.querySelectorAll("#stepsAbove .step.is-done, #stepsBelow .step.is-done").length,n=document.getElementById("stepsFolded");n.innerHTML="";const s=document.createElement("span");s.textContent=`Steps · ${t} of ${e.length} confirmed`;const a=document.createElement("span");a.className="sf-show",a.textContent="Show",n.append(s,a),n.setAttribute("aria-label",`Show the steps, ${t} of ${e.length} confirmed, and close Fix the drawing`)}function ke(e=d.getProject()){const t=i("checklist");t.innerHTML="";const n=ws(e),s=n.findIndex(r=>!In(r,e)),a=De===null?s===-1?n.length:s:De,l=i("stepsAbove"),c=i("stepsBelow");l.replaceChildren(),c.replaceChildren(),n.forEach((r,u)=>{const f=In(r,e),p=u===a,g=!f&&(r.geo||(r.check?.block?!!r.check.block(e):!1)),b=document.createElement("li");b.className=`step${f?" is-done":""}${p?" is-open":""}${g?" is-stuck":""}`;const v=document.createElement("button");v.type="button",v.className="step__head",v.setAttribute("aria-expanded",String(p)),p&&v.setAttribute("aria-current","step");const x=document.createElement("span");x.className="step__mark",x.setAttribute("aria-hidden","true"),x.textContent=f?"✓":String(u+1);const E=document.createElement("span");E.className="step__name",E.textContent=gs[r.key]||"";const Y=document.createElement("span");Y.className="step__state",Y.textContent=f?"Confirmed":g?"Needs a look":"",v.append(x,E,Y);const L=s===-1?n.length:s;v.disabled=!(f||u===L),v.onclick=()=>{De=p&&f||u===L?null:u,ke()},b.append(v),(u<=a?l:c).append(b)}),document.getElementById("toolColumn").classList.contains("fixing")&&Ln(),i("specCard").hidden=!(n[a]&&n[a].specs),i("doneCard").hidden=a!==n.length,n[a]?.geo&&bs(e,t);const o=n[a]?.check;if(!o?.auto&&je.length&&(je=[],ut=[],Fe=-1,setTimeout(B,0)),o?.auto&&W.state==="idle"){const r=cs();r?(W=r,setTimeout(()=>ke(),0)):setTimeout($n,0)}for(const r of n[a]&&n[a].check?[n[a].check]:[]){const u=document.createElement("li"),f=e.checklist[r.key];u.className=f?"confirmed":"",u.innerHTML=`<div class="row"><span class="state">${f?"✓":"○"}</span><span class="label">${r.text(e)}</span><span class="actions"></span></div>`;const p=u.querySelector(".actions"),g=r.block?r.block(e):null;if(r.probe){const b=document.createElement("button");b.className="btn btn--secondary btn--sm",b.textContent=r.probe.label(),b.disabled=r.probe.disabled(),b.onclick=r.probe.run,p.append(b)}if(f){const b=document.createElement("button");b.className="btn btn--secondary btn--sm",b.textContent="Undo",b.onclick=()=>{De=a,d.unconfirmItem(r.key)},p.append(b)}else{const b=document.createElement("button");b.className="btn btn--secondary btn--sm",b.textContent="Confirm",b.disabled=!!g,g&&(b.title=g),b.onclick=()=>{De=null,d.confirmItem(r.key)},p.append(b);for(const x of g&&r.resolve?[].concat(r.resolve):[]){if(x.when&&!x.when(e))continue;const E=document.createElement("button");E.className="btn btn--secondary btn--sm",E.textContent=typeof x.label=="function"?x.label(e):x.label,E.onclick=x.run,p.append(E)}if(r.compare){const x=document.createElement("button");x.className="btn btn--secondary btn--sm",x.textContent="Compare",x.onclick=()=>ce.compare(),p.append(x)}if(r.fix&&(!r.fixWhen||r.fixWhen(e))){const x=document.createElement("button");x.className="btn btn--secondary btn--sm",x.textContent=r.fixLabel?r.fixLabel(e):"Fix",x.onclick=r.fix,p.append(x)}const v=g?p.querySelector("button:not([disabled])"):r.fix&&(!r.fixWhen||r.fixWhen(e))?p.lastElementChild:b;v&&!v.disabled&&(v.className="btn btn--primary btn--sm")}t.append(u)}}function bs(e,t){const n=document.createElement("li"),s=oe.ok,a=e.geometry?.acknowledged;n.className=s||a?"confirmed":"";const l=(We.aspectTolerance*100).toFixed(0),c=s?"✓":a?"!":"✗",o=s?"":a?" warn":" err",r=oe.sourceIsAnnotated?"Construction sheets often read high here, because their dimensions and notes reach past the building.":"Our drawing leaves out dimension lines and notes, so this check often reads high.";if(n.innerHTML=`<div class="row"><span class="state${o}">${c}</span><span class="label">`+(s?`Outline matches, within <b>${(oe.aspectDev*100).toFixed(2)}%</b> (limit ${l}%)`:`<b>${/^Linework/.test(oe.reason||"")?"Some lines differ from your plan.":"The outline differs a little from your plan."}</b> `+(a?"You checked it yourself.":`${r} If the rooms and walls match your plan, confirm. Re-upload only if whole areas are wrong.`))+'</span><span class="actions"></span></div>',!s){const u=n.querySelector(".actions");if(a){const f=document.createElement("button");f.className="btn btn--secondary btn--sm",f.textContent="Undo",f.onclick=()=>{De=0,d.unacknowledgeGeometry()},u.append(f)}else{const f=document.createElement("button");f.className="btn btn--primary btn--sm",f.textContent="Confirm",f.onclick=()=>{qt({title:"Confirm without an automatic geometry check?",body:["The geometry could not be checked automatically.","Confirming records that you checked it yourself."],confirm:"I checked it"}).then(g=>{g&&(De=null,d.acknowledgeGeometry())})};const p=document.createElement("button");p.className="btn btn--secondary btn--sm",p.textContent="Re-upload",p.onclick=()=>{location.href=P?ot("extract.html",P.projectId,P.floorId):"extract.html"},u.append(f,p)}}t.append(n)}const xe=d.suggestSpecs();{const e=d.getProject().specs,t=e.confirmed||e.beds!=null||e.baths!=null;i("specBeds").value=t?e.beds??"":xe.beds,i("specBaths").value=t?e.baths??"":xe.baths,i("specSqft").value=t&&e.sqft!=null?e.sqft:""}i("sqftNote").textContent=xe.roomSum?`Enter your official figure. The ${xe.roomsCounted} sized space${xe.roomsCounted===1?"":"s"} add up to ${xe.roomSum.toLocaleString("en-US")} sq ft, which leaves out walls, stairs and hallways`+(xe.roomsMissing?`, and ${xe.roomsMissing} space${xe.roomsMissing===1?"":"s"} with no printed dimension. `:". ")+"Leave empty to print no size.":"No dimensions to add up. Enter the official figure.",Nn();let yt=typeof d.getProject().specs.below=="boolean"?d.getProject().specs.below:uo({names:[_?.floor?.name,_?.floor?.planTitle],labels:d.getProject().labels});const Mn=()=>i("specBelow").setAttribute("aria-checked",String(yt));Mn();const Pn=()=>{yt=!yt,Mn(),d.setSpecs({confirmed:!1})};i("specBelow").onclick=Pn;let kt=d.getProject().specs.suite===!0;const Tn=()=>i("specSuite").setAttribute("aria-checked",String(kt));Tn();const An=()=>{kt=!kt,Tn(),d.setSpecs({confirmed:!1})};i("specSuite").onclick=An,i("specSuiteLabel").onclick=An,i("specBelowLabel").onclick=Pn,i("specConfirm").onclick=()=>d.confirmSpecs({beds:Number(i("specBeds").value),baths:Number(i("specBaths").value),sqft:i("specSqft").value.trim()===""?null:Number(i("specSqft").value),below:yt,suite:kt});for(const e of["specBeds","specBaths","specSqft"])i(e).addEventListener("input",()=>d.setSpecs({confirmed:!1}));i("confirmBtn").onclick=async()=>{const e=d.confirmAndStyle(await qn()||"an unidentified user");if(xt?.cancel(),i("doneText").replaceChildren(...ys(e)),P){ae.ensureSeed();const t=Fo(P.projectId,P.floorId);await jo(X,t),X=t;const n=await St(await Se(t,"source")),s=await St(await Se(t,"wireframe")),a=ae.getFloor(P.projectId,P.floorId).floor?.verified||{};ae.setFloorVerified(P.projectId,P.floorId,Io(a,e,{verdict:oe,acknowledgedAt:d.getProject().geometry?.acknowledgedAt,artifactScope:t,source:n,drawing:s})),Rt(`Saved ${new Date().toLocaleTimeString()}`),Fn().catch(()=>{})}Hn("review_confirmed",{seconds:Math.round(performance.now()/1e3),rooms:e.labels.filter(d.isRoom).length,sizes:e.labels.filter(t=>d.isRoom(t)&&t.dim).length}),i("doneDialog").showModal()};function ys(e){const t=e.labels.filter(d.isRoom),n=t.filter(r=>r.dim).length,s=(e.staircases||[]).length,a=e.specs||{},l=[a.beds!=null&&`${a.beds} bed${a.suite===!0?" + suite":""}`,a.baths!=null&&`${a.baths} bath`,a.sqft!=null&&`${Number(a.sqft).toLocaleString()} sqft`].filter(Boolean).join(" · "),c=new Date(e.confirmedAt).toLocaleString(void 0,{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});return[["Confirmed by",e.confirmedBy],["On",c],["Spaces",String(t.length)],["Dimensions",n?`${n} transcribed from your plan`:"None printed on this plan"],["Staircases",s?String(s):"None on this floor"],["Listing",l||"Not stated"]].flatMap(([r,u])=>{const f=document.createElement("dt");f.textContent=r;const p=document.createElement("dd");return p.textContent=u,[f,p]})}i("toStudio").onclick=()=>{sessionStorage.setItem("confirmedProject",JSON.stringify(Lo(d.getProject(),{mock:dt||!!z.mock,artifactScope:X}))),location.href=P?ot("studio.html",P.projectId,P.floorId):"studio.html"};function Rt(e){const t=i("saveState");t&&(t.textContent=e)}const xt=P?Mo({store:ae,projectId:P.projectId,floorId:P.floorId,session:sessionStorage,note:Rt}):null;rs().catch(e=>console.warn("drawing check skipped:",e));function ks(e){if(!xt){Rt("Sample plan. Nothing is saved.");return}xt.schedule(e)}document.fonts.load("600 20px Inter").then(()=>document.fonts.load("500 20px Inter")).then(()=>document.fonts.load("400 20px Inter")).then(()=>document.fonts.ready).then(()=>It).then(()=>{S&&B()}).catch(()=>{});const Dn=e=>{i("specState").textContent=e.specs.confirmed?"✓ confirmed":""};d.subscribe(e=>{B(),dn(e),ke(e),Nn(e),Dn(e),Wt(),ks(e)}),Dn(d.getProject());function Nn(e=d.getProject()){const t=yo(e),n=ko(t);i("roomTableCount").textContent=t.length?`· ${n.counted} of ${t.length} sized`:"";const s=i("roomTableBody");if(s.textContent="",!t.length){s.append(te("div","subtle","No spaces confirmed yet."));return}const a=te("table","roomtable"),l=te("tr");l.append(te("th","","Space, as your plan prints it")),l.append(te("th","num","Area")),a.append(l);for(const o of t){const r=te("tr"),u=te("td");u.append(te("div",o.name?"":"muted",o.name||"Unnamed space")),u.append(te("div",o.dim?"dim":"dim muted",o.dim||"no dimension printed")),r.append(u),r.append(te("td",o.area===null?"num muted":"num",o.area===null?"—":`${Math.round(o.area).toLocaleString("en-US")} sq ft`)),a.append(r)}if(s.append(a),ae.houseStyleOf(ae.kitOf(_?.project))?.roundDimensions&&s.append(te("div","subtle","Your brand kit rounds dimensions to whole feet on the plan image. These are your plan’s own figures, and the areas are calculated from them.")),n.counted===0){s.append(te("div","subtle","This plan prints no dimensions, so no areas could be calculated."));return}const c=te("div","roomtable-sum");c.append(te("span","",n.missing?`Sum of the ${n.counted} space${n.counted===1?"":"s"} with a printed dimension`:"Sum of the spaces listed above")),c.append(te("span","num",`${n.sum.toLocaleString("en-US")} sq ft`)),s.append(c),s.append(te("div","subtle","This is not the floor area. It leaves out walls, hallways, stairs and "+(n.missing?`the ${n.missing} space${n.missing===1?"":"s"} above with no printed dimension.`:"anything the plan does not print a dimension for.")))}function te(e,t,n){const s=document.createElement(e);return t&&(s.className=t),n!=null&&(s.textContent=n),s}function Wt(){const e=d.remainingToConfirm(),t=i("confirmBtn");t.disabled=e.length>0,t.title=e.length?`Still to confirm: ${e.join(", ")}.`:"";const n=d.gateItemCount();i("gateNote").textContent=e.length?`${n-e.length} of ${n} confirmed. Next: ${e[0]}.`:"",i("gateNote").classList.toggle("done",e.length===0)}{const e=i("reviewActions"),t=i("statusLine"),n=i("reviewSide"),s=i("actionRow"),a=i("actionDock"),l=a.firstElementChild,c=()=>{a.hidden&&(n.style.minHeight=`${n.offsetHeight}px`,n.style.minWidth=`${n.offsetWidth}px`,l.append(t,e),a.hidden=!1,document.body.classList.add("docked"),a.setAttribute("data-leaving",""),requestAnimationFrame(()=>a.removeAttribute("data-leaving")))},o=()=>{a.hidden||(n.prepend(e),s.prepend(t),n.style.minHeight="",n.style.minWidth="",a.hidden=!0,document.body.classList.remove("docked"))},r=document.querySelector("header.app-header");let u=null;const f=()=>{u?.disconnect();const p=Math.round(r?.getBoundingClientRect().height||64);u=new IntersectionObserver(([g])=>g.isIntersecting?o():c(),{rootMargin:`-${p}px 0px 0px 0px`,threshold:0}),u.observe(n)};if(f(),r&&"ResizeObserver"in window){let p=Math.round(r.getBoundingClientRect().height);new ResizeObserver(()=>{const g=Math.round(r.getBoundingClientRect().height);g!==p&&(p=g,f())}).observe(r)}}if(zo(),It=Xo(d.getProject()),await It,B(),ke(d.getProject()),Wt(),Tt().length&&V(),location.hash==="#fix"||location.hash==="#labels"){location.hash==="#fix"&&(i("fixTools").open=!0);const e=location.hash==="#fix"?i("fixTools"):i("stage");requestAnimationFrame(()=>e.scrollIntoView({block:"center"}))}{let b=function(m){if(de){const y=de.T,q=l(O);return{key:"both",pxW:S.naturalWidth,pxH:S.naturalHeight,layers:{wf:c,src:Qt(y)},content:No(Ct(l(S)),q?Do(q,y):Qt(y))}}return m==="src"?{key:"src",pxW:O.naturalWidth,pxH:O.naturalHeight,layers:{src:c},content:Ct(l(O))}:{key:"wf",pxW:S.naturalWidth,pxH:S.naturalHeight,layers:{wf:c},content:Ct(l(S))}},v=function(){p=e.clientWidth;const m=document.querySelector("header.app-header")?.offsetHeight||56,y=e.getBoundingClientRect().top+window.scrollY,q=i("checkPanel"),ee=q&&q.getBoundingClientRect().bottom<=e.getBoundingClientRect().top,Q=window.innerHeight-y-56,re=Math.max(240,window.innerHeight-m-132),Ne=!ee&&Q>=360?Q:re;g=Bo(u,p,220,Ne),e.style.height=`${g}px`,vt=`${p}x${window.innerHeight}`},E=function(){if(!u||!p)return;f=Ro(u,f,p,g);const m=o==="cmp"&&!!de;for(const[ee,Q]of[["wf",D],["src",ue]]){const re=u.layers[ee],Ne=!!re&&(o==="cmp"||o===ee);if(Q.hidden=!Ne,!Ne)continue;const Be=Wo(u,f,re,p,g);Q.style.left=`${Be.left}px`,Q.style.top=`${Be.top}px`,Q.style.width=`${Be.width}px`,Q.style.height=`${Be.height}px`,Q.dataset.shownW=String(Be.width),Q.dataset.shownL=String(Be.left)}const y=i("rings");y.hidden=D.hidden;for(const ee of["left","top","width","height"])y.style[ee]=D.style[ee];if(t.hidden=!m,i("tagSrc").hidden=i("tagWf").hidden=!m,m){const ee=p*r/100;t.style.left=`${r}%`,t.setAttribute("aria-valuenow",String(Math.round(r)));const Q=+ue.dataset.shownL,re=+ue.dataset.shownW,Ne=+D.dataset.shownL;ue.style.clipPath=`inset(0 ${Math.max(0,Q+re-ee)}px 0 0)`,D.style.clipPath=`inset(0 0 0 ${Math.max(0,ee-Ne)}px)`}else ue.style.clipPath="",D.style.clipPath="";const q="var(--sheet-paper)";e.style.background=m?`linear-gradient(to right, ${q} ${p*r/100}px, #fff ${p*r/100}px)`:o==="src"?q:"",e.classList.toggle("can-pan",f.z>1.001),clearTimeout(x),x=setTimeout(Y,140)},Y=function(){const m=Math.min(window.devicePixelRatio||1,3);if(!D.hidden){const y=tn(+D.dataset.shownW,m,I,N,S.naturalWidth);Math.abs(y-pe)/pe>.1&&(pe=y,B())}if(!ue.hidden){const y=tn(+ue.dataset.shownW,m,Le,Me,O.naturalWidth);Math.abs(y-Pe)/Pe>.1&&(Pe=y,ht())}},j=function(){const m=L()?"Pinch to zoom.":"Pinch or press Ctrl and scroll to zoom.",y=de?"":"Your plan and our drawing are framed differently, so they show one at a time. ",q=L()?"Tap":"Click",ee=an?"; moving one is free, the image is not made again":"",Q=o==="cmp"?`Drag the handle to compare. ${q} a gold label to fix it${ee}.`:o==="src"?i("showPins").checked?"A number marks every space we found.":"":`${q} a gold label to fix it, or drag it to the right room${ee}.`;s.textContent=`${y}${Q} ${m}`.trim()},H=function(m){m==="cmp"&&!de&&(m="src"),o=m;const y=b(m);(!u||y.key!==u.key)&&(u=y,f=lt(u),v());for(const q of n.querySelectorAll('[role="tab"]'))q.setAttribute("aria-selected",String(q.dataset.view===m));j(),E()},ie=function(m){if(A||!f||f.z<=1.001)return;const y=T(m);F={id:m.pointerId,x:y.x,y:y.y};try{e.setPointerCapture(m.pointerId)}catch{}e.classList.add("panning")};const e=i("stage"),t=i("sweepHandle"),n=i("viewWhich"),s=i("stageNote"),a=new WeakMap,l=m=>(a.has(m)||a.set(m,Po(m)),a.get(m)),c={x0:0,y0:0,x1:1,y1:1};let o="wf",r=50,u=null,f=null,p=0,g=0,x=0;const L=()=>matchMedia("(pointer: coarse)").matches;n.onclick=m=>{const y=m.target.closest("[data-view]");if(!(!y||y.getAttribute("aria-selected")==="true")){for(const q of n.querySelectorAll('[role="tab"]'))q.setAttribute("aria-selected",String(q===y));Wn(()=>{H(y.dataset.view),Rn(e)})}},Bn(n);const U=(m,y=p/2,q=g/2)=>{f=Zt(u,f,m,y,q,p,g),E()};i("zoomIn").onclick=()=>U(1.5),i("zoomOut").onclick=()=>U(1/1.5),i("zoomFit").onclick=()=>{f=lt(u),E()};const T=m=>{const y=e.getBoundingClientRect();return{x:m.clientX-y.left,y:m.clientY-y.top}};e.addEventListener("wheel",m=>{if(!m.ctrlKey)return;m.preventDefault();const y=T(m);U(Math.exp(-m.deltaY*(m.deltaMode?.05:.01)),y.x,y.y)},{passive:!1}),e.addEventListener("dblclick",m=>{if(m.target.closest("#sweepHandle"))return;if(m.target===D){const q=D.getBoundingClientRect(),ee=(m.clientX-q.left)*(I/q.width),Q=(m.clientY-q.top)*(N/q.height);if(He.some(re=>ee>=re.rect.x&&ee<=re.rect.x+re.rect.w&&Q>=re.rect.y&&Q<=re.rect.y+re.rect.h))return}const y=T(m);f.z>1.001?(f=lt(u),E()):U(2.5,y.x,y.y)});const M=new Map;let A=null,F=null;const $=()=>{const m=[...M.values()];return{x:(m[0].x+m[1].x)/2,y:(m[0].y+m[1].y)/2,d:Math.hypot(m[0].x-m[1].x,m[0].y-m[1].y)}};e.addEventListener("pointerdown",m=>{if(!m.target.closest("#sweepHandle")&&(M.set(m.pointerId,T(m)),M.size===2)){R=null,we=null,F=null,B(),e.classList.remove("panning"),A=$();try{e.setPointerCapture(m.pointerId)}catch{}m.stopPropagation()}},!0),e.addEventListener("pointermove",m=>{if(M.has(m.pointerId)){if(M.set(m.pointerId,T(m)),A&&M.size>=2){const y=$();f=Zt(u,f,A.d?y.d/A.d:1,y.x,y.y,p,g),f=en(u,f,y.x-A.x,y.y-A.y,p,g),A=y,E(),m.stopPropagation()}else if(F&&F.id===m.pointerId){const y=M.get(m.pointerId);f=en(u,f,y.x-F.x,y.y-F.y,p,g),F.x=y.x,F.y=y.y,E()}}},!0);const J=m=>{M.delete(m.pointerId),M.size<2&&(A=null),F&&F.id===m.pointerId&&(F=null,e.classList.remove("panning"))};e.addEventListener("pointerup",J,!0),e.addEventListener("pointercancel",J,!0),ue.addEventListener("pointerdown",m=>ie(m));let ve=!1;const Ee=m=>{const y=e.getBoundingClientRect();r=Math.max(0,Math.min(100,(m-y.left)/y.width*100)),E()};t.addEventListener("pointerdown",m=>{m.preventDefault(),t.setPointerCapture(m.pointerId),t.classList.add("used"),ve=!0,Ee(m.clientX)}),t.addEventListener("pointermove",m=>{ve&&Ee(m.clientX)});const jt=()=>{ve=!1};t.addEventListener("pointerup",jt),t.addEventListener("pointercancel",jt),t.addEventListener("keydown",m=>{const y={ArrowLeft:-4,ArrowRight:4,Home:-100,End:100}[m.key];y!==void 0&&(m.preventDefault(),t.classList.add("used"),r=Math.max(0,Math.min(100,r+(m.shiftKey?y*3:y))),E())});let Ft=0,vt="";const Ht=()=>{clearTimeout(Ft),Ft=setTimeout(()=>{if(!u)return;const m=`${e.clientWidth}x${window.innerHeight}`;if(m===vt)return;vt=m;const y=!f||f.z<=1.001;v(),y&&(f=lt(u)),E()},60)};new ResizeObserver(Ht).observe(e.parentElement),addEventListener("resize",Ht),ce={beginPan:ie,notes:j,toDrawing(){o!=="wf"&&H("wf")},compare(){H(de?"cmp":"src");const m=!matchMedia("(prefers-reduced-motion: reduce)").matches,y=document.querySelector("header.app-header")?.offsetHeight||56;i("stagePanel").style.scrollMarginTop=`${y+8}px`,i("stagePanel").scrollIntoView({block:"start",behavior:m?"smooth":"auto"})},refit(){i("viewCmp").hidden=!de,u=null,H(o==="cmp"&&!de?"wf":o)}},i("viewCmp").hidden=!de,H(de?"cmp":"wf")}
+</script>
+</body>
+</html>

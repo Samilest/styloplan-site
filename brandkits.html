@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>(function(){try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Brand kits · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=97">
+<script>try{var t=localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>
+  
+  body { --page-max: 1100px; }
+  main { display: grid; grid-template-columns: 300px 1fr; gap: 24px; padding: 8px 24px 32px;
+         align-items: start; }
+  .kit { padding: 12px 12px; border: 1px solid var(--line); border-radius: var(--r-ctl); margin-bottom: 8px;
+         cursor: pointer; font-size: 13px; transition: border-color .12s ease; }
+  .kit:hover { border-color: var(--ink-3); }
+  
+  .kit.editing { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  
+  #kMsg { transition: color .15s ease; }
+  #kMsg.dirty { color: var(--warn); }
+  #kMsg.ok { color: var(--ok); font-weight: 600; }
+  
+  @media (prefers-reduced-motion: reduce) { #kMsg { transition: none; } }
+  
+  main > section.panel > .row:last-child { position: sticky; bottom: 0; z-index: 2;
+    background: var(--surface); padding: 12px 0; margin-top: 12px; border-top: 1px solid var(--line);
+    box-shadow: 0 -12px 16px -12px rgba(0,0,0,.35); }
+  .kit .top { display: flex; align-items: center; gap: 8px; }
+  .kit .top b { flex: 1; }
+  .kit .subtle { display: block; margin-top: 2px; }
+  .kit .sw { display: flex; border-radius: 3px; overflow: hidden; margin-top: 8px; width: 68px; }
+  .kit .sw i { flex: 1; height: 12px; display: block; }
+  .badge { font-size: var(--t-11); font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+           color: var(--ok); background: var(--ok-soft); padding: 2px 8px; border-radius: 999px; }
+
+  label { display: block; font-size: 11.5px; color: var(--ink-2); margin: 12px 0 4px; }
+  fieldset { border: 0; padding: 0; margin: 0 0 24px; }
+  
+  fieldset legend { padding: 0; font-size: 0.9375rem; font-weight: 600;
+                    letter-spacing: -0.005em; color: var(--ink); }
+  fieldset > label:first-of-type { margin-top: 12px; }
+  
+  .roles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 12px; }
+  .roles label { margin: 0 0 4px; }
+  
+  .logo-row { display: flex; gap: 12px; align-items: center; margin-top: 8px; }
+  #logoPreview { height: 40px; max-width: 150px; object-fit: contain; display: none;
+                 border: 1px solid var(--line); border-radius: 4px; padding: 4px; background: #fff; }
+  .row { display: flex; gap: 8px; margin-top: 4px; align-items: center; flex-wrap: wrap; }
+  .row .grow { flex: 1; }
+  
+  .preview { border: 1px solid var(--line); border-radius: var(--r-ctl); padding: 24px 16px;
+             text-align: center; margin-top: 12px; }
+  .preview .co { font-size: 17px; font-weight: 700; letter-spacing: .04em; }
+  .preview .tag { font-size: 11px; margin-top: 4px; opacity: .75; }
+  .preview .bar { display: flex; gap: 8px; justify-content: center; margin-top: 16px; }
+  .preview .bar i { width: 34px; height: 10px; border-radius: 2px; display: block; }
+  @media (max-width: 760px) { .roles { grid-template-columns: 1fr 1fr; } }
+  
+  #kLogo { font: 400 13px/1 var(--sans); color: var(--ink-3); max-width: 100%; }
+  #kLogo::file-selector-button { font: 600 var(--t-15)/1 var(--sans); min-height: 36px; padding: 0 var(--s-4);
+    margin-right: 12px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl);
+    background: var(--surface); color: var(--ink); cursor: pointer; }
+  #kLogo::file-selector-button:hover { background: var(--surface-2); }
+  .hex { display: block; margin-top: 4px; font-size: 11px; letter-spacing: .04em; color: var(--ink-3); text-transform: uppercase; }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/ask.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/glide.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/chrome.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1>Brand kits</h1>
+  <span class="sub">One kit per client. Its logo, colors and type go on every image.</span>
+</div>
+<main id="main" tabindex="-1">
+  <aside class="panel">
+    <h3>Kits</h3>
+    
+    <p class="subtle" style="margin:-4px 0 var(--s-3)">New projects start with the kit marked New projects. To change a project's kit, open its settings.</p>
+    <div id="kitList"></div>
+    <button id="newKit" class="btn btn--secondary">+ New kit</button>
+  </aside>
+  <section class="panel">
+    <h3 id="editHead">Edit kit</h3>
+
+    <fieldset>
+      <legend>Identity</legend>
+      <label for="kCompany">Company name, printed on every image</label><input type="text" id="kCompany">
+      <label for="kTagline">Tagline / contact line</label><input type="text" id="kTagline">
+      
+      <label for="kWebsite">Website, linked from the 3D view's corner chip</label><input type="url" id="kWebsite" placeholder="https://" inputmode="url" autocomplete="url">
+      
+      <button type="button" class="btn btn--link" id="kNameShow" style="margin-top:8px">Use a different name for this kit</button>
+      <div id="kNameRow" hidden>
+        <label for="kName">Kit name, for this list only</label><input type="text" id="kName">
+      </div>
+      <label for="kLogo">Logo</label>
+      <div class="logo-row">
+        <input type="file" id="kLogo" accept="image/png,image/svg+xml,image/jpeg">
+        <img id="logoPreview" alt="">
+        <button id="kLogoClear" class="btn btn--quiet" hidden>Remove</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">PNG with a transparent background works best.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Appearance</legend>
+      <label for="kFont">Label font</label>
+      <select id="kFont">
+        <option>Inter</option><option>Roboto</option><option>Montserrat</option>
+        <option>DM Sans</option><option>Playfair Display</option><option>Cormorant Garamond</option>
+      </select>
+      
+      
+      <label>Default plan look</label>
+      
+      <div class="look-toggle" id="kThemeSeg" role="group" aria-label="Default plan look">
+        <button type="button" data-theme="light">Light</button>
+        <span class="sep" aria-hidden="true">/</span>
+        <button type="button" data-theme="dark">Dark</button>
+      </div>
+      <div class="subtle" style="margin-top:8px">New plans start in this look, and a project PDF uses it. Each plan's look is chosen in Studio.</div>
+      
+      <div class="roles">
+        <div><label for="kBg">Canvas</label><input type="color" id="kBg"><span class="hex num" id="kBgHex"></span></div>
+        <div><label for="kWalls">Text</label><input type="color" id="kWalls"><span class="hex num" id="kWallsHex"></span></div>
+      </div>
+      <div class="subtle" style="margin-top:8px">The page around the plan, and the type on it, in the default look. A project can change them in Studio.</div>
+
+      
+      <div class="roles" style="margin-top:16px">
+        <div><label for="kMono">Brand colour</label><input type="color" id="kMono"><span class="hex num" id="kMonoHex"></span></div>
+      </div>
+      <div class="subtle" style="margin-top:8px">Used when you turn on <b>Tint the plan in one brand colour</b> in Studio. The whole plan then takes shades of this colour.</div>
+    </fieldset>
+
+    <fieldset>
+      <legend>House style</legend>
+      
+      <details class="more" id="kStyleMore">
+      <summary><span id="kStyleSum">Rename, merge or hide room names on every plan. Optional.</span></summary>
+      <div class="subtle" style="margin:8px 0 12px">Set once, applied to every plan. Leave empty to keep each plan's own wording.</div>
+
+      <label>Rename rooms. One rule per line, as <code>OLD, OLD → NEW</code></label>
+      <textarea id="kRenames" rows="5" spellcheck="false"
+        placeholder="MASTER BEDROOM, M BEDROOM, PRIMARY BEDROOM &#8594; M.BEDROOM"></textarea>
+
+      <label for="kMerges">Merge into one label, same form. Parts still count as rooms. Only one label prints.</label>
+      <textarea id="kMerges" rows="2" spellcheck="false"
+        placeholder="SUITE LIVING, SUITE KITCHEN, SUITE DINING &#8594; SUITE"></textarea>
+
+      <label for="kHide">Never label these, comma separated. The space still counts as a room.</label>
+      <input type="text" id="kHide" spellcheck="false" placeholder="CLOSET, HALLWAY, ENTRY">
+
+      <label class="check" style="margin-top:16px">
+        <input type="checkbox" id="kRound">
+        Round dimensions to whole feet
+      </label>
+      <div class="subtle" id="kRoundEg" style="margin-top:4px"></div>
+
+      <div class="row" style="margin-top:12px">
+        <button class="btn btn--secondary btn--sm" id="kStyleSuggest">Load a starting point</button>
+        <button class="btn btn--secondary btn--sm" id="kStyleClear">Clear</button>
+      </div>
+      </details>
+    </fieldset>
+
+    <fieldset>
+      <legend>Preview</legend>
+      <div class="preview" id="kPreview">
+        <div class="co" id="pvCo"></div>
+        <div class="tag" id="pvTag"></div>
+        <div class="bar" id="pvBar"></div>
+      </div>
+    </fieldset>
+
+    <div class="row">
+      <button id="kSave" class="btn btn--primary">Save kit</button>
+      <button id="kUse" class="btn btn--secondary">Use for new projects</button>
+      <span class="subtle" id="kMsg" role="status" aria-live="polite"></span>
+      <span class="grow"></span>
+      <button id="kDelete" class="btn btn--quiet">Delete kit</button>
+    </div>
+  </section>
+</main>
+
+<script type="module">import{askConfirm as j}from"./src/ask.js";import{glide as H,afterPaint as U}from"./src/glide.js";import{renderChrome as W}from"./src/chrome.js";import{authState as C,onAuthChange as F}from"./src/auth.js";import{openSignIn as P}from"./src/auth-ui.js";await W();import*as s from"./src/store.js";import{LOOK_DEFAULTS as x,DEFAULT_TINT as E}from"./src/palettes.js";import{EMPTY_HOUSE_STYLE as y,SUGGESTED_HOUSE_STYLE as I,formatDim as O}from"./src/house-style.js";const e=t=>document.getElementById(t),h=()=>C().user?!1:(P("in","Sign in to keep brand kits on your account.","info"),!0),_=/\s*(?:→|->|=>)\s*/;function N(t=[]){return t.map(n=>{const o=n.any?.length?n.any.join(", "):n.match;return o?`${o} → ${n.to}`:""}).filter(Boolean).join(`
+`)}function $(t){return String(t||"").split(`
+`).map(n=>{const[o,i]=n.split(_);if(!i||!o)return null;const c=o.split(",").map(r=>r.trim()).filter(Boolean);return c.length?{any:c,to:i.trim()}:null}).filter(Boolean)}const q=(t=[])=>t.join(", "),Y=t=>String(t||"").split(",").map(n=>n.trim()).filter(Boolean);function b(t){const n={...y,...t||{}};e("kRenames").value=N(n.renames),e("kMerges").value=N(n.merges),e("kHide").value=q(n.hide),e("kRound").checked=!!n.roundDimensions,R(),e("kStyleMore").open=!!(n.renames?.length||n.merges?.length||n.hide?.length||n.roundDimensions)}function R(){const t=e("kRound").checked,n=`12'-8" x 11'-6"`;e("kRoundEg").textContent=`${n}  prints as  ${O(n,{...y,roundDimensions:t})}`+(t?". Your plan’s exact figures are still printed on the room schedule in your plan pack, and the areas there are calculated from those.":"")}function z(){return{renames:$(e("kRenames").value),merges:$(e("kMerges").value),hide:Y(e("kHide").value),roundDimensions:e("kRound").checked,separator:" X "}}s.ensureSeed();let a=null;const B=x;let m="light";function D(t){m=t==="dark"?"dark":"light";for(const n of e("kThemeSeg").querySelectorAll("button[data-theme]"))n.classList.toggle("active",n.dataset.theme===m),n.setAttribute("aria-pressed",String(n.dataset.theme===m))}for(const t of e("kThemeSeg").querySelectorAll("button[data-theme]"))t.onclick=()=>{m!==t.dataset.theme&&(D(t.dataset.theme),U(()=>{const n=B[m];p("kBg",n.background),p("kWalls",n.walls),v()}))};H(e("kThemeSeg"));const S=t=>String(t??"").replace(/[&<>"]/g,n=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[n]);function f(){const t=s.getKits(),n=s.getActiveKit()?.id;e("kitList").innerHTML="";for(const o of t){const i=document.createElement("div");i.className="kit"+(o.id===a?.id?" editing":"");const c=o.palette||{};i.innerHTML=`<div class="top"><b>${S(o.name)}</b>`+(o.id===n?'<span class="badge">New projects</span>':"")+`</div><span class="subtle">${[o.companyName,o.font].filter(Boolean).map(S).join(" · ")}</span><span class="sw">${["background","walls"].map(r=>`<i style="background:${S(c[r]||"#ccc")}"></i>`).join("")}`+(o.planTint?.brand?`<i style="background:${S(o.planTint.brand)}" title="Brand colour"></i>`:"")+"</span>",i.onclick=()=>w(o),e("kitList").append(i)}}function l(t,n=""){const o=e("kMsg");o.textContent=t,o.classList.toggle("dirty",n==="dirty"),o.classList.toggle("ok",n==="ok")}let k=!1,L=0;const u=()=>!!C().user;function g(){a&&(k=!0,e("kSave").disabled=!1,e("kSave").classList.remove("is-done"),e("kSave").textContent="Save kit",u()?(l("Saving…"),clearTimeout(L),L=setTimeout(()=>{k&&e("kSave").click()},700)):l("Unsaved changes","dirty"))}function M(){e("kSave").hidden=u()}function A(){k=!1,e("kSave").disabled=!0}document.querySelector("main > section.panel").addEventListener("input",g),e("kNameShow").onclick=()=>{e("kNameRow").hidden=!1,e("kNameShow").hidden=!0,e("kName").value||(e("kName").value=e("kCompany").value),e("kName").focus()},M(),F(M),document.querySelector("main > section.panel").addEventListener("change",g);function w(t){t&&(k&&a&&u()&&t.id!==a.id&&(clearTimeout(L),e("kSave").click()),a=structuredClone(t),e("editHead").textContent=`Editing ${t.name}`,e("kName").value=t.name,e("kNameRow").hidden=!t.name||t.name===(t.companyName||""),e("kNameShow").hidden=!e("kNameRow").hidden,e("kCompany").value=t.companyName,e("kTagline").value=t.tagline||"",e("kWebsite").value=t.website||"",e("kFont").value=t.font,D(t.palette.theme),p("kBg",t.palette.background),p("kWalls",t.palette.walls),G(t.planTint),T(t.logoDataUrl),b(t.houseStyle),l(""),A(),e("kSave").classList.remove("is-done"),e("kSave").textContent="Save kit",f(),v())}function G(t){p("kMono",t?.brand||E)}e("kMono").addEventListener("input",()=>{e("kMono").style.background=e("kMono").value,e("kMonoHex").textContent=e("kMono").value,v()});function T(t){e("logoPreview").style.display=t?"block":"none",e("kLogoClear").hidden=!t,t&&(e("logoPreview").src=t)}function v(){const t=e("kBg").value,n=e("kWalls").value,o=e("kFont").value,i=e("kPreview");i.style.background=t,i.style.color=n,i.style.fontFamily=`"${o}", sans-serif`,e("pvCo").textContent=(e("kCompany").value||"Company name").toUpperCase(),e("pvTag").textContent=e("kTagline").value||"Tagline / contact line";const c=["kBg","kWalls"].map(r=>e(r).value);c.push(e("kMono").value),e("pvBar").innerHTML=c.map(r=>`<i style="background:${r};box-shadow:0 0 0 1px rgba(128,128,128,.35)"></i>`).join("")}function p(t,n){e(t).value=n,e(t).style.background=n,e(t+"Hex").textContent=e(t).value}for(const t of["kBg","kWalls"])e(t).addEventListener("input",()=>{e(t).style.background=e(t).value,e(t+"Hex").textContent=e(t).value,v()});for(const t of["kCompany","kTagline"])e(t).addEventListener("input",v);e("kFont").addEventListener("change",v),e("kLogo").onchange=()=>{const t=e("kLogo").files[0];if(!t)return;const n=new FileReader;n.onload=()=>{a.logoDataUrl=n.result,T(n.result),g()},n.readAsDataURL(t)},e("kLogoClear").onclick=()=>{a&&(a.logoDataUrl=null,e("kLogo").value="",T(null),g(),u()||l("Logo removed. Save to keep it that way.","dirty"))},e("kRound").addEventListener("change",R),e("kStyleSuggest").onclick=()=>{b(I),g(),l(u()?"Loaded. Edit it to match your own wording.":"Loaded. Edit it to match your own wording, then Save.",u()?"":"dirty")},e("kStyleClear").onclick=()=>{b(y),g(),l(u()?"Cleared. Each plan keeps its own wording.":"Cleared. Save to keep each plan’s own wording.",u()?"":"dirty")};let K=0;e("kSave").onclick=()=>{if(!a||h())return;const t=B[m],n=e("kBg").value.toLowerCase()===t.background.toLowerCase()&&e("kWalls").value.toLowerCase()===t.walls.toLowerCase();Object.assign(a,{name:(e("kNameRow").hidden?e("kCompany").value.trim():e("kName").value.trim())||e("kName").value||"Untitled kit",companyName:e("kCompany").value.trim(),tagline:e("kTagline").value,website:X(e("kWebsite").value),font:e("kFont").value,palette:{id:n?t.id:"custom",name:n?t.name:"Custom",theme:m,background:e("kBg").value,walls:e("kWalls").value,floors:t.floors,accent:t.accent},planTint:{mode:"off",brand:e("kMono").value},houseStyle:z()}),s.saveKit(a),e("editHead").textContent=`Editing ${a.name}`,A();const o=e("kSave");o.classList.add("is-done"),o.textContent="Saved ✓",l("Saved ✓","ok"),clearTimeout(K),K=setTimeout(()=>{o.classList.remove("is-done"),o.textContent="Save kit",k||l(`Saved at ${new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}`,"ok")},1800),f()},e("kUse").onclick=()=>{if(!a||h())return;const t=k;k&&e("kSave").click(),s.setActiveKit(a.id),l(t?"Saved. New projects will use it ✓":"New projects will use it ✓","ok"),f()},e("kDelete").onclick=async()=>{if(!a||h())return;if(s.getKits().length<2){l("Keep at least one kit.");return}const n=s.getKits().filter(d=>d.id!==a.id)[0],o=s.getProjects().filter(d=>d.brandKitId===a.id),i=o.map(d=>`"${d.name}"`).join(", ");if(!await j({title:`Delete the brand kit “${a.name}”?`,body:["This cannot be undone.",o.length?`${o.length} project${o.length>1?"s":""} use${o.length>1?"":"s"} it and will be rebranded to “${n.name}”: ${i}.`:""],confirm:"Delete kit",danger:!0}))return;const r=s.getActiveKit()?.id===a.id;for(const d of o)d.brandKitId=n.id,s.saveProject(d);s.deleteKit(a.id),a=null,r&&n&&s.setActiveKit(n.id),w(n)};function X(t){const n=String(t||"").trim();if(!n)return"";const o=/^[a-z][a-z0-9+.-]*:\/\//i.test(n)?n:`https://${n}`;try{const i=new URL(o);return i.protocol==="http:"||i.protocol==="https:"?i.href:""}catch{return""}}e("newKit").onclick=()=>{if(h())return;const t=s.saveKit({id:`kit-${Math.random().toString(36).slice(2,8)}`,name:"New kit",companyName:"",tagline:"",website:"",logoDataUrl:null,font:"Inter",palette:{...x.light},planTint:{mode:"off",brand:E},disclaimerOn:!0,disclaimerText:null});f(),w(t)},f();{const t=new URLSearchParams(location.search).get("kit");w(t&&s.getKits().find(n=>n.id===t)||s.getActiveKit())}
+</script>
+</body>
+</html>
