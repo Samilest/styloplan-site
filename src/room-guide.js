@@ -1,0 +1,1 @@
+import{isGarage as i}from"./garage.js";const s=n=>!!(n?.name&&String(n.name).trim());export function roomsVar(n){const o=[],t=new Set;for(const r of n||[]){if(!s(r))continue;const e=String(r.name).trim().toUpperCase();t.has(e)||(t.add(e),o.push(e))}if(!o.length)return"";const a=(n||[]).some(i);return o.join(", ")+(a?".":". There is no garage on this floor.")}

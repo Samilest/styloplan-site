@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+
+<script>(function(){var q=new URLSearchParams(location.search);if(q.get("embed")==="1"||q.get("share")==="1")return;try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>3D view · StyloPlan</title>
+
+<script type="importmap">
+{ "imports": { "three": "./src/vendor/three.module.js" } }
+</script>
+
+<link rel="modulepreload" href="./src/vendor/three.module.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/vendor/OrbitControls.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/engine.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/fixtures.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/garage.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sheet-part.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/geometry.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/theme3d.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/merge.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/railing.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/rails.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/edge-guards.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/extrude.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/openings.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/outline.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/l1-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-plan.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-l1.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sample-project.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/aspect.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/plan-trim.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/ink.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/registration.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/eraser.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/credit-jobs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/chrome.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/report-ui.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/compositor.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/formats.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/footer.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/spec-strip.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/listing.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/patch.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/recolour.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/text-runs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/xmp.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/label-frame.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/fit-cache.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/sweep-fit.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/stairs.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/stair-chain.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/ask.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/publish.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/cloud-publish.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/render-history.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/window-read.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/rooms.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/calibrate.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/look-memory.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/doors.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/door-symbols.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/fireplace.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/posts.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/closets.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-read.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-paths.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/level.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/glide.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/read-cache.js" fetchpriority="low">
+<link rel="modulepreload" href="./src/build-id.js" fetchpriority="low">
+<link rel="preload" href="./src/vendor/supabase.js" as="script">
+<script>import('./src/supabase-client.js').then(function (m) { return m.getSupabase(); }).catch(function () {});</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=97">
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&display=swap">
+
+<script>try{var q=new URLSearchParams(location.search),l=q.get("look"),v=q.get("embed")==="1"||q.get("share")==="1";var t=v&&(l==="dark"||l==="light")?l:localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+
+
+
+<script>try{var p=new URLSearchParams(location.search);var r=document.documentElement;if(p.get("embed")==="1"||p.get("poster"))r.classList.add("embedded");if(p.get("share")==="1")r.classList.add("shared");if(p.get("debug")==="1")r.classList.add("debug")}catch(e){}</script>
+
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="A floor plan you can walk through">
+<meta property="og:description" content="Open on a phone or a laptop. Drag to turn it, scroll to zoom. Nothing to install.">
+<meta property="og:image" content="https://samilest.github.io/styloplan-site/assets/tour-3-studio.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="A floor plan you can walk through">
+<meta name="twitter:description" content="Open on a phone or a laptop. Drag to turn it, scroll to zoom. Nothing to install.">
+<style>
+  
+  body { --page-max: 1600px; }
+  
+  main { display: grid; grid-template-columns: 320px 1fr; gap: 24px;
+         padding-block: var(--s-2) var(--s-6); align-items: start; }
+  
+  main > * { min-width: 0; }
+  #embed { max-width: 100%; }
+  .panel + .panel { margin-top: 16px; }
+  
+  .panel[hidden] + .panel { margin-top: 0; }
+  
+  @media (min-width: 901px) {
+    body:not(.embedded):not(.shared) #stageCol { position: sticky; top: 68px; }
+  }
+  
+  @keyframes panelIn { from { opacity: 0; transform: translateY(8px); } }
+  .panel.reveal { animation: panelIn .45s var(--ease) both; }
+  @media (prefers-reduced-motion: reduce) { .panel.reveal { animation: none; } }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+
+  
+  #stageWrap { position: relative; border: 1px solid var(--line);
+               border-radius: var(--r-panel, 10px); overflow: hidden;
+               background: var(--surface); }
+  #stage { height: min(76vh, 820px); }
+  
+  
+  #stageWrap { --stage-ground: var(--paper); }
+  #stageWrap[data-look] { background: var(--stage-ground); }
+  #stageWrap[data-look] #loading { background: color-mix(in srgb, var(--stage-ground) 72%, transparent); }
+  #stageWrap[data-look="light"] #loading { --ink: #211E19; --load: #211E19; --load-hi: #D1B678; }
+  #stageWrap[data-look="dark"] #loading { --ink: #ECEAE5; --load: #D1B678; --load-hi: #F3EBD9; }
+  #stage canvas { display: block; width: 100%; height: 100%; }
+  
+  #overlay { position: absolute; left: 14px; bottom: 64px; right: 66px;
+             pointer-events: none; font-size: 11.5px; line-height: 1.5; }
+  #overlay .item { margin-top: 4px; }
+  #overlay .warn { color: var(--warn); }
+  #lookWarn, #modelNote { color: var(--warn); }
+  #lookWarn .item + .item { margin-top: 8px; }
+  body[data-view="dark"] #overlay { color: #93a0b0; }
+  body[data-view="light"] #overlay { color: var(--ink-2); }
+  
+  
+  #pubState:not(:empty) { background: var(--surface-2); border: 1px solid var(--line);
+                          border-radius: 10px; padding: 11px 12px; }
+  #pubState .pub-name { font-weight: 600; }
+  
+  #pubState .pub-act { margin-top: 9px; }
+
+  #viewTop { position: absolute; top: 12px; left: 14px; right: 14px;
+             display: flex; flex-wrap: wrap; gap: 8px 10px;
+             align-items: flex-start; justify-content: space-between;
+             
+             pointer-events: none; }
+  #capCol { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  #madeWith { pointer-events: auto; align-self: flex-start; font-size: 11px; font-weight: 500; letter-spacing: .01em;
+              text-decoration: none; opacity: .62; padding: 2px 0; }
+  #madeWith[hidden] { display: none; }
+  #madeWith:hover, #madeWith:focus-visible { opacity: 1; text-decoration: underline; text-underline-offset: 2px; }
+  body[data-view="dark"] #madeWith { color: #e6e9ee; }
+  body[data-view="light"] #madeWith { color: #211e19; }
+  #planCaption { min-width: 0; max-width: 100%;
+                 font-size: 13px; font-weight: 600; letter-spacing: .01em; }
+  body[data-view="dark"] #planCaption { color: #e6e9ee; }
+  body[data-view="light"] #planCaption { color: #211e19; }
+  
+  
+  #viewFoot { position: absolute; left: 14px; right: 68px; bottom: 14px; display: flex; gap: 14px; align-items: flex-end; }
+  
+  #viewFoot > .btn { flex: 0 0 auto; white-space: nowrap; }
+  
+  #wordmark { font-family: Poppins, system-ui, sans-serif; font-weight: 600; font-size: 14px;
+              letter-spacing: .01em; text-decoration: none;
+              transition: color var(--d-std, .18s) var(--ease, ease); }
+  
+  #viewFoot > #wordmark { color: rgba(33,30,25,.6); }
+  body[data-view="dark"] #viewFoot > #wordmark { color: rgba(230,233,238,.6); }
+  #viewFoot > #wordmark:hover, #viewFoot > #wordmark:focus-visible { color: #211e19; }
+  body[data-view="dark"] #viewFoot > #wordmark:hover, body[data-view="dark"] #viewFoot > #wordmark:focus-visible { color: #e6e9ee; }
+  
+  #viewSide #bReset { width: 38px; height: 38px; min-height: 0; padding: 0; margin-top: 4px;
+                      display: grid; place-items: center; border-radius: 10px;
+                      background: rgba(255,255,255,.86); color: #211e19; border-color: transparent;
+                      -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); pointer-events: auto; }
+  body[data-view="dark"] #viewSide #bReset { background: rgba(30,36,46,.86); color: #e6e9ee; }
+  #sectionNote { flex: 1 1 auto; min-width: 0; text-align: center;
+                 font-size: 11px; line-height: 1.35; color: var(--ink-3); opacity: .85;
+                 pointer-events: none; text-wrap: pretty; padding-bottom: 2px;
+                 transition: opacity .4s ease; }
+  
+  #viewFoot.quiet #sectionNote { opacity: 0; }
+
+  
+  
+  #viewSide { position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+              display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  
+  #viewSide .cap { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: #6E6759;
+                   cursor: pointer; padding: 4px 6px; user-select: none; }
+  #viewSide .cap.on { color: #211E19; }
+  body[data-view="dark"] #viewSide .cap.on { color: #ECEAE5; }
+  body[data-view="dark"] #viewSide .cap { color: #9A958C; }
+  
+  #viewSide .switch { background: #6E6759; }
+  #viewSide .switch::after { background: #fff; }
+  #viewSide .switch[aria-checked="true"] { background: #D1B678; }   
+  body[data-view="dark"] #viewSide .switch { background: #6B7380; }
+  body[data-view="dark"] #viewSide .switch::after { background: #1E2124; }
+  body[data-view="dark"] #viewSide .switch[aria-checked="true"] { background: #D1B678; }
+  .switch-v { display: block; position: relative; width: 26px; height: 44px; }
+  
+  .switch-v .switch { position: absolute; left: -9px; top: 9px; transform: rotate(-90deg); }
+  #cornerTools { position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column;
+                 align-items: flex-end; gap: 12px; pointer-events: none; }
+  #zoomTools { display: flex; flex-direction: column; border-radius: 10px; overflow: hidden; pointer-events: auto; }
+  #bFull { width: 38px; height: 38px; min-height: 0; padding: 0; display: grid; place-items: center; border-radius: 10px; }
+  #bFull[hidden] { display: none; }
+  #bFull .fs-close, #bFull.on .fs-open { display: none; }
+  #bFull.on .fs-close { display: block; }
+  #zoomTools button { width: 38px; height: 38px; padding: 0; border: 0;
+                      border-radius: 0; font-size: 17px; line-height: 1;
+                      display: grid; place-items: center; }
+  
+  #zoomTools button + button { box-shadow: inset 0 1px 0 rgba(128,128,128,.3); }
+  
+  #zoomTools button[disabled] { opacity: .42; cursor: default; }
+  
+  @media (pointer: coarse) { #zoomTools button, #bFull { width: 44px; height: 44px; } }
+
+  
+  
+  #viewTools { display: flex; gap: 8px; flex-wrap: nowrap; flex-shrink: 0;
+               justify-content: flex-end; pointer-events: none; }
+  #viewTools button { font-size: 12px; }
+  
+  
+  
+  #roomCard { position: absolute; left: 14px; bottom: 60px; width: fit-content; z-index: 6;
+    display: flex; align-items: center; gap: 4px; max-width: calc(100% - 78px); padding: 6px;
+    border-radius: 14px; background: rgba(255,255,255,.94); color: #211e19;
+    box-shadow: 0 10px 30px rgba(20,24,30,.22); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+  #roomCard[hidden] { display: none; }
+  body[data-view="dark"] #roomCard { background: rgba(30,36,46,.94); color: #e6e9ee; }
+  #roomCard .rc-text { display: flex; flex-direction: column; align-items: center; min-width: 0; padding: 4px 8px; text-align: center; }
+  #roomCard b { font-size: 15px; font-weight: 700; letter-spacing: .02em; line-height: 1.25; overflow-wrap: anywhere; }
+  #roomCard span { font-size: 14px; opacity: .78; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  #roomCard button { width: 40px; height: 40px; border: 0; border-radius: 10px; background: transparent; color: inherit;
+    font-size: 22px; line-height: 1; cursor: pointer; flex: none; }
+  #roomCard button:hover, #roomCard button:focus-visible { background: rgba(128,128,128,.16); }
+  #roomCard .rc-close { font-size: 20px; }
+  @media (pointer: coarse) { #roomCard button { width: 44px; height: 44px; } }
+  #gestureHint {
+    position: absolute; inset: auto 0 0 0; margin: 0 auto 18px; width: max-content;
+    max-width: calc(100% - 32px); padding: 8px 14px; border-radius: 999px;
+    background: rgba(20,24,30,.82); color: #fff; font-size: 13px; text-align: center;
+    pointer-events: none; opacity: 0; visibility: hidden;
+    transition: opacity .18s ease, visibility 0s linear .18s;
+  }
+  #gestureHint.show { opacity: 1; visibility: visible; transition: opacity .18s ease; }
+
+  
+  #loading {
+    position: absolute; inset: 0; display: grid; place-content: center; gap: 10px;
+    justify-items: center; background: color-mix(in srgb, var(--bg) 72%, transparent);
+    
+    color: var(--ink); font-size: 13px; letter-spacing: .01em;
+    opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility 0s linear .2s;
+    z-index: 3;
+    
+    pointer-events: none;
+  }
+  #loading.show { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+  
+  
+  #loading { --cube: #D1B678; }
+  #stageWrap[data-look="light"] #loading { --cube: #B89A56; }
+  #loading .loadcube { position: relative; display: block; width: 52px; height: 52px; order: -1; margin-bottom: 6px;
+    color: var(--cube); transform-origin: 26.00px 24.70px; animation: lcTurn 26.4s infinite; }
+  #loading .loadcube i { position: absolute; display: block; height: 1.25px; margin-top: -.625px; transform-origin: 0 50%; }
+  #loading .loadcube i > b { display: block; height: 100%; transform-origin: 0 50%; animation: 4.4s linear infinite both; }
+  #loading .loadcube i > b > b { display: block; height: 100%; background: currentColor; border-radius: 1px; transform-origin: 100% 50%; animation: 4.4s linear infinite both; }
+  #loading .loadcube i.bk { opacity: .45; background: repeating-linear-gradient(90deg, currentColor 0 2px, transparent 2px 4.6px); }
+  @keyframes lcD0{0%,0%{transform:scaleX(0)}9.778%,100%{transform:scaleX(1)}}@keyframes lcE0{0%,67.045%{transform:scaleX(1)}74.868%,100%{transform:scaleX(0)}}
+  @keyframes lcD1{0%,9.778%{transform:scaleX(0)}12.611%,100%{transform:scaleX(1)}}@keyframes lcE1{0%,74.868%{transform:scaleX(1)}77.134%,100%{transform:scaleX(0)}}
+  @keyframes lcD2{0%,12.611%{transform:scaleX(0)}14.432%,100%{transform:scaleX(1)}}@keyframes lcE2{0%,77.134%{transform:scaleX(1)}78.591%,100%{transform:scaleX(0)}}
+  @keyframes lcD3{0%,14.432%{transform:scaleX(0)}15.826%,100%{transform:scaleX(1)}}@keyframes lcE3{0%,78.591%{transform:scaleX(1)}79.706%,100%{transform:scaleX(0)}}
+  @keyframes lcD4{0%,15.826%{transform:scaleX(0)}17.045%,100%{transform:scaleX(1)}}@keyframes lcE4{0%,79.706%{transform:scaleX(1)}80.682%,100%{transform:scaleX(0)}}
+  @keyframes lcD5{0%,17.045%{transform:scaleX(0)}18.265%,100%{transform:scaleX(1)}}@keyframes lcE5{0%,80.682%{transform:scaleX(1)}81.658%,100%{transform:scaleX(0)}}
+  @keyframes lcD6{0%,18.265%{transform:scaleX(0)}19.658%,100%{transform:scaleX(1)}}@keyframes lcE6{0%,81.658%{transform:scaleX(1)}82.772%,100%{transform:scaleX(0)}}
+  @keyframes lcD7{0%,19.658%{transform:scaleX(0)}21.48%,100%{transform:scaleX(1)}}@keyframes lcE7{0%,82.772%{transform:scaleX(1)}84.229%,100%{transform:scaleX(0)}}
+  @keyframes lcD8{0%,21.48%{transform:scaleX(0)}24.313%,100%{transform:scaleX(1)}}@keyframes lcE8{0%,84.229%{transform:scaleX(1)}86.496%,100%{transform:scaleX(0)}}
+  @keyframes lcD9{0%,24.313%{transform:scaleX(0)}34.091%,100%{transform:scaleX(1)}}@keyframes lcE9{0%,86.496%{transform:scaleX(1)}94.318%,100%{transform:scaleX(0)}}
+  @keyframes lcTurn{7.386%{transform:rotate(0deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}10.417%{transform:rotate(60deg);animation-timing-function:linear}24.053%{transform:rotate(60deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}27.083%{transform:rotate(120deg);animation-timing-function:linear}40.72%{transform:rotate(120deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}43.75%{transform:rotate(180deg);animation-timing-function:linear}57.386%{transform:rotate(180deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}60.417%{transform:rotate(240deg);animation-timing-function:linear}74.053%{transform:rotate(240deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}77.083%{transform:rotate(300deg);animation-timing-function:linear}90.72%{transform:rotate(300deg);animation-timing-function:cubic-bezier(.65,0,.35,1)}93.75%{transform:rotate(360deg);animation-timing-function:linear}0%{transform:rotate(0deg);animation-timing-function:linear}100%{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion: reduce) {
+    #loading .loadcube, #loading .loadcube b { animation: none; }
+  }
+  
+  
+  #loading.steps #loadingText { display: none; }
+  #loading:not(.steps) #loadingStep { display: none; }
+  
+  #loadingStep { position: relative; display: block; height: 22px; width: min(340px, 84vw); overflow: hidden;
+    
+    -webkit-mask-image: linear-gradient(transparent, #000 15%, #000 85%, transparent);
+            mask-image: linear-gradient(transparent, #000 15%, #000 85%, transparent); }
+  #loadingStep .step { position: absolute; inset: 0; text-align: center; white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; font-size: 13px; line-height: 22px; color: var(--ink); will-change: opacity, transform;
+    animation: stepIn .32s var(--ease) .18s both; }
+  
+  @supports ((-webkit-background-clip: text) or (background-clip: text)) and (color: color-mix(in srgb, red 50%, blue)) {
+    #loadingStep .step.working { animation: stepIn .32s var(--ease) .18s both, working 2.4s linear infinite; }
+  }
+  #loadingStep .step.out { animation: stepOut .2s var(--ease-in) both; }
+  @keyframes stepIn { from { opacity: 0; transform: translateY(70%); } }
+  @keyframes stepOut { to { opacity: 0; transform: translateY(-70%); } }
+  @media (prefers-reduced-motion: reduce) {
+    #loading { transition: none; }
+    #loadingStep .step, #loadingStep .step.working, #loadingStep .step.out { animation: none; }
+    #loadingStep .step.out { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { #gestureHint { transition: none; } }
+  #viewTools select { font-size: 12px; min-width: 0; }
+
+  
+  @media (max-width: 900px) {
+    main > section { order: -1; }
+  }
+  
+  @media (max-width: 600px) {
+    
+    
+    #viewTop { left: 10px; right: 60px; top: 10px; }
+    #viewSide { top: 10px; right: 10px; transform: none; gap: 8px; }
+    #viewSide .cap { font-size: 10px; }
+    #viewFoot { left: 10px; right: 64px; bottom: 10px; gap: 10px; }
+    #cornerTools { right: 10px; bottom: 10px; }
+    #roomCard { left: 10px; }
+    
+    #sectionNote { font-size: 10px; text-align: left; }
+    #overlay { left: 10px; right: 62px; }
+    
+    #viewTools { gap: 6px; flex-wrap: nowrap; }
+    #viewTools select { text-overflow: ellipsis; min-width: 0; }
+    #viewTools button { flex: 0 0 auto; white-space: nowrap; }
+  }
+
+
+  
+  .wins { border: 1px solid var(--line); border-radius: var(--r-ctl);
+          overflow: hidden; background: var(--surface); margin-top: 12px;
+          max-height: 46vh; overflow-y: auto; }
+  
+  .wins > div { display: grid; grid-template-columns: 26px minmax(0, 1fr) 116px;
+                grid-template-areas: "pin name sel" "pin what what"; gap: 2px 8px;
+                align-items: center; padding: 7px 10px; }
+  .wins > div.fixable { grid-template-areas: "pin name sel" "pin what fix"; }
+  .wins .fix { grid-area: fix; justify-self: end; padding: 2px 6px; background: none; border: 0; cursor: pointer;
+               color: var(--accent); font-size: 12px; font-weight: 500; text-decoration: underline; text-underline-offset: 2px; }
+  .wins .fix:hover { color: var(--ink); }
+  @media (pointer: coarse) { .wins .fix { min-height: 44px; min-width: 44px; } }
+  .wins > div + div { border-top: 1px solid var(--line); }
+  .wins > div:hover, .wins > div.hot { background: var(--surface-2); }
+  .wins .pin { grid-area: pin; width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+               background: var(--accent-soft); color: var(--accent);
+               font: 500 12px/1 var(--display); }
+  .wins > div.hot .pin { background: var(--select); color: var(--accent-ink, #fff); }
+  
+  .wins > div.picked { animation: win-picked 1.4s var(--ease); }
+  @keyframes win-picked { 0%, 35% { background: var(--select-soft, var(--surface-2)); } }
+  @media (prefers-reduced-motion: reduce) { .wins > div.picked { animation: none; background: var(--surface-2); } }
+  
+  #stage canvas.over-pin { cursor: pointer; }
+  #stage canvas.adding { cursor: crosshair; }
+  .addrow { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; margin: 6px 0 4px; }
+  .addrow .btn { margin-left: -8px; }
+  .addrow .subtle { font-size: 12px; }
+  .wins .n { grid-area: name; min-width: 0; font-size: 13px; font-weight: 600; white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+  .wins .d { grid-area: what; min-width: 0; font-size: 12px; color: var(--ink-2); white-space: nowrap;
+             overflow: hidden; text-overflow: ellipsis; }
+  .wins .m { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .wins select { grid-area: sel; min-height: 30px; padding: 2px 4px; font-size: 13px; width: 116px; }  
+  .wins > div.off .n { color: var(--ink-2); font-weight: 500; }
+  
+  .wins .sec { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px;
+               background: var(--surface-2); border: 0; border-top: 1px solid var(--line);
+               color: var(--ink); font: 600 12px/1.2 var(--display); letter-spacing: .02em;
+               text-transform: uppercase; cursor: pointer; text-align: left; }
+  .wins .sec:first-child { border-top: 0; }
+  .wins .sec__chev { width: 0; height: 0; border-left: 5px solid transparent; border-right: 5px solid transparent;
+                     border-top: 6px solid var(--ink-2); transition: transform .15s; }
+  .wins .sec:not(.open) .sec__chev { transform: rotate(-90deg); }
+  .wins .sec__n { margin-left: auto; color: var(--ink-2); font-weight: 500; text-transform: none; letter-spacing: 0; }
+  .wins .none { padding: 10px; font-size: 12px; color: var(--ink-2); }
+  
+  .wins .posts-intro { margin: 0; padding: 8px 10px 6px; font-size: 12px; line-height: 1.45; }
+  .wins > div > .btn { justify-self: end; }
+  
+  .wins > div.stair-row { grid-template-areas: "pin name name" "pin what what" "pin acts acts"; }
+  .wins .stair-row .n { grid-area: name; }
+  .wins .stair-row .d { grid-area: what; }
+  .wins .stair-acts { grid-area: acts; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .wins .stair-acts .btn[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+  #winVerdict { margin-top: 10px; }
+  #winVerdict .verdict__title { font-size: 14px; }
+
+  #embed { width: 100%; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+           resize: vertical; min-height: 92px; }
+
+  #err { position: fixed; inset: 0; z-index: 30; display: none; place-items: center;
+         background: var(--bg); padding: 24px; }
+  #err .box { max-width: 520px; }
+
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; }
+    #stage { height: 56vh; }
+  }
+
+  
+  .embedded .app-header, .embedded .page-head, .embedded aside { display: none; }
+  
+  html.embedded:not(.debug) #overlay { display: none; }
+  
+  .embedded main, .shared main { display: block; padding: 0; max-width: none; height: 100%; }
+  .embedded main > section, .shared main > section { height: 100%; }
+  .embedded #stageWrap { border: 0; border-radius: 0; height: 100%; }
+  .embedded #stage { height: 100%; }
+
+  
+  html.shared, html.shared body { margin: 0; height: 100dvh; overflow: hidden; }
+  @supports not (height: 100dvh) {
+    html.shared, html.shared body { height: 100vh; }
+  }
+  .shared .app-header, .shared .page-head, .shared aside { display: none; }
+  .shared #overlay { display: none; }
+  .shared main > section { display: flex; flex-direction: column; }
+  
+  .shared #stageWrap { border: 0; border-radius: 0; flex: 1 1 auto; min-height: 0; }
+  .shared #stage { height: 100%; }
+  .shared #stageHint, .shared #modelNote { display: none; }
+  
+  .share-bar { display: none; }
+  .shared .share-bar {
+    display: flex; align-items: center; gap: 12px; flex: 0 0 auto;
+    padding: 10px max(14px, env(safe-area-inset-left)) 10px max(14px, env(safe-area-inset-right));
+    border-bottom: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  }
+  .share-bar .t { font-weight: 600; font-size: var(--t-15); min-width: 0;
+                  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .share-bar .by { margin-left: auto; flex: 0 0 auto; font-size: var(--t-12);
+                   color: var(--ink-3); text-decoration: none; }
+  .share-bar .by:hover { color: var(--accent); }
+  
+  .embedded #stageHint, .embedded #modelNote { display: none; }
+  html.embedded, html.embedded body { margin: 0; height: 100%; overflow: hidden; }
+  
+  
+  
+  #viewTools > *, #viewFoot > .btn, #zoomTools > *, #bFull {
+    background: rgba(255,255,255,.86); color: #211e19; border-color: transparent;
+    -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+    pointer-events: auto;
+  }
+  body[data-view="dark"] #viewTools > *,
+  body[data-view="dark"] #viewFoot > .btn,
+  body[data-view="dark"] #zoomTools > *, body[data-view="dark"] #bFull { background: rgba(30,36,46,.86); color: #e6e9ee; }
+  .embedded #viewTools select { font-size: 12px; }
+  
+  #viewTools select { max-width: 190px; }
+  
+  
+  body[data-view] #viewTools select {
+    --chev: #211E19;
+    padding-right: 34px;
+    background-image: linear-gradient(45deg, transparent 50%, var(--chev) 50%),
+                      linear-gradient(135deg, var(--chev) 50%, transparent 50%);
+    background-position: calc(100% - 19px) 50%, calc(100% - 13px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+  }
+  body[data-view="dark"] #viewTools select { --chev: #D1B678; }
+  
+  body[data-view] #viewTools .on { background: #D1B678; color: #211E19; }   
+  body[data-view="dark"] #viewTools .on { background: #D1B678; color: #211E19; }
+  @media (prefers-reduced-transparency: reduce) {
+    #viewTools > *, #viewFoot > .btn, #zoomTools > *, #bFull { -webkit-backdrop-filter: none; backdrop-filter: none; }
+  }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/published-withdraw.js" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<script>try{var q=new URLSearchParams(location.search),l=q.get("look");if((q.get("embed")==="1"||q.get("share")==="1")&&(l==="dark"||l==="light"))document.body.dataset.view=l}catch(e){}</script>
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1 id="hTitle">3D view</h1>
+  <span class="sub">The plan you confirmed, in 3D. It is built from your render.</span>
+</div>
+
+<main id="main" tabindex="-1">
+  <aside>
+    
+    <section class="panel" id="floorPanel">
+      <h3>Floor</h3>
+      <select id="bFloor" class="grow" aria-label="Floor" autocomplete="off"></select>
+      <div class="subtle" id="floorHint" hidden style="margin-top:8px">A floor opens here once it is rendered.</div>
+    </section>
+
+    
+    <section class="panel" id="lookPanel">
+      <h3>Plan look</h3>
+      
+      <div class="look-toggle" id="lookSeg" role="group" aria-label="Plan look">
+        <button type="button" data-look="light">Light</button>
+        <span class="sep" aria-hidden="true">/</span>
+        <button type="button" data-look="dark">Dark</button>
+      </div>
+      <div class="subtle" id="lookNote" style="margin-top:8px"></div>
+      <div class="subtle warn" id="lookWarn" hidden style="margin-top:8px"></div>
+    </section>
+
+    
+    
+    <section class="panel" id="winPanel" hidden>
+      <h3>Windows and doors</h3>
+      <div class="subtle" id="winIntro" style="margin:-2px 0 0">Read from your plan's symbols and numbered on the model. Click one on the model to find it here. Change any that is wrong, and the model follows.</div>
+      <div class="wins" id="winList"></div>
+      
+      <div class="addrow" id="addRow">
+        <button id="bAddOpening" type="button" class="btn btn--quiet btn--sm">+ Add a door or window</button>
+        <span class="subtle" id="addNote" role="status"></span>
+      </div>
+      <div class="verdict" id="winVerdict" role="status">
+        <span class="dot" id="winDot"></span>
+        <div><div class="verdict__title" id="winTitle"></div><div class="verdict__detail" id="winDetail"></div></div>
+        <span></span>
+      </div>
+      <div class="row" style="margin-top:10px"><button id="bConfirmWin" class="btn btn--secondary btn--sm">Confirm windows and doors</button>
+        <button id="bWinEdit" class="btn btn--secondary btn--sm" hidden>Edit</button>
+        <span class="subtle" id="winNote">Free. It opens the title and sharing below.</span></div>
+      
+      
+      <div id="repRow" class="subtle" hidden style="margin:16px 0 0;padding:12px 0 0;border-top:1px solid var(--line)">
+        Something looks wrong in the 3D? <button type="button" class="btn btn--link" id="bReport3d">Tell us where</button>
+      </div>
+    </section>
+
+    
+    <section class="panel" id="titlePanel">
+      <h3>Plan title</h3>
+      <div id="titleShow" style="font-weight:600;margin:-2px 0 2px"></div>
+      <div class="subtle" id="titleFrom" style="margin-bottom:var(--s-3)"></div>
+      
+      <div class="row" style="gap:var(--s-3);align-items:center;margin:0">
+        <button id="bCaption" class="switch" role="switch" aria-checked="true" aria-labelledby="captionLabel"></button>
+        <span id="captionLabel">Show on the model</span>
+      </div>
+    </section>
+
+    
+    <section class="panel" id="embedPanel">
+      <h3>Share</h3>
+
+      
+      <div id="pubState" style="margin-bottom:10px"></div>
+      <div id="embedReady">
+        
+        <div id="embedCodeBox">
+        <textarea id="embed" readonly spellcheck="false"></textarea>
+        
+        <div class="row"><button id="copyEmbed" class="btn btn--primary btn--sm">Copy code</button>
+          <button id="copyLink" class="btn btn--sm">Copy link</button>
+          <span class="subtle" id="embedNote"></span></div>
+        <p class="subtle" id="linkNote" style="margin:8px 0 0"></p>
+        </div>
+
+        
+        
+        <div id="embedOptions" style="margin-top:14px;border-top:1px solid var(--line);padding-top:12px">
+          <div class="subtle" style="margin:0 0 8px;text-transform:uppercase;letter-spacing:.06em;font-size:11px">What visitors see</div>
+          <div class="row" id="embedScope" hidden style="gap:var(--s-3);align-items:center;margin-bottom:var(--s-3)">
+            <button id="bAllFloors" class="switch" role="switch" aria-checked="false"
+                    aria-label="Show every floor"></button>
+            <span id="scopeLabel">All floors</span>
+          </div>
+          
+          <div class="subtle" id="embedCan"></div>
+        </div>
+      </div>
+      <div class="subtle" id="embedBlock" hidden></div>
+    </section>
+  </aside>
+
+  <section id="stageCol">
+    
+    <div class="share-bar">
+      <span class="t" id="shareTitle"></span>
+      <a class="by" href="index.html" target="_blank" rel="noopener">Made with StyloPlan</a>
+    </div>
+    <div id="stageWrap">
+      
+      <script>try{var w=document.currentScript.parentNode,u=new URLSearchParams(location.search),k=u.get("look")||(u.get("f")&&localStorage.getItem("pr.look."+u.get("f")));if(k==="light"||k==="dark"){w.dataset.look=k;w.style.setProperty("--stage-ground",k==="light"?"#f8f7f4":"#1b1e23")}}catch(e){}</script>
+      <div id="stage"></div>
+      
+      <div id="gestureHint" aria-live="polite"></div>
+      
+      <div id="roomCard" role="group" aria-label="Room" hidden>
+        <button type="button" class="rc-step" id="rcPrev" aria-label="Previous room">&#8249;</button>
+        <div class="rc-text" aria-live="polite"><b id="rcName"></b><span id="rcDim"></span></div>
+        <button type="button" class="rc-step" id="rcNext" aria-label="Next room">&#8250;</button>
+        <button type="button" class="rc-close" id="rcClose" aria-label="Back to the whole home">&times;</button>
+      </div>
+      
+      <div id="loading" class="show steps" aria-live="polite"><span id="loadingText" class="working">Loading…</span><span id="loadingStep"><span class="step working">Reading your render</span></span><span class="loadcube" aria-hidden="true"><i style="left:7.99px;top:14.30px;width:20.80px;transform:rotate(-30.00deg)"><b style="animation-name:lcD0"><b style="animation-name:lcE0"></b></b></i><i style="left:26.00px;top:3.90px;width:20.80px;transform:rotate(30.00deg)"><b style="animation-name:lcD1"><b style="animation-name:lcE1"></b></b></i><i style="left:44.01px;top:14.30px;width:20.80px;transform:rotate(150.00deg)"><b style="animation-name:lcD2"><b style="animation-name:lcE2"></b></b></i><i style="left:26.00px;top:24.70px;width:20.80px;transform:rotate(-150.00deg)"><b style="animation-name:lcD3"><b style="animation-name:lcE3"></b></b></i><i style="left:7.99px;top:14.30px;width:20.80px;transform:rotate(90.00deg)"><b style="animation-name:lcD4"><b style="animation-name:lcE4"></b></b></i><i style="left:7.99px;top:35.10px;width:20.80px;transform:rotate(30.00deg)"><b style="animation-name:lcD5"><b style="animation-name:lcE5"></b></b></i><i style="left:26.00px;top:45.50px;width:20.80px;transform:rotate(-90.00deg)"><b style="animation-name:lcD6"><b style="animation-name:lcE6"></b></b></i><i style="left:26.00px;top:24.70px;width:20.80px;transform:rotate(90.00deg)"><b style="animation-name:lcD7"><b style="animation-name:lcE7"></b></b></i><i style="left:26.00px;top:45.50px;width:20.80px;transform:rotate(-30.00deg)"><b style="animation-name:lcD8"><b style="animation-name:lcE8"></b></b></i><i style="left:44.01px;top:35.10px;width:20.80px;transform:rotate(-90.00deg)"><b style="animation-name:lcD9"><b style="animation-name:lcE9"></b></b></i><i class="bk" style="left:7.99px;top:35.10px;width:20.80px;transform:rotate(-30.00deg)"></i><i class="bk" style="left:26.00px;top:24.70px;width:20.80px;transform:rotate(30.00deg)"></i><i class="bk" style="left:26.00px;top:24.70px;width:20.80px;transform:rotate(-90.00deg)"></i></span></div>
+      
+      
+      <div id="viewTop">
+        
+        <div id="capCol"><div id="planCaption" hidden></div><a id="madeWith" hidden target="_blank" rel="noopener">Made with StyloPlan</a></div>
+        
+        <div id="viewTools">
+          <button id="bLabels" class="on btn btn--secondary btn--sm">Labels</button>
+          <button id="bTheme" class="btn btn--secondary btn--sm"></button>
+          
+          <button id="bShot" class="btn btn--secondary btn--sm">Save image</button>
+        </div>
+      </div>
+      
+      <div id="viewFoot">
+        <a id="wordmark" class="btn btn--secondary btn--sm" href="index.html" target="_blank" rel="noopener" aria-label="StyloPlan: open the StyloPlan site">StyloPlan</a>
+        
+        <div id="sectionNote">Built from the plan's own symbols: windows at a standard height, doors as the plan draws them. Details may vary in construction.</div>
+      </div>
+      
+      
+      <div id="viewSide">
+        <span class="cap on" aria-hidden="true" data-walls="up">3D</span>
+        <span class="switch-v"><button id="bWalls" class="switch" role="switch" aria-checked="true" aria-label="Walls up (off shows the flat plan)" title="Walls up / flat plan"></button></span>
+        <span class="cap" aria-hidden="true" data-walls="down">2D</span>
+        
+        <button id="bReset" class="btn btn--secondary btn--sm" aria-label="Reset view" title="Reset view">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false">
+            <path fill="currentColor" d="M12 4a8 8 0 1 0 6.93 12l-2.6-1.5A5 5 0 1 1 12 7v3l5-4-5-4z"/>
+          </svg>
+        </button>
+      </div>
+      
+      <div id="cornerTools">
+        <button id="bFull" class="btn btn--secondary btn--sm" hidden aria-label="Full screen" title="Full screen">
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" class="fs-open"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>
+          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false" class="fs-close"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+        <div id="zoomTools">
+          <button id="bZoomIn" class="btn btn--secondary btn--sm" aria-label="Zoom in" title="Zoom in">+</button>
+          <button id="bZoomOut" class="btn btn--secondary btn--sm" aria-label="Zoom out" title="Zoom out">&#8722;</button>
+        </div>
+      </div>
+      <div id="overlay"></div>
+    </div>
+    
+    <div class="subtle" id="modelNote" hidden style="margin-top:8px"></div>
+    
+    <div class="subtle" id="stageHint" style="margin-top:8px"><span id="gestureWords">Drag to turn, scroll to zoom, Shift-drag to move.</span> Pocket, bypass, bifold and garage doors are shown shut.</div>
+  </section>
+</main>
+
+<div id="err"><div class="box panel">
+  <h3>This plan cannot be shown in 3D</h3>
+  <div id="errBody" class="subtle"></div>
+</div></div>
+
+<script type="module">import*as y from"three";import{OrbitControls as Kn}from"./src/vendor/OrbitControls.js";import{buildExtruded as To,THEMES as $t}from"./src/model3d/engine.js";import{SECTION_H as zo}from"./src/model3d/fixtures.js";import{extrudeWalls as et,GEOMETRY_VERSION as Fo,MIN_SHIPPED_VERSION as Jn}from"./src/model3d/extrude.js";import{fetchHealth as Qn}from"./src/l1-client.js";import{lookOfTone as ei,lookOfImage as ti}from"./src/model3d/theme3d.js";import{readFloorContext as oi,floorStage as Po,floorHref as Ro,planTitleOf as ni}from"./src/floor-context.js";import{setFloorGeoLook as ii,setFloorOpenings as ri,setFloorPosts as si,setFloorStair as ai,kitOf as tt}from"./src/store.js";import{lookToOpen as li,rememberLook as di,lastLook as ci}from"./src/look-memory.js";import{applyErases as fi}from"./src/review/eraser.js";import{getArtifact as Io,getArtifactUrl as ot,hasArtifact as Ht,scopeFor as ui,styledKind as Lt,resolveStyled as pi}from"./src/artifacts.js";import{renderChrome as hi}from"./src/chrome.js";import{onAuthChange as mi}from"./src/auth.js";import{startReport as wi}from"./src/report-ui.js";import{track as gi}from"./src/events.js";import{isPrintable as xi}from"./src/compositor.js";import{labelsOnRender as bi,stairsOnRender as yi,frameFit as vi,primeFit as ki}from"./src/label-frame.js";import{cachedFit as Ei}from"./src/fit-cache.js";import{readStairs as $i,outsideOf as Li}from"./src/model3d/stairs.js";import{railsFromWireframe as Si}from"./src/model3d/rails.js";import{findPosts as Ci,filledPosts as Mi,applyPosts as No,postFrame as Ti,snapPost as zi}from"./src/model3d/posts.js";import{edgeGuards as Fi}from"./src/model3d/edge-guards.js";import{askConfirm as nt}from"./src/ask.js";import{glide as Pi}from"./src/glide.js";import{floorPayload as Ri,homePayload as Oo,publishState as Ii,brandOf as Ni,brandBehind as Oi}from"./src/publish.js";import{publishedState as Ai,staleFloors as Di,publishFloors as ji,withdrawFloors as Wi}from"./src/cloud-publish.js";import{readPublishedHome as Bi,webHref as _i}from"./src/published-read.js";await hi();import{fitToBox as Ui,extentOf as Hi,windowsFromRecord as Gi,windowsOnWall as Vi,DEFAULT_WIDTH_FT as qi}from"./src/model3d/geometry.js";import{planGaps as Yi,classifyPlan as Xi,buildingExtent as Zi,ftPerPx as St,glazedOpenings as Ki,exteriorGaps as Ji,medianWallThickness as Qi,OUTDOOR_ROOM as er}from"./src/model3d/openings.js";import{planInkOf as tr,inkMaskOf as or,readPlan as nr,readWindows as ir,applyDecisions as rr,decisionsFrom as sr,fixFor as ar,openingRoom as lr,sightRaster as dr,sameOpening as cr}from"./src/model3d/window-read.js";import{readingCache as fr}from"./src/model3d/read-cache.js";import{findDoors as ur}from"./src/model3d/doors.js";import{roomGraph as pr}from"./src/model3d/rooms.js";import{belowGrade as hr,floorLevel as Ao,stairFromFloors as mr}from"./src/model3d/level.js";const Ae=e=>String(e??"").replace(/[&<>"']/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[t]),a=e=>document.getElementById(e);let Do=null;function it(e){const t=document.getElementById("loading");if(t){if(clearTimeout(Do),e===null){t.classList.remove("show"),Do=setTimeout(()=>{t.hidden=!0},250);return}t.hidden=!1,t.classList.remove("steps"),document.getElementById("loadingText").textContent=e,t.classList.add("show")}}const jo=700;async function rt(e){if(we)return;const t=document.getElementById("loadingStep");if(!t||document.getElementById("loading")?.hidden||t.querySelector(".step:not(.out)")?.textContent===e)return;const o=t.querySelector(".step:not(.out)"),i=o?performance.now()-Number(o.dataset.at||0):1/0;i<jo&&await new Promise(s=>setTimeout(s,jo-i));for(const s of t.querySelectorAll(".step:not(.out)"))s.classList.add("out"),setTimeout(()=>s.remove(),400);const n=document.createElement("span");n.className="step working",n.textContent=e,n.dataset.at=String(performance.now()),t.append(n),await new Promise(s=>{requestAnimationFrame(()=>setTimeout(s,0)),setTimeout(s,100)})}const me=e=>(it(null),a("err").style.display="grid",a("errBody").textContent=e,S.get("poster")&&parent.postMessage({type:"styloplan-poster",floorId:S.get("f"),posters:null,why:e},location.origin),new Promise(()=>{})),S=new URLSearchParams(location.search),ke=S.get("embed")==="1",Wo=S.get("inner")==="1"&&window.parent!==window,Gt=S.get("doors")==="1",st=S.get("debug")==="1",Ct=S.get("windows")==="1",Mt=S.get("windows")==="wall",Bo=Mt&&S.get("glass")!=="0",Tt=!Ct&&!Mt&&S.get("windows")!=="open";Tt||(document.getElementById("sectionNote").textContent="3D view built from the floor plan. Doors and windows are not modelled: they appear as plan symbols on the floor, with the wall left open. Details may vary in construction.");const T=S.get("demo"),we=(()=>{const e=(S.get("poster")||"").split(",").map(t=>/^(\d{2,4})x(\d{2,4})$/.exec(t)).filter(Boolean).map(t=>({w:Number(t[1]),h:Number(t[2])}));return e.length?{w:e[0].w,h:e[0].h,shapes:e}:null})(),wr=!we&&(S.get("share")==="1"||S.get("embed")==="1");we&&(a("stage").style.width=`${we.w}px`,a("stage").style.height=`${we.h}px`);let f=T||wr?null:oi();function zt(e){const t=document.getElementById("stageWrap");!t||e!=="light"&&e!=="dark"||(t.dataset.look=e,t.style.setProperty("--stage-ground",`#${$t[e].bg.toString(16).padStart(6,"0")}`))}zt(S.get("look")||ci(S.get("f"))||null);let v=null;!T&&!f&&(v=await Bi(S.get("p"),S.get("f")),v&&(f=v.ctx)),!T&&!f&&await me(S.get("p")?"This floor plan is not being shared. If it is yours, open it in StyloPlan and turn on “Share this plan”; otherwise ask whoever sent you this page.":"No floor was named. Open this from a confirmed floor in Studio.");async function gr(e){const t=e?.verified;return t?{confirmedLabels:(t.labels||[]).filter(xi),confirmedStairs:t.staircases||[],buildingWidthFt:qi,name:e.name,below:typeof t.specs?.below=="boolean"?t.specs.below:null,openings:t.openings||null,posts:t.posts||null}:null}const $=T?await fetch(`test/fixtures/${T}-geometry.json`).then(e=>e.ok?e.json():null).catch(()=>null):await gr(f.floor);T&&!$&&await me(`No fixture for “${T}”. The demo plans ship with the source, not with the deployed site. Run it from a local checkout.`),$||await me("This floor has not been confirmed in Review yet.");const De=e=>new Promise((t,o)=>{const i=new Image;i.onload=()=>t(i),i.onerror=()=>o(new Error(e)),i.src=e});let Z=v?.geometry?.extent?.x1||$.buildingWidthFt,_o=v?.geometry?.extent?.x1?`width ${Z.toFixed(1)}ft from the published reading`:`width assumed ${Z}ft`;const Vt=S.get("look");let B=(T||v)&&Vt!=="light"&&Vt!=="dark"?f?.project&&tt(f.project)?.palette?.theme==="light"?"light":"dark":li({asked:Vt,floorId:T||v?null:S.get("f"),kitLook:f?.project?tt(f.project)?.palette?.theme:null}),ce=null;async function ia(e){if(v){const o=await v.renderUrl(e)||await v.renderUrl(v.look);if(!o)throw new Error("this floor has no published render");return ce=v.look,B=v.look,o}const t=await pi(f.scope,e);if(!t)throw new Error("this floor has no render yet");return ce=t.theme,t.theme&&(B=t.theme),t.url}const qt=new Map;function at(e){return qt.has(e)||qt.set(e,(async()=>v?e===v.look||e===v.geoLook?v.renderUrl(e):null:await Io(f.scope,Lt(e))?ot(f.scope,Lt(e)):null)()),qt.get(e)}const je=new Map,We=e=>{const t=$t[e==="light"?"light":"dark"].bg;return[t>>16&255,t>>8&255,t&255]};async function xr(){if(T){const t=[];for(const o of["dark","light"]){const i=`test/fixtures/${T}-styled-${o}.jpg`;await fetch(i,{method:"HEAD"}).then(s=>s.ok).catch(()=>!1)&&t.push({look:o,url:i})}return t}const e=[];for(const t of["dark","light"]){const o=await at(t);o&&e.push({look:t,url:o})}return!e.length&&await Io(f.scope,"styled")&&e.push({look:null,url:await ot(f.scope,"styled")}),e}const Uo=e=>{const t=e.walls.filter(o=>Math.max(o.x1-o.x0,o.z1-o.z0)>(e.extent?e.extent.x1*.09:4)).length;return t?e.rects/t:1/0};await rt("Reading your render");const Ee=await xr();Ee.length||await me("This floor has no render yet. The 3D is built from the render: render it in Studio first, at no extra credit.");const Ho=T?null:v?v.geoLook||null:f.floor?.geoLook||null,Go=Ho?Ee.filter(e=>e.look===Ho):[],br=Go.length?Go:Ee;let lt=null,F=null,m=null;if(!T&&!v&&!await at(B)){const e=B==="dark"?"light":"dark";await at(e)&&(B=e)}const ge=B,J=v?.geometry||null;let $e=null;for(const e of br){const t=await De(e.url),o=et(t,Z,{sheetBg:We(ge),geometry:v?J:null,floor:!1});o.extent&&(!m||Uo(o)<Uo(m))&&(m=o,F=t,lt=e.url,$e=e.look)}if(m||await me("No walls could be found in this render."),!v&&$.confirmedLabels?.length){const e=T?`test/fixtures/${T}-wireframe-v3.png`:await ot(f.scope,"wireframe").catch(()=>null),t=e?await De(e).catch(()=>null):null,o=t?fi(t,f?.floor?.verified?.erases):null,i=o?(await Promise.all(Ee.filter(n=>n.url!==lt).map(n=>De(n.url).catch(()=>null)))).filter(Boolean):[];if(await rt("Reading the rooms, doors and windows"),o&&F){const{value:n}=await Ei("frameFit",[o,F,...i],()=>vi(o,F,i));ki(o,F,i,n)}$.confirmedLabels=bi($.confirmedLabels,o,F,i),$.confirmedStairs=yi($.confirmedStairs,o,F,i)}let Be=[],dt="",Vo=[],fe=[],ct=null,q=null,V=null,D=[],ue=[],ft=[],_e=null,ut=!1,j={windows:[],doors:[],posts:[],stairs:[]},O="windows",ie=!1;const qo=1.5,Yo=S.get("level")==="basement"||S.get("level")!=="above"&&hr({confirmed:$.below??$.specs?.below??null,names:[$.name,f?.floor?.name,f?.floor?.planTitle],labels:$.confirmedLabels||[]});if(m.fromPublished){if(Tt&&J?.openings?.length){const e=F.naturalWidth,t=F.naturalHeight,o=m.trim.x1-m.trim.x0,i=m.trim.y1-m.trim.y0,n=r=>m.extent.x0+(r/e-m.trim.x0)/o*(m.extent.x1-m.extent.x0),s=r=>m.extent.z0+(r/t-m.trim.y0)/i*(m.extent.z1-m.extent.z0);fe=J.openings.map(r=>({x0:n(r.x0),x1:n(r.x1),z0:s(r.y0),z1:s(r.y1),horizontal:r.horizontal,kind:r.kind,units:r.units,leaves:r.leaves?.map(l=>({hx:n(l.x),hz:s(l.y),ax:l.ax,az:l.ay,ix:l.ix,iz:l.iy,len:l.r/e/o*(m.extent.x1-m.extent.x0),deg:l.deg})),fire:r.fire?(()=>{const l=r.horizontal?n:s,d=r.horizontal?s:n,c=r.fire;return{side:c.side,backC:d(c.face+c.side*c.depth),back:[l(c.back[0]),l(c.back[1])],hearth:c.hearth?{far:d(c.hearth.far),lo:l(c.hearth.lo),hi:l(c.hearth.hi)}:null}})():void 0,wall:r.wall?{x0:n(r.wall.x0),x1:n(r.wall.x1),z0:s(r.wall.y0),z1:s(r.wall.y1)}:void 0})),dt=`${fe.length} opening(s) from the published reading`+Xo()}}else{await rt("Reading the rooms, doors and windows");const e=v?null:await fr(ir),t=nr({plan:Se(F),first:m,labels:$.confirmedLabels||[],assumedWidthFt:Z,retrace:h=>et(F,h,{sheetBg:We(ge),geometry:null,floor:!1}),...e?{read:e.read}:{}});e&&(st&&(window.__readCache={hits:e.hits,misses:e.misses}),e.save()),($.confirmedLabels?.length||t.calibrated==="doors")&&(_o=t.calibrated?`width ${t.widthFt.toFixed(1)}ft, ${t.why}`:`width assumed ${Z}ft: ${t.why}`),Z=t.widthFt,m=t.ex,m.extent||await me("No walls could be found in this render.");let o=null;(Mt||Tt)&&(o={...t.read,plan:t.plan},ct=o,Mt&&(Be=o.fills,dt=o.note)),Be.length&&(m=et(F,Z,{sheetBg:We(ge),geometry:null,fill:Be,floor:!1}),m.extent||await me("No walls could be found in this render."));const i=F.naturalWidth,n=F.naturalHeight,s=m.trim.x1-m.trim.x0,r=m.trim.y1-m.trim.y0,l=h=>m.extent.x0+(h/i-m.trim.x0)/s*(m.extent.x1-m.extent.x0),d=h=>m.extent.z0+(h/n-m.trim.y0)/r*(m.extent.z1-m.extent.z0),c=h=>({x0:l(h.x0),x1:l(h.x1),z0:d(h.y0),z1:d(h.y1),horizontal:h.horizontal}),u=h=>({hx:l(h.x),hz:d(h.y),ax:h.ax,az:h.ay,ix:h.ix,iz:h.iy,len:h.r/i/s*(m.extent.x1-m.extent.x0),deg:h.deg}),p=(h,b)=>{const M=h.horizontal?l:d,z=h.horizontal?d:l;return{side:b.side,backC:z(b.face+b.side*b.depth),back:[M(b.back[0]),M(b.back[1])],hearth:b.hearth?{far:z(b.hearth.far),lo:M(b.hearth.lo),hi:M(b.hearth.hi)}:null}};Vo=Be.map(c),Tt&&o&&(q={w:i,h:n,toModel:c,toLeaf:u,toFire:p,read:o},V=$.openings||null,Ue())}function Xo(){const e=fe.filter(i=>i.kind==="garage").length,t=fe.filter(i=>i.kind==="door").length,o=fe.filter(i=>i.kind==="fireplace").length;return(e?` · ${e} garage door(s) shuttered`:"")+(t?` · ${t} door(s) hung`:"")+(o?` · ${o} fireplace(s)`:"")+` · ${Yo?"basement":"above-grade"} sill`}function Zo(e){return e.raw==="door"||e.raw==="fireplace"||e.raw==="garage"||["door","sliding","pocket","bifold","garage","fireplace"].includes(e.kind)?"doors":"windows"}function Ue(){if(!q)return;const{w:e,h:t,toModel:o,toLeaf:i,toFire:n,read:s}=q,r=rr(s.openings,V,e,t);D=r.rows,fe=r.openings.filter(c=>c.kind==="win"||c.kind==="garage"||c.kind==="door"||c.kind==="fireplace").map(c=>({...o(c),kind:c.kind,units:c.units,leaves:c.leaves?.map(i),fire:c.fire?n(c,c.fire):void 0,wall:c.wall?o({...c.wall,horizontal:c.horizontal}):void 0}));const l=St(Se(F).seg,Z)||0,d=D.map((c,u)=>u).filter(c=>{const u=D[c].g,p=(u.horizontal?u.x1-u.x0:u.y1-u.y0)*l;return!(D[c].kind==="open"&&p<qo)});j={windows:d.filter(c=>Zo(D[c])==="windows"),doors:d.filter(c=>Zo(D[c])==="doors"),posts:j.posts||[],stairs:j.stairs||[]},ue=j[O],ft=O==="posts"||O==="stairs"?ue.map((c,u)=>({n:u+1,x:(c.box.x0+c.box.x1)/2,z:(c.box.z0+c.box.z1)/2})):ue.map((c,u)=>{const p=o(D[c].g);return{n:u+1,x:(p.x0+p.x1)/2,z:(p.z0+p.z1)/2}}),dt=s.note+Xo()}$e&&!T&&!v&&f.floor?.geoLook!==$e&&(ii(f.project.id,f.floor.id,$e),f.floor.geoLook=$e),v&&!ce?(ce=v.look,B=v.look):!T&&!ce&&!$e&&(ce=ei(m.floorTone||[0,0,0]),B=ce);async function Yt(e){if(je.has(e))return je.get(e);const t=T?(Ee.find(c=>c.look===e)||Ee[0])?.url:await at(e)||lt;if(!t)return null;const o=t===lt&&e===ge,i=o?F:await De(t),n=o?m:et(i,Z,{sheetBg:We(e),geometry:v&&t===lt?J:null,fill:Be,floor:!1}),s=n.extent&&m.extent?Math.abs(n.extent.z1/m.extent.z1-1):0,r=s<=.02,l=r?null:e===ge?m:et(F,Z,{sheetBg:We(e),geometry:v?J:null,fill:Be,floor:!1}),d={theme:e,render:i,aspectDelta:s,borrowedFloor:!r,ex:r?{...m,floor:n.floorWith(He),floorRect:n.floorRect,planFloor:n.planFloorWith(He)}:{...m,floor:l.floorWith(He),floorRect:l.floorRect,planFloor:l.planFloorWith(He)}};return je.set(e,d),d}const yr=(()=>{const e=F.naturalWidth,t=F.naturalHeight,o=m.trim.x1-m.trim.x0,i=m.trim.y1-m.trim.y0,n=r=>m.extent.x0+(r/e-m.trim.x0)/o*(m.extent.x1-m.extent.x0),s=r=>m.extent.z0+(r/t-m.trim.y0)/i*(m.extent.z1-m.extent.z0);return r=>({x0:n(r.x0),x1:n(r.x1),z0:s(r.y0),z1:s(r.y1)})})(),pt=[...ct?.openings||J?.openings||[],...ct?.plan?.gaps||J?.gaps||[]].filter(e=>typeof e?.x0=="number").map(yr),He=Li(m,pt);if(!m.fromPublished&&!m.rails&&S.get("rails")!=="0"){await rt("Building the 3D model");const e=T?`test/fixtures/${T}-wireframe-v3.png`:f?await ot(f.scope,"wireframe").catch(()=>null):null,t=e?await De(e).catch(()=>null):null;t&&(m.rails=Si(m,F,t))}let U=await Yt(B)||await Yt(B==="dark"?"light":"dark");U||(U={theme:B,render:F,ex:m,aspectDelta:0},je.set(B,U)),B=U.theme,zt(B);const Ko=U.render,I=U.ex,Le=F;I.extent||await me("No walls could be found in this render.");function Se(e){Se.cache??=new Map;const t=Se.cache;if(t.has(e))return t.get(e);const o=tr(e),i={...o,ext:Zi(o.seg)};return t.set(e,i),i}async function vr(e,t){if(!e)return{windows:[],note:"no render for this floor"};const{ink:o,w:i,h:n,seg:s,ext:r,gaps:l}=Se(e),d=St(s,Z);if(!r||!d)return{windows:[],note:"no walls found in the wireframe"};const c={},{band:u}=Xi(o,i,n,l,d,c),p=Ki({w:i},{mask:o,low:null},l),h=Yi(s,{minGap:20,maxGap:4e3}),b=Qi(o,i,n)||Math.round(i/100),M=Ji(o,i,n,s,p,{bridge:h,faceDepth:Math.max(3,Math.round(b*2))}),z=p.length-M.length,g=t.trim.x1-t.trim.x0,x=t.trim.y1-t.trim.y0,N=P=>t.extent.x0+(P/i-t.trim.x0)/g*(t.extent.x1-t.extent.x0),R=P=>t.extent.z0+(P/n-t.trim.y0)/x*(t.extent.z1-t.extent.z0),G=P=>({x0:N(P.x0),x1:N(P.x1),z0:R(P.y0),z1:R(P.y1),horizontal:P.horizontal,byLines:P.byLines}),W=1,K=1.5,Y=t.extent,ne=M.map(G),Oe=ne.filter(P=>(P.horizontal?P.x1-P.x0:P.z1-P.z0)<K?!1:P.x0>=Y.x0-W&&P.x1<=Y.x1+W&&P.z0>=Y.z0-W&&P.z1<=Y.z1+W),Ut=ne.length-Oe.length;let Lo=[],So="";if(Gt){const P=ur(o,i,n,s,{ftPerPx:d,gaps:l,wallPx:t.wallFloorFt?t.wallFloorFt/d:0}),Qe=pr({mask:o,W:i,H:n,segments:s,gaps:l,doors:P}).report,Co=l.filter(X=>{const Mo=(X.horizontal?X.x1-X.x0:X.y1-X.y0)*d;return Mo>=2&&Mo<=4.2}).length;So=`${P.length} doors read · ${Qe.rooms} rooms · ${Qe.joinTwoRooms} join two rooms · ${Qe.toOutside} to outside`+(Qe.sameRoomBothSides?` · ${Qe.sameRoomBothSides} SUSPECT (same room both sides)`:"")+` · ${Co} door-width openings`+(P.length>Co?" · more doors than openings":""),Lo=P.map(X=>({x:N(X.x),z:R(X.y),r:X.radius/i/g*(t.extent.x1-t.extent.x0),deg:X.deg,along:X.along,into:X.into,score:X.score}))}return{windows:Oe,doors:Lo,doorNote:So,dropped:Ut,note:`${Oe.length} window(s) read off the render`+(z?` · ${z} on an interior wall, left solid`:"")+(Ut?` · ${Ut} set aside as too small or off the building`:"")+` · glazing ${(u.lo*100).toFixed(0)}-${(u.hi*100).toFixed(0)}% (${u.from})`}}const ht=Ct||Gt||st?await vr(Le,I):{windows:[],doors:[],doorNote:"",dropped:0,note:""},kr=S.get("stairs")!=="0",Xt=f?.project?.floors?.length>1?mr({level:Ao({below:$.below??$.specs?.below??null,name:$.name}),stairs:$.confirmedStairs||[]},f.project.floors.filter(e=>e.id!==f.floor?.id).map(e=>({level:Ao({below:e.verified?.specs?.below??null,name:e.name})}))):null,Er=Xt?.direction||($.below===!0?"up":/\b(upper|second|2nd|third|3rd|top|attic|loft)\b/i.test($.name||"")?"down":"up");let pe=null;function Jo(){const e={...$,confirmedStairs:($.confirmedStairs||[]).filter(t=>!t.off3d)};pe=kr?$i(Le,I,e,{openings:pt,defaultDirection:Er}):null}Jo();const Qo=S.get("posts")!=="0"?Ci(Le,I,{openings:pt}):[],en=S.get("posts")!=="0"&&He?Mi(I,He,fe.filter(e=>e.kind==="win"||e.kind==="door"||e.kind==="garage")):[],mt=Ti(I);let Ce=$.posts||null,xe=No({read:Qo,filled:en,decisions:Ce,frame:mt});function tn(){xe=No({read:Qo,filled:en,decisions:Ce,frame:mt}),j.posts=xe.rows,O==="posts"&&(ue=xe.rows,ft=xe.rows.map((e,t)=>({n:t+1,x:(e.box.x0+e.box.x1)/2,z:(e.box.z0+e.box.z1)/2})))}tn();function $r(){const e=new Map((pe?.stairs||[]).map(t=>[t.st?.id,t]));return($.confirmedStairs||[]).map((t,o)=>{const i=e.get(t.id)||null,n=i?.mx??0,s=i?.mz??0;return{st:t,s:i,i:o,box:{x0:n,x1:n,z0:s,z1:s}}})}function on(){j.stairs=$r(),O==="stairs"&&(ue=j.stairs,ft=ue.map((e,t)=>({n:t+1,x:e.box.x0,z:e.box.z0})))}on();function Ft(e,t){f?.project?.id&&ai(f.project.id,f.floor.id,e,t);for(const o of $.confirmedStairs||[])o.id===e&&Object.assign(o,t);for(const o of f?.floor?.verified?.staircases||[])o.id===e&&Object.assign(o,t);Jo(),nn(),on(),Re(),ee(),no()}function Lr(e){if(!e?.pieces)return"";if(e.round)return"curved";const t=e.pieces.find(o=>o.winders);return/^U/.test(e.why)?"U-shaped, with a landing":/^L/.test(e.why)?t?`L-shaped, turning by ${t.winders.n} winders`:"L-shaped, with a landing":"straight"}function Sr(e){const t=document.createElement("p");if(t.className="subtle posts-intro",t.textContent="Read from your plan. Set which way each one goes from this floor, or leave it flat on the floor.",e.appendChild(t),j.stairs.forEach((o,i)=>{const{st:n,s}=o,r=document.createElement("div");r.className=`stair-row${n.off3d?" off":""}`,r.dataset.n=String(i+1);const l=document.createElement("span");l.className="pin",l.textContent=String(i+1);const d=document.createElement("span");d.className="n",d.textContent=s?.near?s.near.toUpperCase():`Staircase ${i+1}`,d.title=d.textContent;const c=document.createElement("div");c.className="stair-acts";const u=(b,M,z,g)=>{const x=document.createElement("button");return x.type="button",x.className="btn btn--quiet btn--sm",x.textContent=b,x.setAttribute("aria-pressed",String(M)),x.setAttribute("aria-label",z),x.addEventListener("click",g),x},p=s?.pieces?s.down?"down":"up":n.direction;if(!n.off3d&&(c.append(u("Up",p==="up",`Staircase ${i+1} goes up from this floor`,()=>Ft(n.id,{direction:"up"})),u("Down",p==="down",`Staircase ${i+1} goes down from this floor`,()=>Ft(n.id,{direction:"down"}))),s?.round)){const b=n.turn!=="ccw";c.append(u(b?"Turns ↻":"Turns ↺",!0,`Staircase ${i+1} turns ${b?"clockwise":"counterclockwise"} going up; switch`,()=>Ft(n.id,{turn:b?"ccw":"cw"})))}c.append(u(n.off3d?"Show":"Flat",!!n.off3d,n.off3d?`Build staircase ${i+1} in 3D`:`Leave staircase ${i+1} flat on the floor`,()=>Ft(n.id,{off3d:!n.off3d})));const h=document.createElement("span");h.className="d",h.textContent=n.off3d?"left flat on the floor by you":s?.pieces?`${s.n} steps · ${Lr(s)}${s.turned?s.travelBy==="arrow"?" · follows the arrow on your plan":" · starts from its open end":""}${s.guessed?" · direction set from this floor, check it":""}${s.round&&!s.turnSet?" · turn not set, check it":""}`:s?.unread==="treads"?"no steps could be read beside it, so it is flat":"flat",r.addEventListener("pointerenter",()=>ve(i+1,!0)),r.addEventListener("pointerleave",()=>ve(i+1,!1)),r.append(l,d,c,h),e.appendChild(r)}),!j.stairs.length){const o=document.createElement("div");o.className="none",o.textContent="No staircases on this plan.",e.appendChild(o)}}let Zt=[];function nn(){Zt=S.get("guards")!=="0"?Fi(Le,I,{stairs:pe,openings:pt,exclude:(pe?.stairs||[]).flatMap(e=>e.guards||[])}):[]}nn();const Cr=.02,Mr=.8,Tr=($.rooms||[]).length>0&&($.walls||[]).length>0,Me=Tr?Gi($.walls,Hi($.rooms),I.extent):{windows:[],aspectError:0},Kt=Vi(Me.windows,I.walls),rn=Me.aspectError<=Cr,zr=Me.windows.length>0&&Kt.keep.length/Me.windows.length>=Mr,sn=rn&&zr,Fr=S.get("outline")!=="0",Pr=S.get("merge")!=="0",Jt=()=>({outline:Fr,merge:Pr,headers:S.get("openings")==="header",theme:L,labels:$.confirmedLabels,staircases:$.confirmedStairs,stairs3d:pe,posts3d:xe.stand,postCuts:xe.cut,guards3d:Zt,windows:Ct?sn?Kt.keep:ht.windows:Bo?Vo:[],glass:Bo&&!Ct,market:fe,belowGrade:Yo,markers:v||ut||we?[]:ft});let L=B,Ge=!0;const Ve={};for(const e of["light","dark"])Ve[e]=!!T||(v?e===v.look:!!await at(e));ce&&(Ve[ce]=!0);function Rr(e){const t=new y.Group;if(!e?.length)return t;const o=new y.LineBasicMaterial({color:3791242,depthTest:!1}),i=(n,s,r=.06)=>new y.Vector3(n,r,s);for(const n of e){const s=n.deg*Math.PI/180,r=n.along[0]*Math.cos(s)+n.into[0]*Math.sin(s),l=n.along[1]*Math.cos(s)+n.into[1]*Math.sin(s);t.add(new y.Line(new y.BufferGeometry().setFromPoints([i(n.x,n.z),i(n.x+r*n.r,n.z+l*n.r)]),o));const d=[];for(let u=0;u<=24;u++){const p=s*(u/24);d.push(i(n.x+(n.along[0]*Math.cos(p)+n.into[0]*Math.sin(p))*n.r,n.z+(n.along[1]*Math.cos(p)+n.into[1]*Math.sin(p))*n.r))}t.add(new y.Line(new y.BufferGeometry().setFromPoints(d),o));const c=[];for(let u=0;u<=16;u++){const p=u/16*Math.PI*2;c.push(i(n.x+Math.cos(p)*n.r*.06,n.z+Math.sin(p)*n.r*.06))}t.add(new y.Line(new y.BufferGeometry().setFromPoints(c),o))}return t.renderOrder=998,t}await rt("Building the 3D model");const an=To(I,Jt());let C=an;st&&(window.__model=()=>({current:C,ex:I,windows:Jt().windows,openings:ct?.openings||[],plan:ct?.plan,market:fe,rows:D,decisions:V,stairs:pe,edges:Zt,sealed:pt,renderer:k,scene:_,camera:w}));let Qt="";st&&Qn().then(e=>{Qt=(e?.build||"").slice(0,7),oo()}).catch(()=>{});const eo=new WeakMap;function to(e){if(!e)return"none";if(eo.has(e))return eo.get(e);let t;try{const o=document.createElement("canvas");o.width=64,o.height=64;const i=o.getContext("2d",{willReadFrequently:!0});i.drawImage(e,0,0,64,64);const n=i.getImageData(0,0,64,64).data;let s=2166136261;for(let d=0;d<n.length;d+=4)for(let c=0;c<3;c++)s^=n[d+c],s=Math.imul(s,16777619);const r=e.naturalWidth||e.width,l=e.naturalHeight||e.height;t=`${r}x${l}#${(s>>>0).toString(16).padStart(8,"0")}`}catch(o){t=`unreadable (${o.name})`}return eo.set(e,t),t}function oo(e){if(!st){a("overlay").innerHTML="";return}const t=[];if(Qt&&t.push(`<span class="subtle">build ${Qt}</span>`),t.push(`<span class="subtle">floor: showing ${L} · traced as ${ge}`+(ge===B?"":` (asked ${ge}, render is ${B})`)+` · borrowed ${U.borrowedFloor?"YES":"no"} · aspect Δ ${((U.aspectDelta||0)*100).toFixed(2)}% · sheetBg [${We(L).join(",")}] · floorTone [${(I.floorTone||[]).map(o=>Math.round(o)).join(",")||"?"}] · embed ${ke?"yes":"no"}</span>`),t.push(`<span class="subtle">picture: ${Ee.length} candidate(s) · walls traced from ${to(F)} · floor drawn from ${to(U.render)} · plan ${I.fromPublished?"from the published reading":"traced here"} · ${Ae(_o)}`+(dt?` · ${Ae(dt)}`:"")+(v&&!I.fromPublished&&J?` (record v${J.version} refused: older than v${Jn} or another picture)`:"")+(v&&I.fromPublished&&J&&J.version!==Fo?` (record v${J.version}, this engine v${Fo})`:"")+"</span>"),t.push(...C.notes.map(Ae)),ht.note&&t.push(Ae(ht.note)),!sn){const o=Me.windows.length===0?"your confirmed record carries no window openings, so nothing was placed from it.":rn?`${Kt.dropped} of ${Me.windows.length} did not sit in a wall.`:`the record and the render differ by ${(Me.aspectError*100).toFixed(1)}% in shape.`;t.push(`<span class="warn">No confirmed window positions on this plan: ${o}</span>`)}e&&t.push(`<span class="warn">${Ae(e)}</span>`),a("overlay").innerHTML=t.map(o=>`<div class="item">${o}</div>`).join("")}function no(){const e=[];if(U.borrowedFloor&&e.push("The two renders of this floor are too different in shape to share one set of walls, so the plan you are seeing is the other look. Rendering this one again in Studio usually fixes it."),Ve[L]||e.push(`This floor has no ${L} render, so the plan you are seeing is your ${L==="dark"?"light":"dark"} one. Render it in ${L} in Studio to match.`),!v&&(pe?.flat||pe?.stairs.some(o=>o.derived||o.guessed||o.turned||o.st?.paired||o.pieces&&o.round&&!o.turnSet))){const o=f?Ro("review.html",f.project.id,f.floor.id):"review.html",i=n=>String(n).replace(/[&<>"]/g,s=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[s]);pe.stairs.forEach((n,s)=>{const r=`Staircase ${s+1}${n.near?` (by ${i(n.near.toUpperCase())})`:""}`;n.pieces&&n.derived&&e.push(`${r} has no UP or DN set in Review. It lies outside the walls, so it is shown as steps ${n.down?"down to":"up from"} the ground. <a href="${o}">Set it in Review</a> if that is wrong.`),n.pieces&&n.round&&!n.turnSet&&e.push(`${r} is round and has no turn set. It is shown turning clockwise as it goes up. Turn it round under Stairs, below, if that is wrong.`),n.pieces&&n.st?.paired&&e.push(`${r} stands beside another stair behind a wall, so the two are shown as one going up and one going down`+(n.st.pairedBy==="break line"?" (the one your plan draws a break line across goes up). ":" (by the UP or DN set in Review). ")+`Open its staircase card in Review and answer there: <a href="${o}">two stairs or one</a>.`),n.pieces&&n.turned&&!n.st?.paired&&e.push((n.travelBy==="arrow"?`${r} is shown going the way the arrow on your plan points.`:`${r} is shown starting from its open side, the only side it can be walked onto from.`)+` Its arrow in Review points the other way: <a href="${o}">turn it there</a> so the 2D plan matches.`),n.pieces&&n.guessed&&e.push(`${r} has no UP or DN set, so it is shown going ${n.down?"down":"up"} from this floor${Xt?` (${Xt.why})`:""}. Change it under Stairs, below, if that is wrong.`),!n.pieces&&(n.unread==="direction"?e.push(`${r} has no UP or DN set in Review, so this floor's stairs stay flat. <a href="${o}">Set it in Review</a> and the 3D will stand them up.`):n.unread==="treads"&&e.push(`${r}: no stair treads could be read from the render beside its marker, so this floor's stairs stay flat. <a href="${o}">Move its marker onto the stair in Review</a>, or leave the floor as it is.`))})}const t=a("lookWarn");t.innerHTML=e.map(o=>`<div class="item">${o}</div>`).join(""),t.hidden=e.length===0}function Ir(){const e=a("modelNote");e&&(e.hidden=!0)}Ir(),a("hTitle").textContent=T?T.charAt(0).toUpperCase()+T.slice(1):$.name||"Floor",document.body.dataset.view=L;const _=new y.Scene;if(new URLSearchParams(location.search).get("probe")&&addEventListener("click",e=>{const t=new y.Raycaster,o=k.domElement.getBoundingClientRect();t.setFromCamera(new y.Vector2((e.clientX-o.left)/o.width*2-1,-((e.clientY-o.top)/o.height*2-1)),w);const i=t.intersectObjects(_.children,!0).filter(l=>l.object.isMesh)[0];if(!i){console.log("probe: nothing hit");return}const n=new y.Box3().setFromObject(i.object).getSize(new y.Vector3),s=i.uv?[Math.round(i.uv.x*1696),Math.round((1-i.uv.y)*2528)]:null,r={geometry:i.object.geometry.type,sizeFt:[n.x,n.y,n.z].map(l=>+l.toFixed(2)),world:[i.point.x,i.point.y,i.point.z].map(l=>+l.toFixed(2)),planImagePx:s};console.log("probe:",JSON.stringify(r)),window.__probe=r}),_.background=new y.Color($t[L].bg),_.add(an.group),Gt){_.add(Rr(ht.doors));const e=document.createElement("div");e.className="subtle warn",e.style.marginTop="8px",e.textContent=ht.doorNote,a("stageHint").after(e)}const Nr=()=>{const e=C.group;e.updateWorldMatrix(!0,!0);const t=new y.Matrix4().copy(e.matrixWorld).invert(),o=new y.Box3,i=new y.Matrix4;return e.traverse(n=>{if(!n.isMesh||!n.geometry||!n.visible)return;for(let r=n.parent;r&&r!==e;r=r.parent)if(!r.visible)return;n.geometry.boundingBox||n.geometry.computeBoundingBox();const s=n.geometry.boundingBox.clone().applyMatrix4(i.multiplyMatrices(t,n.matrixWorld));s.max.y-s.min.y>.05&&o.union(s)}),o.isEmpty()?null:o.applyMatrix4(e.matrixWorld)},io=()=>{const e=U.ex.extent,t=new y.Box3().setFromObject(C.group),o=Math.max(t.max.y,.1),i=new y.Box3(new y.Vector3(e.x0,0,e.z0),new y.Vector3(e.x1,o,e.z1)),n=Nr();return n&&i.union(n),Ui(i,40,A().w/A().h,1.02)};let H=io();function A(){const e=a("stage");return{w:Math.max(1,e.clientWidth),h:Math.max(1,e.clientHeight)}}const w=new y.PerspectiveCamera(40,A().w/A().h,.5,4e3),k=new y.WebGLRenderer({antialias:!0,stencil:!0}),ln=Math.min(devicePixelRatio,2),dn=1,Or=37e5,cn=()=>{const{w:e,h:t}=A();return Math.max(Math.min(1,ln),Math.min(ln,Math.sqrt(Or/(e*t))))};let be=cn(),qe=16.7,Pt=300,wt=0;k.setPixelRatio(be),k.setSize(A().w,A().h,!1),a("stage").append(k.domElement);const E=new Kn(w,k.domElement);E.target.set(H.target.x,H.target.y,H.target.z),E.zoomToCursor=!0,E.enablePan=!0,E.screenSpacePanning=!0,E.panSpeed=.8,E.enableDamping=!0,E.dampingFactor=.08,E.minPolarAngle=.18,E.maxPolarAngle=Math.PI/180*55;function ro(){E.minDistance=Math.min(H.distance*.35,zo/Math.cos(E.maxPolarAngle)),E.maxDistance=H.distance*1.5}if(ro(),ke){E.touches={ONE:null,TWO:y.TOUCH.DOLLY_ROTATE},k.domElement.style.touchAction="pan-y",a("stage").addEventListener("wheel",o=>{o.ctrlKey||o.metaKey||ao()||(o.stopPropagation(),lo(Ye()?"Use two fingers to turn the model":"Hold Ctrl and scroll to zoom"))},{capture:!0,passive:!0});const e=new Set;let t=null;k.domElement.addEventListener("pointerdown",o=>{if(!(o.pointerType!=="touch"||ao())){if(e.add(o.pointerId),e.size>1){clearTimeout(t);return}t=setTimeout(()=>{e.size===1&&lo("Use two fingers to turn the model")},120)}},{passive:!0});for(const o of["pointerup","pointercancel","pointerleave"])k.domElement.addEventListener(o,i=>e.delete(i.pointerId),{passive:!0})}const Ye=()=>matchMedia("(pointer: coarse)").matches,so=Wo?window.parent.document:document,ao=()=>!!(so.fullscreenElement||so.webkitFullscreenElement);function Ar(e){let t=document.getElementById("floorFrame");t||(t=document.createElement("iframe"),t.id="floorFrame",t.title="Floor plan in 3D",t.allow="fullscreen",t.style.cssText="position:fixed;inset:0;width:100%;height:100%;border:0;z-index:2147483000;background:transparent",document.body.append(t)),t.src=`${location.pathname}${e}`,Vn=!0,Et()}let fn=null;function lo(e){const t=a("gestureHint");t.textContent=e,t.classList.add("show"),clearTimeout(fn),fn=setTimeout(()=>t.classList.remove("show"),2200)}const te=new y.Vector3,re=new y.Vector3;let Rt=0;function Te(){H=io(),ro(),re.set(H.target.x,H.target.y,H.target.z),pn()}const Dr=.01/zo,jr=900;let ze=!0,co=1,It=0,fo=0,uo=0,Fe=1,Xe=0,un=0;function pn(){if(!ze){const r=U.ex.extent,l=Math.tan(w.fov*Math.PI/180/2),d=l*(A().w/A().h),c=Math.max((r.z1-r.z0)/(2*l),(r.x1-r.x0)/(2*d))*1.25;re.set((r.x0+r.x1)/2,H.target.y,(r.z0+r.z1)/2),te.set(re.x,re.y+c,re.z+c*.02);return}const e=Math.hypot(.55,.72),t=Math.tan(w.fov*Math.PI/180/2),o=Math.atan(t*(A().w/A().h)),i=Math.max(H.distance*e,H.radius*1.02/Math.sin(o)),n=i*.55/e,s=i*.72/e;te.set(H.target.x+Math.sin(Rt)*s,H.target.y+n,H.target.z+Math.cos(Rt)*s)}function po(){Te(),E.target.copy(re),w.position.copy(te),w.lookAt(E.target),E.update()}po();const ye=matchMedia("(prefers-reduced-motion: reduce)"),Ze=15e3,hn=1.6,Nt=4;let gt=hn,oe=performance.now()-Ze,Q=!1;const Ot=e=>a("viewFoot")?.classList.toggle("quiet",e);E.addEventListener("start",()=>{Q=!1}),E.addEventListener("end",()=>{oe=performance.now()});for(const e of["pointerdown","wheel"])k.domElement.addEventListener(e,()=>{oe=performance.now(),Ot(!0)},{passive:!0});k.domElement.addEventListener("pointermove",e=>{e.buttons&&(oe=performance.now())},{passive:!0});function Wr(e){if(!Q){if(performance.now()-oe<Ze)return;if(Ot(!1),ye.matches){Te(),w.position.copy(te),E.target.copy(re),w.lookAt(E.target);return}if(w.position.distanceTo(te)<.01){mn(e);return}if(Te(),w.position.distanceTo(te)<.01){mn(e);return}Q=!0,gt=hn}const t=1-Math.exp(-gt*e);w.position.lerp(te,t),E.target.lerp(re,t),w.position.distanceTo(te)<.02&&(w.position.copy(te),E.target.copy(re),Q=!1)}const Br=75;function mn(e){Rt+=Math.PI*2/Br*e,pn(),w.position.copy(te),w.lookAt(E.target)}const wn=1.3,_r=11;let he=null;const gn=()=>w.position.distanceTo(E.target);function xn(e){const t=he??gn();he=Math.min(E.maxDistance,Math.max(E.minDistance,t*e)),oe=performance.now(),Q=!1,Ot(!0)}function Ur(e){if(Q&&(he=null),he==null)return;const t=w.position.clone().sub(E.target),o=t.length();if(!(o>0)){he=null;return}const i=o+(he-o)*(1-Math.exp(-_r*e));w.position.copy(E.target).addScaledVector(t.divideScalar(o),i),Math.abs(i-he)<Math.max(.001,he*.002)&&(he=null)}let bn="";function Hr(){const e=gn(),t=`${e<=E.minDistance*1.01}|${e>=E.maxDistance*.99}`;if(t===bn)return;bn=t;const[o,i]=t.split("|");a("bZoomIn").disabled=o==="true",a("bZoomOut").disabled=i==="true"}for(const[e,t]of[["bZoomIn",1/wn],["bZoomOut",wn]]){const o=a(e);o.addEventListener("click",()=>xn(t));let i=null,n=null;const s=()=>{clearTimeout(i),clearInterval(n),i=n=null};o.addEventListener("pointerdown",()=>{s(),i=setTimeout(()=>{n=setInterval(()=>{if(o.disabled){s();return}xn(t)},90)},380)});for(const r of["pointerup","pointercancel","pointerleave"])o.addEventListener(r,s)}const Gr={empty:"needs a plan",uploaded:"needs review",confirmed:"not rendered yet"};async function Vr(){if(!f)return a("bFloor").closest(".panel").hidden=!0,0;const e=f.project.floors||[],t=a("bFloor");let o=0;for(const i of e){const n=v?"styled":await Po(f.project.id,i.id),s=n==="styled";if(s&&o++,ke&&!s)continue;const r=document.createElement("option");r.value=i.id,r.textContent=s?i.name:`${i.name} (${Gr[n]||"not rendered yet"})`,r.disabled=!s,r.selected=i.id===f.floor.id,t.append(r)}return t.disabled=t.options.length<2,a("floorPanel").hidden=e.length<2,a("floorHint").hidden=![...t.options].some(i=>i.disabled),t.onchange=()=>{if(t.value===f.floor.id)return;const i=[...t.options].find(s=>s.value===t.value)?.textContent;it(i?`Loading ${i}…`:"Loading…");const n=new URLSearchParams(location.search);if(n.set("p",f.project.id),n.set("f",t.value),n.set("look",L),v&&!Wo&&ao()){n.set("inner","1"),Ar(`?${n}`);return}location.search=`?${n}`},o}const qr=await Vr();async function Yr(e){try{const t=await ot(e,"styled");return t?ti(await De(t)):null}catch{return null}}const se=[];if(f&&!v)for(const e of f.project.floors||[]){const t=ui(f.project.id,e.id);se.push({id:e.id,name:e.name||"Floor",stage:await Po(f.project.id,e.id),light:await Ht(t,Lt("light")),dark:await Ht(t,Lt("dark"))});const o=se[se.length-1];!o.light&&!o.dark&&await Ht(t,"styled")&&(o[await Yr(t)]=!0)}function ho(e){const t=se.filter(o=>!o[e]);return{ok:t.length===0,render:t.filter(o=>o.stage==="confirmed"||o.stage==="styled"),review:t.filter(o=>o.stage!=="confirmed"&&o.stage!=="styled")}}function mo(e){const t=e.map(o=>o.name);return t.length<=1?t[0]||"":`${t.slice(0,-1).join(", ")} and ${t[t.length-1]}`}const Xr=[{id:"light",name:"Light"},{id:"dark",name:"Dark"}];function yn(e){const t=f?Ro("studio.html",f.project.id,f.floor.id):"studio.html";return e?t+(t.includes("?")?"&":"?")+"look="+encodeURIComponent(e):t}function vn(){if(v){a("lookPanel").hidden=!0;return}for(const o of a("lookSeg").querySelectorAll("button[data-look]")){const i=o.dataset.look;o.classList.toggle("active",L===i),o.setAttribute("aria-pressed",String(L===i)),o.disabled=!Ve[i]}const e=a("lookNote");e.replaceChildren();const t=Xr.find(o=>!Ve[o.id]);if(t){const o=document.createElement("a");o.href=yn(t.id),o.textContent="Render it in Studio",e.append(`${t.name} is not rendered yet. `,o)}}a("lookSeg").onclick=e=>{const t=e.target.closest("button[data-look]");t&&!t.disabled&&Cn(t.dataset.look)},Pi(a("lookSeg"));const Pe=T?T.charAt(0).toUpperCase()+T.slice(1):ni(f.project,f.floor);let xt=S.get("title")!=="0";if(ke){const e=a("madeWith");e.href=new URL("index.html?ref=embed",location.href).href,e.hidden=!1}function Zr(){const e=a("wordmark");if(!e)return;const t=v?f?.floor?.brand||null:T?null:Ni(tt(f?.project));if(!t)return;e.textContent=t.name;const o=_i(t.website);if(o){e.href=o;let i=o;try{i=new URL(o).host}catch{}e.setAttribute("aria-label",`${t.name}: open ${i}`),e.title=i}else e.removeAttribute("href"),e.removeAttribute("target"),e.removeAttribute("rel"),e.setAttribute("aria-label",t.name),e.removeAttribute("title")}Zr();function kn(){v&&(a("titleShow").closest(".panel").hidden=!0);const e=a("planCaption");e.textContent=Pe,e.hidden=!xt||!Pe,document.documentElement.classList.contains("shared")&&(a("shareTitle").textContent=Pe||"Floor plan",e.hidden=!0,document.title=Pe?`${Pe} · StyloPlan`:"3D view · StyloPlan"),a("bCaption").setAttribute("aria-checked",String(xt)),a("titleShow").textContent=Pe||"Not set",a("titleFrom").innerHTML=f?`Set in <a href="${yn()}">Studio</a>, where it also prints on your image.`:"From this demo plan."}a("bCaption").onclick=()=>{xt=!xt,kn(),Ke()},kn(),matchMedia("(pointer: coarse)").matches&&(a("gestureWords").textContent="Drag to turn, pinch to zoom, two fingers to move.");const En=(e,t)=>{e.classList.toggle("on",t),e.setAttribute("aria-pressed",t?"true":"false")};function $n(){const e=($.confirmedLabels||[]).length>0;if(a("bLabels").disabled=!e,!e){a("bLabels").title="This floor has no room names yet. Name them in Review.",En(a("bLabels"),!1);return}En(a("bLabels"),Ge),a("bLabels").title=Ge?"Hide the room names":"Show the room names"}$n(),a("bLabels").onclick=()=>{Ge=!Ge,C.labelGroup.visible=Ge,$n()};const Ln=()=>L==="dark"?"light":"dark";function Sn(){const e=Ln(),t=a("bTheme");t.hidden=!Ve[e]||!v,t.textContent=e==="dark"?"Dark mode":"Light mode",t.title=`Show this plan in ${e} mode`}Sn();async function Cn(e){if(e===L)return;const t=a("bTheme");t.disabled=!0,je.has(e)||(zt(e),it(`Loading ${e} view…`));try{const o=await Yt(e);if(!o)return;U=o,L=e,!T&&!v&&di(S.get("f"),e),Re()}finally{t.disabled=!1,zt(L),it(null)}}a("bTheme").onclick=()=>Cn(Ln()),a("bReset").onclick=()=>{Te(),ye.matches?(po(),Q=!1):(gt=Nt,Q=!0),oe=performance.now()-Ze};{const e=a("bFull"),t=so,o=()=>t.fullscreenElement||t.webkitFullscreenElement,i=!!(t.fullscreenEnabled||t.webkitFullscreenEnabled),n=()=>(t.documentElement.requestFullscreen||t.documentElement.webkitRequestFullscreen).call(t.documentElement),s=()=>(t.exitFullscreen||t.webkitExitFullscreen).call(t),r=()=>{const d=new URL(location.href);return d.searchParams.delete("embed"),d.searchParams.set("share","1"),d.toString()},l=()=>{const d=!!o();ke&&(E.touches={ONE:d?y.TOUCH.ROTATE:null,TWO:y.TOUCH.DOLLY_ROTATE},k.domElement.style.touchAction=d?"none":"pan-y"),e.classList.toggle("on",d),e.setAttribute("aria-label",d?"Exit full screen":"Full screen"),e.title=d?"Exit full screen":"Full screen"};v&&(i||ke)&&(e.hidden=!1,e.onclick=()=>{if(!i){window.open(r(),"_blank","noopener");return}o()?s():n()},t.addEventListener("fullscreenchange",l),t.addEventListener("webkitfullscreenchange",l),l())}const wo=(()=>{if(!v)return null;const e=a("roomCard"),t=new y.Raycaster,o=new y.Vector2,i=new y.Plane(new y.Vector3(0,1,0),0),n=new y.Vector3,s=new y.Vector3;let r=null,l=!1;const d=()=>(C.labelGroup?.children||[]).filter(g=>g.userData.room).map(g=>({sp:g,at:g.getWorldPosition(new y.Vector3)})).sort((g,x)=>Math.floor(g.at.z/10)-Math.floor(x.at.z/10)||g.at.x-x.at.x),c=g=>{const x=String(g||"").split(/[x×X]/).map(R=>{const G=R.match(/(\d+(?:\.\d+)?)\s*'(?:\s*-?\s*(\d+(?:\.\d+)?)\s*")?/);if(G)return+G[1]+(G[2]?+G[2]/12:0);const W=R.match(/(\d+(?:\.\d+)?)\s*"/);return W?+W[1]/12:0}),N=Math.max(0,...x);return N>2&&N<80?N:12};function u(g){const x=c(g.sp.userData.room.dim)*2.2,N=Math.tan(w.fov*Math.PI/180/2),R=N*(A().w/A().h),G=Math.max(x/(2*N),x/(2*R)),W=Math.atan2(w.position.x-E.target.x,w.position.z-E.target.z),K=ze?62*Math.PI/180:89*Math.PI/180;s.set(g.at.x,0,g.at.z),n.set(s.x+Math.sin(W)*Math.cos(K)*G,Math.sin(K)*G,s.z+Math.cos(W)*Math.cos(K)*G)}function p(g){r=g,u(g),l=!0,Q=!1,oe=performance.now(),a("rcName").textContent=g.sp.userData.room.name,a("rcDim").textContent=g.sp.userData.room.dim||"",a("rcDim").hidden=!g.sp.userData.room.dim,e.hidden=!1,Ot(!0),ye.matches&&(w.position.copy(n),E.target.copy(s),l=!1)}function h(){r&&(r=null,l=!1,e.hidden=!0,Te(),gt=Nt,Q=!0,oe=performance.now()-Ze)}function b(g){const x=d();if(!x.length)return;const N=r?x.findIndex(R=>R.sp===r.sp):-1;p(x[(N+g+x.length)%x.length])}function M(g,x){const N=k.domElement.getBoundingClientRect();o.set((g-N.left)/N.width*2-1,-((x-N.top)/N.height)*2+1),t.setFromCamera(o,w);const R=d();if(!R.length)return;const G=t.intersectObjects(R.map(ne=>ne.sp),!1)[0];if(G)return p(R.find(ne=>ne.sp===G.object));const W=t.ray.intersectPlane(i,new y.Vector3);if(!W)return h();let K=null,Y=1/0;for(const ne of R){const Oe=Math.hypot(ne.at.x-W.x,ne.at.z-W.z);Oe<Y&&(Y=Oe,K=ne)}K&&Y<=c(K.sp.userData.room.dim)*.75?p(K):h()}let z=null;k.domElement.addEventListener("pointerdown",g=>{z=g.isPrimary?{x:g.clientX,y:g.clientY,t:performance.now(),n:1}:(z&&(z.n=2),z)},{passive:!0}),k.domElement.addEventListener("pointerup",g=>{const x=z;z=null,!(!x||x.n>1||!g.isPrimary)&&(Math.hypot(g.clientX-x.x,g.clientY-x.y)>8||performance.now()-x.t>450||M(g.clientX,g.clientY))},{passive:!0}),E.addEventListener("start",()=>{l=!1}),a("rcPrev").onclick=()=>b(-1),a("rcNext").onclick=()=>b(1),a("rcClose").onclick=h,addEventListener("keydown",g=>{g.key==="Escape"&&r&&h()});try{sessionStorage.getItem("roomTapHint")||setTimeout(()=>{if(!r){lo(Ye()?"Tap a room to see its name and size":"Click a room to see its name and size");try{sessionStorage.setItem("roomTapHint","1")}catch{}}},2600)}catch{}return{get on(){return r},frame(g){if(!r)return!1;if(performance.now()-oe>=Ze)return h(),!1;if(l){const x=1-Math.exp(-Nt*g);w.position.lerp(n,x),E.target.lerp(s,x),w.position.distanceTo(n)<.02&&(l=!1)}return!0}}})(),Mn=e=>String(e||"").replace(/[\\/:*?"<>|]/g," ").replace(/\s+/g," ").trim(),Tn=2,Kr=()=>new Promise(e=>{const t=A().w,o=A().h;k.setSize(t*Tn,o*Tn,!1),w.aspect=t/o,w.updateProjectionMatrix(),k.render(_,w),k.domElement.toBlob(i=>{k.setSize(t,o,!1),w.updateProjectionMatrix(),k.render(_,w),e(i)},"image/png")});a("bShot").onclick=async()=>{const e=a("bShot");e.disabled=!0;const t=e.textContent;try{const o=await Kr();if(!o){e.textContent="Could not save";return}const i=Mn(f?.project?.name||$?.name)||"Floor plan",n=[$?.name,L==="light"?"Light":"Dark","3D"].map(Mn).filter(Boolean).join(" - "),s=document.createElement("a");s.href=URL.createObjectURL(o),s.download=`${i} (${n}).png`,s.click(),setTimeout(()=>URL.revokeObjectURL(s.href),1e4)}finally{setTimeout(()=>{e.disabled=!1,e.textContent=t},400)}};function Re(){_.remove(C.group),de&&(_.remove(de),de=null),C.dispose(),C=To(U.ex,Jt()),C.labelGroup.visible=Ge,_.add(C.group),_.background.set($t[L].bg),document.body.dataset.view=L,Sn(),vn(),Ke(),le(),Te(),oo(),no()}oo(),no(),vn();const Jr=[["window","Window"],["patio","Patio door"],["door","Door"],["sliding","Sliding doors"],["pocket","Pocket door"],["bifold","Bifold door"],["garage","Garage door"],["fireplace","Fireplace"],["open","Open"]],zn=new Set(["door","sliding","pocket","bifold"]),bt=[["windows","Windows"],["doors","Doors"],["posts","Posts"],["stairs","Stairs"]],Ie=!v&&!!q;a("winPanel").hidden=!Ie,mi(({user:e})=>{a("repRow").hidden=!(e&&Ie&&!T&&f?.project?.id)}),a("bReport3d").onclick=()=>wi({host:k.domElement,surface:"3d",look:L,what:"3D",projectId:f.project.id,floorId:f.floor.id});let go=null;function Qr(e){const{w:t,h:o}=q,i=e.fire?r=>((e.horizontal?r.y*o:r.x*t)-e.fire.face)*e.fire.side<0:()=>!0,n=q.read?.plan?.seg;return n&&go?.seg!==n&&(go={seg:n,wall:dr(n,q.read?.openings||[],t,o)}),(lr(e,$.confirmedLabels||[],go?.wall,t,o,{keep:r=>!er.test(r.name)&&i(r)})?.name||"").toUpperCase()}function Fn(e){const t=e.horizontal?e.x1-e.x0:e.y1-e.y0,o=St(Se(F).seg,Z);return o?t*o:0}const es={fixed:"fixed",slider:"sliding","double-hung":"double-hung",jalousie:"jalousie",patio:"patio"};function ts(e){const o=(e.units||[]).map(n=>es[n.style]||n.style);return o.length?o.every(n=>n===o[0])?{style:o[0],n:o.length>1?` · ${o.length} units`:""}:{style:o.join(" + "),n:""}:{style:"fixed",n:""}}function Pn(e){if(O===e){ie&&(ie=!1,ee());return}ie=!1,O=e,Ue(),Re(),ee()}function ee(){if(!Ie)return;const e=a("winList");e.innerHTML="";const t=(i,n,s)=>{const r=document.createElement("button");r.type="button",r.className=`sec${s?" open":""}`,r.setAttribute("aria-expanded",String(s));const l=j[i].length;return r.innerHTML='<span class="sec__chev" aria-hidden="true"></span><span class="sec__name"></span><span class="sec__n"></span>',r.querySelector(".sec__name").textContent=n,r.querySelector(".sec__n").textContent=l?String(l):"none",r.addEventListener("click",()=>{s?(ie=!0,ee()):Pn(i)}),r},o=bt.findIndex(([i])=>i===O);for(const[i,n]of bt.slice(0,o))e.appendChild(t(i,n,!1));if(e.appendChild(t(bt[o][0],bt[o][1],!ie)),O==="posts"?ie||ls(e):O==="stairs"?ie||Sr(e):(ie?[]:ue).forEach((i,n)=>{const s=D[i],r=document.createElement("div");r.className=s.kind==="open"?"off":"",r.dataset.n=String(n+1);const l=document.createElement("span");l.className="pin",l.textContent=String(n+1);const d=Qr(s.g)||`Opening ${n+1}`,c=Fn(s.g),{style:u,n:p}=ts(s.g),h=s.kept?"added by you":s.raw==="door"?`${{bifold:"bifold ",pocket:"pocket ",sliding:"sliding "}[s.read]||""}door${s.g.interior?"":" to outside"}`:s.raw==="fireplace"?"fireplace":s.raw==="garage"?"garage door":s.raw==="win"?s.read==="patio"?"patio door":`${u} window${s.g.interior?" inside":""}${p}`:"opening",b=document.createElement("span");b.className="n",b.textContent=d,b.title=d;const M=document.createElement("span");M.className="d";const z=document.createElement("span");z.className="m",z.textContent=c?`${c.toFixed(1)} ft`:"",M.append(z,document.createTextNode(`${c?" · ":""}${h}`)),M.title=s.kept?"An opening you added":`What the symbol on your plan reads as: ${h}`;const g=document.createElement("select");g.className="select",g.setAttribute("aria-label",`What opening ${n+1} in ${d} is`);for(const[x,N]of Jr){if(x==="fireplace"&&s.raw!=="fireplace")continue;const R=document.createElement("option");R.value=x,R.textContent=N,R.selected=s.kind===x,g.appendChild(R)}if(g.addEventListener("change",()=>ns(i,g.value)),r.addEventListener("pointerenter",()=>ve(n+1,!0)),r.addEventListener("pointerleave",()=>{r.contains(document.activeElement)||ve(n+1,!1)}),r.addEventListener("focusin",()=>ve(n+1,!0)),r.addEventListener("focusout",x=>{r.contains(x.relatedTarget)||ve(n+1,!1)}),r.append(l,b,g,M),zn.has(s.kind)){const x=document.createElement("button");x.type="button",x.className="fix",x.textContent=s.fixed?"Undo":"Fix",x.title=s.fixed?"Back to the door as read from your plan":"Redraw this door in its standard shape",x.setAttribute("aria-label",`${s.fixed?"Undo the fix on":"Fix the shape of"} door ${n+1} in ${d}`),x.addEventListener("click",()=>is(i)),r.classList.add("fixable"),r.appendChild(x)}e.appendChild(r)}),!ie&&!ue.length&&O!=="posts"&&O!=="stairs"){const i=document.createElement("div");i.className="none",i.textContent=O==="doors"?"No door symbols read on this plan.":"No window symbols read on this plan.",e.appendChild(i)}for(const[i,n]of bt.slice(o+1))e.appendChild(t(i,n,!1));a("bAddOpening").textContent=yt?"Cancel":O==="posts"?"+ Add a post":"+ Add a door or window",os()}function os(){const e={window:0,patio:0,door:0,garage:0,fireplace:0,open:0};for(const l of[...j.windows,...j.doors]){const d=zn.has(D[l].kind)?"door":D[l].kind;e[d]=(e[d]||0)+1}const t=[];e.window&&t.push(`${e.window} window${e.window===1?"":"s"}`),e.patio&&t.push(`${e.patio} patio door${e.patio===1?"":"s"}`),e.door&&t.push(`${e.door} door${e.door===1?"":"s"}`),e.garage&&t.push(`${e.garage} garage door${e.garage===1?"":"s"}`),e.fireplace&&t.push(`${e.fireplace} fireplace${e.fireplace===1?"":"s"}`),e.open&&t.push(`${e.open} left open`);const o=t.join(", ")||"no openings read",i=a("winVerdict"),n=a("winDot");i.className="verdict",n.className="dot";const s=(O==="posts"||O==="stairs"?[...j.windows,...j.doors]:ue).filter(l=>!D[l].decided).length;V?.confirmedAt&&!s?(i.classList.add("verdict--confirmed"),n.classList.add("dot--ok"),a("winTitle").textContent=`Reviewed and confirmed by you · ${new Date(V.confirmedAt).toLocaleDateString(void 0,{day:"numeric",month:"short"})}`,a("winDetail").textContent=o,a("bConfirmWin").textContent="Confirm again"):V?.confirmedAt?(i.classList.add("verdict--checking"),n.classList.add("dot--warn"),a("winTitle").textContent=`${s} opening${s===1?"":"s"} read since you confirmed`,a("winDetail").textContent=`${o} · check the new ones, then confirm`,a("bConfirmWin").textContent="Confirm windows and doors"):(i.classList.add("verdict--checking"),n.classList.add("dot--warn"),a("winTitle").textContent="Check them, then confirm to share",a("winDetail").textContent=`${o} · read from your plan`,a("bConfirmWin").textContent="Confirm windows and doors"),a("bConfirmWin").disabled=!(j.windows.length+j.doors.length);const r=!!V?.confirmedAt&&!s;_e===null&&(_e=!r),ut=r&&!_e;for(const l of["winIntro","winList","bConfirmWin","winNote","addRow"])a(l).hidden=ut||l==="addRow"&&(ie||O==="stairs");a("bWinEdit").hidden=!ut,C?.markerGroup&&(C.markerGroup.visible=!ut&&ft.length>0)}let At=null;function xo(e=!1){const t=At||!Ie||!!V?.confirmedAt||!!ae.rows?.size;for(const o of["titlePanel","embedPanel"]){const i=a(o);i.hidden=!t,i.classList.toggle("reveal",t&&e&&At===!1)}t&&e&&At===!1&&a("titlePanel").scrollIntoView({behavior:ye.matches?"auto":"smooth",block:"nearest"}),At=t}function Dt(e={}){V=sr(D,q.w,q.h,{look:$e||null,renderKey:to(F),confirmedAt:V?.confirmedAt||null,...e}),f?.project?.id&&f?.floor?.id&&!T&&(ri(f.project.id,f.floor.id,V),f.floor.verified&&(f.floor.verified.openings=V))}function ns(e,t){D[e].kind=t,delete D[e].fixed,Dt(),Ue(),Re(),ee(),le()}function is(e){const t=D[e];t.fixed?delete t.fixed:t.fixed=ar(t.kind,Fn(t.g)),Dt(),Ue(),Re(),ee(),le()}a("bConfirmWin").addEventListener("click",()=>{Dt({confirmedAt:new Date().toISOString()}),_e=!1,Ue(),ee(),xo(!0),le();const e=a("winVerdict");e.classList.remove("is-just"),e.offsetWidth,e.classList.add("is-just"),e.addEventListener("animationend",()=>e.classList.remove("is-just"),{once:!0})}),a("bWinEdit").addEventListener("click",()=>{_e=!0,ee()});function ve(e,t){for(const o of C.markerGroup?.children||[])o.userData.marker===e&&(o.userData.hot=t,o.userData.redraw?.(t));for(const o of a("winList").children)o.classList.toggle("hot",t&&o.dataset.n===String(e))}const Ne=new y.Raycaster;function bo(e,t,o=!1){if(!Ie||!C||!q)return null;const i=k.domElement.getBoundingClientRect();if(Ne.setFromCamera(new y.Vector2((e-i.left)/i.width*2-1,-((t-i.top)/i.height*2-1)),w),C.markerGroup?.visible){const c=Ne.intersectObjects(C.markerGroup.children,!1)[0];if(c)return{section:O,n:c.object.userData.marker}}if(o)return null;const n=Ne.intersectObject(C.group,!0).find(c=>c.object.isMesh&&!c.object.isSprite);if(!n)return null;const s=C.group.worldToLocal(n.point.clone()),r=.75;let l=null,d=1/0;for(const c of["windows","doors"])j[c].forEach((u,p)=>{const h=q.toModel(D[u].g);if(s.x<h.x0-r||s.x>h.x1+r||s.z<h.z0-r||s.z>h.z1+r)return;const b=Math.hypot(s.x-(h.x0+h.x1)/2,s.z-(h.z0+h.z1)/2);b<d&&(d=b,l={section:c,n:p+1})});return l}function yo({section:e,n:t}){_e=!0,O!==e?Pn(e):ee();const o=[...a("winList").children].find(i=>i.dataset.n===String(t));o&&(o.scrollIntoView({behavior:ye.matches?"auto":"smooth",block:Ye()?"center":"nearest"}),o.querySelector("select")?.focus({preventScroll:!0}),o.classList.remove("picked"),o.offsetWidth,o.classList.add("picked"))}if(Ie){let e=null;k.domElement.addEventListener("pointerdown",o=>{e={x:o.clientX,y:o.clientY,id:o.pointerId}},{passive:!0}),k.domElement.addEventListener("pointerup",o=>{const i=e;if(e=null,!i||i.id!==o.pointerId||Math.hypot(o.clientX-i.x,o.clientY-i.y)>6)return;if(yt){ss(o.clientX,o.clientY);return}const n=bo(o.clientX,o.clientY);n&&yo(n)});let t=null;k.domElement.addEventListener("pointermove",o=>{if(!(o.pointerType!=="mouse"||o.buttons)){if(t){t=[o.clientX,o.clientY];return}t=[o.clientX,o.clientY],requestAnimationFrame(()=>{k.domElement.classList.toggle("over-pin",!!bo(t[0],t[1],!0)),t=null})}},{passive:!0})}let yt=!1;function vt(e,t=""){yt=e,k.domElement.classList.toggle("adding",e);const o=O==="posts";if(a("bAddOpening").textContent=e?"Cancel":o?"+ Add a post":"+ Add a door or window",a("addNote").textContent=e?o?`${Ye()?"Tap":"Click"} where your plan draws the post. It snaps to the square on the drawing.`:`${Ye()?"Tap":"Click"} the gap on the model where the door or window should be.`:t,e&&o&&ze&&$o(!1),e){const i=k.domElement.getBoundingClientRect();(i.top<0||i.bottom>innerHeight)&&k.domElement.scrollIntoView({behavior:ye.matches?"auto":"smooth",block:"center"})}}function rs(e,t){const o=k.domElement.getBoundingClientRect();Ne.setFromCamera(new y.Vector2((e-o.left)/o.width*2-1,-((t-o.top)/o.height*2-1)),w);const i=Ne.intersectObject(C.group,!0).find(c=>c.object.isMesh&&!c.object.isSprite);if(!i)return null;const n=C.group.worldToLocal(i.point.clone()),s=St(Se(F).seg,Z)||0,r=.75;let l=null,d=1/0;for(const c of q.read?.plan?.gaps||[]){if((c.horizontal?c.x1-c.x0:c.y1-c.y0)*s<qo||D.some(b=>cr(b.g,c)))continue;const p=q.toModel(c);if(n.x<p.x0-r||n.x>p.x1+r||n.z<p.z0-r||n.z>p.z1+r)continue;const h=Math.hypot(n.x-(p.x0+p.x1)/2,n.z-(p.z0+p.z1)/2);h<d&&(d=h,l=c)}return l}function ss(e,t){if(O==="posts"){cs(e,t);return}const o=rs(e,t);if(!o){const d=bo(e,t);if(d){vt(!1,"That one is already on the list."),yo(d);return}a("addNote").textContent=`No open doorway there. ${Ye()?"Tap":"Click"} the gap between two walls, or Cancel.`;return}const{w:i,h:n}=q,s=`added:${Date.now().toString(36)}`,r={id:s,x0:+(o.x0/i).toFixed(4),y0:+(o.y0/n).toFixed(4),x1:+(o.x1/i).toFixed(4),y1:+(o.y1/n).toFixed(4),horizontal:!!o.horizontal,interior:!0,kind:"door",read:"open"};V={...V||{},items:[...V?.items||[],r]},Ue(),Dt(),Re(),vt(!1,"Added. Choose what it is.");const l=j.doors.findIndex(d=>D[d].id===s);l>=0?yo({section:"doors",n:l+1}):ee(),le()}function as(){f?.project?.id&&f?.floor?.id&&!T&&(si(f.project.id,f.floor.id,Ce),f.floor.verified&&(f.floor.verified.posts=Ce))}function jt(e){const t=e.added||[],o=e.removed||[];Ce=t.length||o.length?{added:t,removed:o}:null,as(),tn(),Re(),ee(),le()}function ls(e){const t=document.createElement("p");if(t.className="subtle posts-intro",t.textContent="Columns on a porch or deck, read where your plan draws a square. Add one the model missed, or remove one it should not have.",e.appendChild(t),xe.rows.forEach((o,i)=>{const n=document.createElement("div");n.className=o.removed?"off":"",n.dataset.n=String(i+1);const s=document.createElement("span");s.className="pin",s.textContent=String(i+1);const r=document.createElement("span");r.className="n";const l=ds((o.box.x0+o.box.x1)/2,(o.box.z0+o.box.z1)/2);r.textContent=l||`Post ${i+1}`,r.title=r.textContent;const d=document.createElement("button");d.type="button",d.className="btn btn--quiet btn--sm",d.textContent=o.removed?"Put back":"Remove",d.setAttribute("aria-label",`${o.removed?"Put back":"Remove"} post ${i+1}`),d.addEventListener("click",()=>{const p=Ce||{},h=mt.toFrac((o.box.x0+o.box.x1)/2,(o.box.z0+o.box.z1)/2);o.kind==="added"?jt({...p,added:(p.added||[]).filter((b,M)=>M!==o.i)}):o.removed?jt({...p,removed:(p.removed||[]).filter(M=>{const z=mt.toFt(M.x,M.y);return!(z.x>=o.box.x0-.25&&z.x<=o.box.x1+.25&&z.z>=o.box.z0-.25&&z.z<=o.box.z1+.25)})}):jt({...p,removed:[...p.removed||[],{x:+h.fx.toFixed(4),y:+h.fy.toFixed(4)}]})});const c=document.createElement("span");c.className="d";const u=document.createElement("span");u.className="m",u.textContent=`${Math.max(o.box.x1-o.box.x0,o.box.z1-o.box.z0).toFixed(1)} ft`,c.append(u,document.createTextNode(` · ${o.kind==="added"?"added by you":o.removed?"removed by you":"read from your plan"}`)),n.addEventListener("pointerenter",()=>ve(i+1,!0)),n.addEventListener("pointerleave",()=>ve(i+1,!1)),n.append(s,r,d,c),e.appendChild(n)}),!xe.rows.length){const o=document.createElement("div");o.className="none",o.textContent="No posts read on this plan.",e.appendChild(o)}}function ds(e,t){const o=I.trim,i=I.extent;let n=null,s=1/0;for(const r of $.confirmedLabels||[]){if(!r.name)continue;const l=i.x0+Rn(r.x,o.x0,o.x1)*(i.x1-i.x0),d=i.z0+Rn(r.y,o.y0,o.y1)*(i.z1-i.z0),c=Math.hypot(l-e,d-t);c<s&&(s=c,n=r.name)}return s<30?n:null}const Rn=(e,t,o)=>(e-t)/(o-t);function cs(e,t){const o=k.domElement.getBoundingClientRect();Ne.setFromCamera(new y.Vector2((e-o.left)/o.width*2-1,-((t-o.top)/o.height*2-1)),w);const i=new y.Plane(new y.Vector3(0,1,0),0),n=new y.Vector3;if(!Ne.ray.intersectPlane(i,n))return;const s=C.group.worldToLocal(n.clone()),r=Le.naturalWidth,l=Le.naturalHeight,d=mt.toFrac(s.x,s.z);if(d.fx<0||d.fy<0||d.fx>1||d.fy>1){a("addNote").textContent="That is off the plan. Click where the post is drawn, or Cancel.";return}const c=(I.extent.x1-I.extent.x0)/((I.trim.x1-I.trim.x0)*r),u=zi(or(Le),d.fx*r,d.fy*l,c),p=Ce||{};jt({...p,added:[...p.added||[],{x0:+(u.x0/r).toFixed(4),y0:+(u.y0/l).toFixed(4),x1:+(u.x1/r).toFixed(4),y1:+(u.y1/l).toFixed(4)}]}),vt(!1,u.snapped?"Added, on the square your plan draws.":"Added where you clicked: no square drawn there, so a 6-inch post.")}Ie&&(a("bAddOpening").addEventListener("click",()=>vt(!yt)),addEventListener("keydown",e=>{yt&&e.key==="Escape"&&vt(!1)}));let ae={signedIn:!1,rows:null,error:null},In=[];ee(),xo();function Nn(e,t){const o=t==="embed"?"embed.html":"view3d.html";return new URL(o,location.href).href+`?p=${encodeURIComponent(f.project.id)}&f=${encodeURIComponent(f.floor.id)}&look=${encodeURIComponent(L)}`+(t==="share"?"&share=1":"")+(e?"&floors=all":"")}function fs(e){if(!f)return"";const t=e==="all";if(t&&!ho(L).ok)return"";const o=t?f.project.name||"Floor plan":$.name||"Floor plan",i=Nn(t,"embed")+(xt?"":"&title=0"),n=o.replace(/"/g,"");return`<div style="display:block;width:100%;max-width:100%;height:100%;margin:0 auto">
+  <div style="position:relative;display:block;width:100%;height:100%;aspect-ratio:${us()};min-height:340px;max-height:760px;border-radius:12px;overflow:hidden">
+    <iframe src="${i}" title="${n} in 3D"
+      style="position:absolute;inset:0;width:100%;height:100%;border:0"
+      loading="lazy" allowfullscreen></iframe>
+  </div>
+</div>`}function us(){const e=Ko?.naturalWidth||4,t=Ko?.naturalHeight||5;return`${(e/t).toFixed(2)} / 1`}let vo=!1;function On(){return vo?"all":"one"}let An="one";function Ke(){const e=a("embed").closest(".panel");if(!f||v){e.hidden=!0;return}e.hidden=!1,a("embedScope").hidden=se.length<2;const t=se.length<2?"one":On();An=t,a("linkNote").textContent="";const o=a("bAllFloors");o.setAttribute("aria-checked",t==="all"?"true":"false");const i=ho(L);o.disabled=!i.ok&&t!=="all",o.style.opacity=o.disabled?".45":"";const n=[...i.render,...i.review];a("scopeLabel").innerHTML=`All ${se.length} floors`+(i.ok?"":` <span class="subtle">· ${Ae(mo(n))} ${n.length>1?"need":"needs"} a ${L} render</span>`),o.title=i.ok?"":`Every floor needs a ${L} render first`;const s=fs(t);if(a("embedReady").hidden=!s,a("embedBlock").hidden=!!s,s){a("embed").value=s,a("embedNote").textContent=`Shows the ${L} look.`,a("embedCan").textContent='Your page shows the plan with a "View in 3D" button, sized to the space you give it. '+(t==="all"?"Visitors can turn the model, switch floors and hide the room names.":"Visitors can turn the model and hide the room names.");return}const r=ho(L),l=[...r.render,...r.review],d=l.length>1;a("embedBlock").textContent=`All floors needs every floor in the same look. ${mo(l)} ${d?"have":"has"} no ${L} render${r.review.length?` (${mo(r.review)} still needs Review first)`:""}.`}async function ko(){if(!f)return;ae=await Ai(f.project.id);const e=Dn();In=ae.rows?await Di(e,ae.rows):[]}function Dn(){return f?.project.floors?.length?Oo(f.project,L,e=>!!se.find(t=>t.id===e)?.[L],tt(f.project)).ready:[]}function jn(){if(!f)return[];const e=tt(f?.project);if(On()==="all"&&se.length>1)return Oo(f.project,L,o=>!!se.find(i=>i.id===o)?.[L],e).ready;const t=Ri(f.project,f.floor,L,e);return t?[t]:[]}const Wn=e=>ae.rows?.get(e.floorId)?.look===L;function le(){xo();const e=a("pubState");if(e.innerHTML="",!f||v)return;const t=jn(),o=t.filter(Wn),i=Ii({signedIn:ae.signedIn,readable:!!ae.rows,total:t.length,live:o.length,behind:o.filter(r=>In.includes(r.floorId)).length});if(i.showSwitch){const r=document.createElement("button");r.className="switch",r.setAttribute("role","switch"),r.setAttribute("aria-checked",i.on?"true":"false"),r.setAttribute("aria-label","Share this plan"),r.onclick=()=>i.on?ms():Un();const l=document.createElement("span");l.className="pub-name",l.textContent="Share this plan";const d=document.createElement("div");d.className="row",d.style.cssText="gap:var(--s-3);align-items:center;margin:0 0 var(--s-2)",d.append(r,l),e.append(d)}const n=document.createElement("div"),s=document.createElement("div");if(s.className=i.tone==="warn"?"subtle warn":"subtle",s.textContent=i.text,n.append(s),i.showUpdate){const r=document.createElement("button");r.className="btn btn--secondary btn--sm pub-act",r.textContent="Update the version on my website",r.onclick=Un,n.append(r)}e.append(n),ps(!i.codeWorks)}function ps(e){a("embedCodeBox")&&(a("embedCodeBox").hidden=!!e,a("copyEmbed").disabled=!!e,a("copyLink").disabled=!!e)}function hs(e,t){const i=t.width>=t.height?1600:Math.round(1600*t.width/t.height),n=t.width>=t.height?Math.round(1600*t.height/t.width):1600,s=[`${i}x${n}`,"1600x1280"],r=new URL("view3d.html",location.href).href+`?p=${encodeURIComponent(e.projectId)}&f=${encodeURIComponent(e.floorId)}&look=${encodeURIComponent(e.look)}&poster=${s.join(",")}&v=${Date.now()}`;return new Promise(l=>{const d=document.createElement("iframe");d.setAttribute("aria-hidden","true"),d.tabIndex=-1,d.style.cssText="position:fixed;left:-1700px;top:0;width:1600px;height:1600px;border:0;visibility:hidden";let c=!1;const u=b=>{c||(c=!0,clearTimeout(h),removeEventListener("message",p),d.remove(),l(b||null))},p=b=>{if(b.origin!==location.origin||b.source!==d.contentWindow||b.data?.type!=="styloplan-poster")return;b.data.why&&console.warn(`poster: ${e.floorName}: ${b.data.why}`);const M=Array.isArray(b.data.posters)?b.data.posters.map(z=>z?.blob instanceof Blob?z.blob:null):null;u(M&&M[0]?M:null)},h=setTimeout(()=>{console.warn(`poster: ${e.floorName}: no picture after 60s`),u(null)},6e4);addEventListener("message",p),d.src=r,document.body.append(d)})}function Bn(e){const t=document.createElement("span");return t.className="working",t.textContent=e,t}function _n(e,t){clearTimeout(e._rest),e.dataset.label==null&&(e.dataset.label=e.textContent),e.classList.add("is-done"),e.textContent=`${t} ✓`,e._rest=setTimeout(()=>{e.classList.remove("is-done"),e.textContent=e.dataset.label,delete e.dataset.label},1800)}async function Un(){const e=jn();if(!e.length)return;const t=e.every(Wn),o=new Set(e.map(d=>d.floorId)),i=ae.rows?Oi(Dn(),ae.rows,L).filter(d=>!o.has(d.floorId)):[],n=[...e,...i],s=i.length?[`Your brand changed, so ${i.map(d=>d.floorName).join(", ")} ${i.length>1?"are":"is"} updated too.`]:[];if(!await nt({title:t?"Update your website?":`Show ${e.length>1?`${e.length} floors`:"this plan"} on your website?`,body:t?["The version on your website is replaced by what you see here.",...s,"Pages that already have the embed code update on their own."]:["Anyone with the link will be able to see this floor plan and its room names.","Your original plan, your other projects and your account are not part of it.","You can turn it off at any time.",...s],confirm:t?"Update":"Show it"}))return;a("pubState").replaceChildren(Bn("Putting it on your website…"));let l;try{l=await ji(n,{poster:hs})}catch(d){l={published:0,failed:[{name:n.length>1?"The floors":"This plan",why:d?.message||String(d)}]}}await ko(),le(),gi("publish",{floors:n.length,published:l.published,failed:l.failed.length}),!l.failed.length&&l.noPoster?.length&&await nt({title:"Published, but the preview image could not be made",body:[`${l.noPoster.join(", ")}: the 3D preview did not draw in time, so your website keeps its previous preview (or shows the plan).`,"Reload this page and press Update again."],confirm:"Close",cancel:null}),l.failed.length&&await nt({title:l.published?"Some floors did not go up":"Could not put it on your website",body:l.failed.map(d=>`${d.name}: ${d.why}`).concat(l.published?[`${l.published} published successfully.`]:[]),confirm:"Close",cancel:null})}async function ms(){const e=[...ae.rows||[]].map(([i,n])=>({floorId:i,look:n.look}));if(!e.length||!await nt({title:e.length>1?`Take all ${e.length} floors off your website?`:"Take this plan off your website?",body:['It stops being readable straight away, including on websites that already have the code: they will show a "not published" message instead.',"Nothing on this computer is deleted. You can turn it back on whenever you like."],confirm:"Take it off",danger:!0}))return;a("pubState").replaceChildren(Bn("Taking it off…"));let o;try{o=await Wi(e)}catch(i){o={withdrawn:0,error:i?.message||String(i)}}await ko(),le(),o.error&&await nt({title:"Could not take it off",body:[o.error],confirm:"Close",cancel:null})}a("bAllFloors").onclick=()=>{vo=!vo,Ke(),le()},Ke(),await ko(),le(),ke&&(a("bTheme").hidden=!0,a("bShot").hidden=!0,S.get("floors")==="all"&&qr>1&&a("viewTools").prepend(a("bFloor"))),a("copyEmbed").onclick=async()=>{try{await navigator.clipboard.writeText(a("embed").value),_n(a("copyEmbed"),"Copied")}catch{a("embed").select(),a("embedNote").textContent="Press Ctrl+C to copy."}setTimeout(Ke,2500)},a("copyLink").onclick=async()=>{const e=Nn(An==="all","share"),t=a("linkNote");try{if(navigator.share){await navigator.share({title:Pe||"Floor plan",url:e});return}await navigator.clipboard.writeText(e),_n(a("copyLink"),"Copied"),t.textContent="Link copied. Send it in an email or a message."}catch(o){if(o&&o.name==="AbortError")return;t.textContent=e}setTimeout(Ke,4e3)};function ws(){const{w:e,h:t}=A();w.aspect=e/t,w.updateProjectionMatrix(),be=cn(),Pt=300,qe=16.7,wt=0,k.setPixelRatio(be),k.setSize(e,t,!1),H=io(),ro()}new ResizeObserver(ws).observe(a("stage"));const gs=.03,xs=13,bs=.12;function Hn(){const e=C.markerGroup?.children||[];if(!e.length||!C.markerGroup.visible)return;const t=A().h,o=Math.tan(w.fov*Math.PI/180/2);for(const i of e){const n=w.position.distanceTo(i.position),s=2*o*n/t,r=i.userData.hot?34:26;i.scale.set(r*s,r*s,1)}}function Gn(){const e=C.labelGroup?.children||[];if(!e.length||!C.labelGroup.visible)return;const t=A().h,o=Math.min(t,A().w),i=Math.tan(w.fov*Math.PI/180/2);let n=1/0,s=0;const r=[];for(const u of e){const p=w.position.distanceTo(u.position);r.push(p),p<n&&(n=p),p>s&&(s=p)}const l=s-n,d=1-Xe,c=(1-bs)*d;e.forEach((u,p)=>{const h=r[p],b=2*i*h/t,M=u.userData.twoLine?1.33:1,z=Math.max(gs*o,xs)*M*b;u.scale.set(z*u.userData.aspect,z,1);const g=l>1e-6?(h-n)/l:0;u.material.opacity=(1-c*(g*g*(3-2*g)))*(1-Xe)*(wo?.on&&wo.on.sp!==u?.3:1),u.renderOrder=999+Math.round((1-g)*100)})}if(k.render(_,w),it(null),we){const e=[],t=({w:o,h:i})=>new Promise(n=>{a("stage").style.width=`${o}px`,a("stage").style.height=`${i}px`,po(),k.setPixelRatio(1),k.setSize(o,i,!1),w.aspect=o/i,w.updateProjectionMatrix();const s=.86;{const r=U.ex.extent,l=Math.max(new y.Box3().setFromObject(C.group).max.y,.1),d=[];for(const u of[r.x0,r.x1])for(const p of[0,l])for(const h of[r.z0,r.z1])d.push(new y.Vector3(u,p,h));for(const u of C.labelGroup?.children||[])d.push(u.position.clone().setY(u.position.y+1.5));const c=E.target;for(let u=0;u<3;u++){w.updateMatrixWorld();let p=1,h=-1,b=1,M=-1;for(const K of d){const Y=K.clone().project(w);p=Math.min(p,Y.x),h=Math.max(h,Y.x),b=Math.min(b,Y.y),M=Math.max(M,Y.y)}const z=Math.max((h-p)/(2*s),(M-b)/(2*s));w.position.sub(c).multiplyScalar(z).add(c),w.updateMatrixWorld();const g=w.position.distanceTo(c),x=Math.tan(w.fov*Math.PI/180/2)*g,N=x*w.aspect,R=new y.Vector3().setFromMatrixColumn(w.matrixWorld,0),G=new y.Vector3().setFromMatrixColumn(w.matrixWorld,1),W=R.multiplyScalar((p+h)/2*N).add(G.multiplyScalar((b+M)/2*x));w.position.add(W),c.add(W),w.lookAt(c)}}Gn(),Hn(),k.render(_,w),k.domElement.toBlob(r=>{e.push({w:o,h:i,blob:r}),n()},"image/png")});for(const o of we.shapes)await t(o);parent.postMessage({type:"styloplan-poster",floorId:f?.floor?.id||null,posters:e},location.origin)}let Wt=performance.now(),Eo=!1,Bt=!0,Vn=!1,_t=0,kt=0;function $o(e){ze=e,a("bWalls").setAttribute("aria-checked",String(e));for(const t of document.querySelectorAll("#viewSide .cap[data-walls]"))t.classList.toggle("on",t.dataset.walls==="up"===e);E.minPolarAngle=e?.18:.01,fo=It,uo=e?0:1,Fe=0,un=performance.now(),ye.matches&&(It=uo,Fe=1),Te(),ye.matches&&(w.position.copy(te),E.target.copy(re)),gt=Nt,Q=!0,oe=performance.now()-Ze}let de=null;function qn(){return de||!C.planFloor||(de=C.planFloor(),de&&_.add(de)),de}function ys(){if(Fe<1){Fe=Math.min(1,(performance.now()-un)/jr);const t=Fe*Fe*(3-2*Fe);It=fo+(uo-fo)*t}Xe=It,co=Math.max(Dr,1-Xe),C.group.scale.y=co,C.labelGroup&&(C.labelGroup.scale.y=1/co);const e=Xe>0?qn():de;if(e){const t=Math.max(0,(Xe-.25)/.75);e.material.opacity=t,e.visible=t>.001}}a("bWalls").onclick=()=>$o(!ze);for(const e of document.querySelectorAll("#viewSide .cap[data-walls]"))e.onclick=()=>{e.dataset.walls==="up"!==ze&&$o(!ze)};(window.requestIdleCallback||(e=>setTimeout(e,800)))(()=>{qn()});function vs(e){if(Pt>0){Pt--;return}if(!(e>100)){if(qe=qe*.95+e*.05,wt=qe>24?wt+1:0,wt>=180&&be>dn){be=Math.max(dn,be*.8);const{w:t,h:o}=A();k.setPixelRatio(be),k.setSize(t,o,!1),Pt=120,qe=16.7,wt=0}Yn&&(Yn.textContent=`${Math.round(1e3/qe)} fps · ${be.toFixed(2)}x`)}}const Yn=new URLSearchParams(location.search).get("fps")==="1"?Object.assign(document.body.appendChild(document.createElement("div")),{style:"position:fixed;left:8px;bottom:8px;z-index:2147483600;font:12px/1.4 monospace;color:#fff;background:rgba(0,0,0,.6);padding:4px 8px;border-radius:4px;pointer-events:none"}):null;function Xn(){_t=requestAnimationFrame(Xn);const e=performance.now();vs(e-Wt);const t=Math.min((e-Wt)/1e3,.05);Wt=e,wo?.frame(t)||Wr(t),ys(),Ur(t),E.update(),Hr(),Gn(),Hn(),k.render(_,w),window.__view3d||(window.__view3d={scene:_,camera:w,THREE:y,renderer:k,controls:E,ex:I,get spin(){return Rt},get idleSince(){return oe},get returning(){return Q},get running(){return Eo}})}const Je={running:!1,onScreen:!0,hidden:!1,changes:[]};window.__loop=Je;function ks(e){Je.running=e,Je.onScreen=Bt,Je.hidden=document.hidden,!e&&!kt&&(kt=setInterval(Et,800)),e&&kt&&(clearInterval(kt),kt=0),e!==Eo&&(Eo=e,Je.changes.length<40&&Je.changes.push(`${Math.round(performance.now())}ms ${e?"run":"stop"}`+(e?"":` (${document.hidden?"tab hidden":"scrolled away"})`)),e?(Wt=performance.now(),_t=requestAnimationFrame(Xn)):(cancelAnimationFrame(_t),_t=0))}const Et=()=>ks(Bt&&!document.hidden&&!Vn);for(const e of["visibilitychange","pageshow","focus","resize"])(e==="visibilitychange"?document:window).addEventListener(e,Et);typeof IntersectionObserver=="function"?new IntersectionObserver(e=>{Bt=e.some(t=>t.isIntersecting),Et()},{rootMargin:"200px",threshold:.01}).observe(a("stageWrap")):Bt=!0,Et(),window.__view={ex:()=>U.ex,theme:()=>L,frames:je,built:()=>C,scene:_,camera:w,controls:E};
+</script>
+</body>
+</html>
