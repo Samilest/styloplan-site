@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Named by robots.txt and submitted in Search Console (2026-11-23).
+     A lastmod only where the page itself prints its date: What's new carries
+     its newest entry's, the terms their "LAST UPDATED". A test keeps the two
+     equal. The home page and the guide had dates kept by hand, and by November
+     the home page still said September; a search engine stops believing
+     dates that are wrong, so none is better. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://styloplan.com/</loc>
+  </url>
+  <url>
+    <loc>https://styloplan.com/guide.html</loc>
+  </url>
+  <url>
+    <loc>https://styloplan.com/updates.html</loc>
+    <lastmod>2026-11-22</lastmod>
+  </url>
+  <url>
+    <loc>https://styloplan.com/legal.html</loc>
+    <lastmod>2026-11-24</lastmod>
+  </url>
+</urlset>

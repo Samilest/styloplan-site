@@ -1,0 +1,1 @@
+export const PUBLISHED_BUCKET="published",PUBLISHED_TABLE="published_floors",renderPath=(t,e,o="webp")=>`${t}/${e}.${o}`,posterPath=(t,e="webp",o="")=>`${t}/poster${o?`-${o}`:""}.${e}`,POSTER_SHAPES=["","5x4"];

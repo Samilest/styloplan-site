@@ -1,0 +1,6 @@
+# Nothing is blocked here on purpose. The app's own pages carry noindex, and a
+# crawler has to be able to read a page to see that it does.
+User-agent: *
+Allow: /
+
+Sitemap: https://styloplan.com/sitemap.xml

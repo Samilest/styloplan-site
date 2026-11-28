@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://challenges.cloudflare.com 'sha256-Jc/isErUVHsRyR9GIOytXHQlUplZJfqXpIAOX5PtyHA=' 'sha256-bl6h3wF672qdqD5ugjVJCCPwQ/RzOzdVyc7dz6A7Iqo=' 'sha256-ghUEo3D8yzgROr/3uNO6qrO12kCmjOlBhrY22ZAJnRs=' 'sha256-fXMsWQMkL8zo3PYoBkQ5QqkKyN6MUv0qvjy0oO71eeo=' 'sha256-wdF25e1oScckF9nC3WPzv/L1L/kwG9rMwtOfOg7kUXc='; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https://sijpjnejuqxtmkmmklhm.supabase.co; connect-src 'self' data: blob: https://sijpjnejuqxtmkmmklhm.supabase.co wss://sijpjnejuqxtmkmmklhm.supabase.co; media-src 'self' blob:; worker-src 'self' blob:; frame-src 'self' https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+
+<script>(function(){try{if(window.top===window.self||window.top.location.origin===location.origin)return}catch(e){}document.documentElement.style.setProperty("display","none","important");try{window.top.location.replace(location.href)}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<meta name="robots" content="noindex, follow">
+<link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+<title>Projects · StyloPlan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600&family=Roboto:wght@400;500&family=Inter:wght@400;600;700&family=Montserrat:wght@400;600&family=DM+Sans:wght@400;600&family=Playfair+Display:wght@400;600;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Lato:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="./src/ui.css?v=a864c479afde">
+<script>/* A password-reset link: hide the account until its question is up (auth-ui.js newPasswordDialog). */if(/(^#|&)type=recovery(&|$)/.test(location.hash))document.documentElement.classList.add("recovering");</script>
+<script>try{var t=localStorage.getItem("pr-theme");document.documentElement.dataset.theme=t==="light"?"light":"dark"}catch(e){document.documentElement.dataset.theme="dark"}</script>
+<style>
+  
+  
+  body { --page-max: 1600px; }
+  main { padding-block: var(--s-2) var(--s-6); }
+  .panel { margin-bottom: 16px; }
+  .panel h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.005em; }
+  .phead { display: flex; align-items: center; gap: 12px 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  
+  .busy { font-size: 12.5px; color: var(--ink-3); min-height: 0; }
+  .busy:not(:empty) { margin-top: 12px; }
+  .busy.is-done { color: var(--ok); }
+  .busy.is-warn { color: var(--warn); }
+
+  
+  
+  .fold { background: none; border: 0; padding: 0.4em 0.15em; margin-left: -0.15em;
+          display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .fold:hover { background: none; }
+  .fold .chev { color: var(--ink-3); font-size: 11px; transition: transform .15s ease; }
+  
+  
+  .page-head { padding-bottom: 0; }
+  #list { margin-top: var(--s-5); }
+
+  #list, #archivedList { display: grid; gap: var(--s-4);
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); align-items: start; }
+  
+  
+  .panel .fold-body { display: grid; grid-template-rows: 0fr;
+    transition: grid-template-rows var(--d-overlay) var(--ease); }
+  .panel:not(.collapsed) .fold-body { grid-template-rows: 1fr; }
+  
+  .panel .fold-body > * { overflow: hidden; min-height: 0;
+    visibility: visible; transition: visibility 0s; }
+  .panel.collapsed .fold-body > * { visibility: hidden;
+    transition: visibility 0s var(--d-overlay); }
+  @media (prefers-reduced-motion: reduce) {
+    .panel .fold-body, .nextup, .chev { transition: none; }
+  }
+
+  
+  .phead { height: 48px; display: flex; align-items: center; gap: var(--s-2);
+    flex-wrap: nowrap; margin: 0; }
+  .phead h2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; }
+  .pcount { font-family: var(--mono); font-size: var(--t-12); color: var(--ink-2);
+    white-space: nowrap; }
+  .fold .pstatus { height: 44px; display: flex; align-items: center; gap: var(--s-2);
+    overflow: hidden; }
+  .pstatus .sum { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font-size: var(--t-13); color: var(--ink-2); }
+  .pips { display: flex; gap: 4px; flex: none; }
+  .pip { width: 8px; height: 8px; border-radius: 999px; background: var(--line-strong); }
+  .pip.on { background: var(--ok); }
+
+  
+  .thumb { position: relative; }
+  .thumb .tag { position: absolute; left: var(--s-2); bottom: var(--s-2);
+    font-family: var(--mono); font-size: var(--t-11); padding: 2px 8px;
+    border-radius: var(--r-chip); background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--line); }
+
+  
+  
+  .fold { display: block; width: 100%; text-align: left; background: none;
+    border: 0; padding: 0; margin: 0; color: inherit; cursor: pointer; }
+  .fold .phead { display: flex; align-items: center; gap: var(--s-2);
+    height: 48px; padding: 0; }
+  .foldcue { display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s-2); padding: var(--s-2) 0; }
+  .foldtext { font-size: var(--t-13); color: var(--ink-2); }
+  .fold:hover .foldtext { color: var(--accent); }
+  
+  .foldtext.is-said { position: absolute; width: 1px; height: 1px; overflow: hidden;
+    clip-path: inset(50%); white-space: nowrap; }
+  .foldcue .chevbox { margin-left: auto; }
+
+  
+  .chevbox { width: 32px; height: 32px; display: grid; place-items: center;
+    flex: none; border-radius: var(--r-ctl); color: var(--ink-2);
+    transition: background var(--d-micro) var(--ease); }
+  .chev { transition: transform var(--d-std) var(--ease); }
+  
+  .panel:not(.collapsed) .chev { transform: rotate(-90deg); }
+  .pname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; font: 500 var(--t-17)/1.3 var(--display); }
+  .fold:hover .chevbox { background: var(--neutral-soft); color: var(--ink); }
+  .fold:hover .pname { color: var(--accent); }
+  .fold:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+  
+  .floorlist { list-style: none; margin: 0; padding: 0; }
+  .addFloorRow { margin: var(--s-2) 0 0; }
+  
+  .floorrow { display: flex; align-items: center; }
+  .floorrow .floorlink { flex: 1; min-width: 0; }
+  
+  .floorrow .floorlink { padding-right: var(--s-2); }
+  
+  
+  .fl-del, .fl-ren { flex: none; display: inline-flex; align-items: center; justify-content: center;
+    
+    width: 32px; height: 32px; padding: 0; margin-right: calc(var(--s-1) * -1);
+    background: none; border: 1px solid transparent; border-radius: var(--r-ctl);
+    color: var(--ink-3); cursor: pointer;
+    transition: color var(--d-micro) var(--ease), border-color var(--d-micro) var(--ease); }
+  .fl-del:hover, .fl-del:focus-visible { color: var(--err); border-color: var(--line-strong); }
+  .fl-ren { margin-right: 0; }
+  .fl-ren:hover, .fl-ren:focus-visible { color: var(--accent); border-color: var(--line-strong); }
+  @media (prefers-reduced-motion: reduce) { .fl-del, .fl-ren { transition: none; } }
+  
+  @media (pointer: coarse) {
+    .fl-del { width: 44px; height: 44px; margin-right: calc(var(--s-2) * -1); }
+    .fl-ren { width: 44px; height: 44px; }
+  }
+  .floorlink { display: flex; align-items: center; gap: var(--s-2);
+    padding: var(--s-2) var(--s-3); border-radius: var(--r-ctl);
+    text-decoration: none; color: inherit; }
+  .floorlink:hover { background: var(--neutral-soft); }
+  .fl-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fl-name { font-size: var(--t-15); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .fl-meta { font-size: var(--t-13); color: var(--ink-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  
+  .fl-next { display: inline-flex; align-items: center; gap: var(--s-1); flex: none;
+    min-height: 32px; padding: 0 var(--s-3);
+    font-size: var(--t-13); font-weight: 600; color: var(--accent);
+    white-space: nowrap;
+    background: var(--surface);
+    border: 1px solid color-mix(in oklab, var(--accent) 40%, transparent);
+    border-radius: var(--r-ctl);
+    transition: background var(--d-micro) var(--ease), color var(--d-micro) var(--ease),
+                border-color var(--d-micro) var(--ease); }
+  .floorlink:hover .fl-next, .floorlink:focus-visible .fl-next {
+    background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  
+  @media (prefers-reduced-motion: reduce) { .fl-next { transition: none; } }
+  
+  .floorlink.is-next .fl-next, .floorlink.is-next:hover .fl-next, .floorlink.is-next:focus-visible .fl-next {
+    background: var(--ink); color: var(--paper); border-color: var(--ink); }
+  
+  .floorlist { container-type: inline-size; }
+  @container (max-width: 470px) {
+    .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+    .fl-next { flex: 1 0 100%; justify-content: center; }
+    
+    .floorrow { align-items: flex-start; }
+    .fl-del, .fl-ren { margin-top: var(--s-1); }
+    
+    .floorrow { position: relative; --icon: 32px; }
+    .floorrow .floorlink { margin-inline: calc(var(--s-3) * -1); padding-right: var(--s-3); }
+    .fl-main { padding-right: calc(var(--icon) * 2 + var(--s-3)); }
+    .floorrow .fl-ren, .floorrow .fl-del { position: absolute; top: var(--s-2); margin: 0; }
+    .floorrow .fl-ren { right: calc(var(--icon) + var(--s-1)); }
+    .floorrow .fl-del { right: 0; }
+    .fl-next { min-height: 36px; font-size: var(--t-15); color: var(--ink); border-color: var(--line-strong); }
+    .floorlink:hover .fl-next, .floorlink:focus-visible .fl-next {
+      background: var(--surface-2); color: var(--ink); border-color: var(--line-strong); }
+    
+    .fl-next { flex: 0 0 auto; justify-content: flex-start; margin-left: calc(8px + var(--s-2)); min-height: 32px; font-size: var(--t-13); }
+    
+    .floorrow .fl-main { flex: 1 0 calc(100% - 8px - var(--s-2)); box-sizing: border-box; }
+  }
+  @container (max-width: 470px) {
+    @media (pointer: coarse) {
+      .floorrow { --icon: 44px; }
+      .floorrow .fl-ren, .floorrow .fl-del { top: 0; }
+      .fl-next { min-height: 44px; }
+    }
+  }
+  
+  @supports not (container-type: inline-size) {
+    @media (max-width: 560px) {
+      .floorlink { flex-wrap: wrap; row-gap: var(--s-2); }
+      .fl-next { flex: 1 0 100%; justify-content: center; }
+      .floorrow { align-items: flex-start; }
+      .fl-del, .fl-ren { margin-top: var(--s-1); }
+    }
+  }
+  .dot--idle { background: var(--line-strong); }
+
+  
+  .nextup { padding: 0 0 var(--s-3); overflow: hidden;
+    max-height: 96px; opacity: 1;
+    transition: max-height var(--d-overlay) var(--ease),
+                opacity var(--d-std) var(--ease),
+                padding var(--d-overlay) var(--ease); }
+  .nextup .nextbtn { width: 100%; }
+  
+  .nextup .nextbtn { white-space: normal; line-height: 1.3; padding-block: var(--s-2); }
+  
+  .panel:not(.collapsed) .nextup { max-height: 0; opacity: 0; padding-bottom: 0;
+    visibility: hidden; transition: max-height var(--d-overlay) var(--ease),
+                                    opacity var(--d-std) var(--ease),
+                                    padding var(--d-overlay) var(--ease),
+                                    visibility 0s var(--d-overlay); }
+  
+  .archive .panel:not(.collapsed) .nextup { max-height: 96px; opacity: 1;
+    padding-bottom: var(--s-3); visibility: visible; transition-delay: 0s; }
+
+  
+  
+  .panel[data-project] { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .panel[data-project] > * { grid-column: 1 / -1; }
+  .panel[data-project] > .fold { grid-row: 1; }
+  .panel[data-project] > .projMenuBtn { grid-row: 1; grid-column: 2; align-self: start;
+    width: 32px; min-height: 32px; margin: 8px 0 0 0; z-index: 1; color: var(--ink-2); }
+  .panel[data-project] .fold .phead { padding-right: var(--s-7); }
+  @media (pointer: coarse) {
+    .panel[data-project] > .projMenuBtn { width: 44px; min-height: 44px; margin: 2px 0 0 0; }
+  }
+  
+  .fold--one .pcount { display: none; }
+  
+  .fold--one.is-inert { cursor: default; }
+  .fold--one.is-inert:hover .pname { color: inherit; }
+  
+  .onecue { display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s-2); padding: var(--s-2) 0; }
+  .onecue .addFloorRow { margin: 0; }
+  .onecue-acts { display: inline-flex; gap: var(--s-1); align-items: center; }
+  
+  .onecue-name { font: 400 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase;
+                 color: var(--ink-3); margin-right: var(--s-1); max-width: 12ch; overflow: hidden;
+                 text-overflow: ellipsis; white-space: nowrap; }
+  .onecue, .foldcue { min-height: 48px; box-sizing: border-box; }
+  @media (pointer: coarse) { .onecue, .foldcue { min-height: 60px; } }   
+  
+  .panel[data-project] > .busy { padding: 0; }
+  
+  .busy-x { display: flex; align-items: flex-start; gap: var(--s-2); }
+  .busy-x > span { flex: 1; }
+  .busy-x > button { flex: none; width: 28px; height: 28px; margin: -5px -6px 0 0; border: 0; border-radius: 4px;
+                     background: transparent; color: inherit; font-size: 18px; line-height: 1; cursor: pointer; }
+  .busy-x > button:hover { background: var(--surface-2, rgba(127,127,127,.15)); }
+  @media (pointer: coarse) { .busy-x > button { width: 44px; height: 44px; margin: -13px -14px 0 0; } }
+  .panel[data-project].collapsed > .busy:not(:empty) { margin-top: 0; padding-bottom: var(--s-3); }
+
+  
+  .projmenu { margin: auto; border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface); color: var(--ink); box-shadow: var(--e-2);
+    padding: var(--s-1); min-width: 240px; }
+  .projmenu::backdrop { background: rgba(20,18,15,.4); }
+  
+  .projmenu:popover-open {
+    opacity: 1; transform: none; transform-origin: top center;
+    transition: opacity var(--d-std) var(--ease), transform var(--d-std) var(--ease);
+  }
+  @starting-style { .projmenu:popover-open { opacity: 0; transform: scale(.97); } }
+  @supports (overlay: auto) {
+    .projmenu {
+      opacity: 0; transform: scale(.99); transform-origin: top center;
+      transition: opacity var(--d-micro) var(--ease), transform var(--d-micro) var(--ease),
+                  overlay var(--d-micro) allow-discrete, display var(--d-micro) allow-discrete;
+    }
+    .projmenu:popover-open {
+      transition: opacity var(--d-std) var(--ease), transform var(--d-std) var(--ease),
+                  overlay var(--d-std) allow-discrete, display var(--d-std) allow-discrete;
+    }
+  }
+
+  
+  @supports (anchor-name: --a) {
+    
+    .projmenu {
+      position-area: block-end span-inline-start;
+      margin: var(--s-1) 0 0;
+      position-try-fallbacks: block-start span-inline-start,
+                              block-end span-inline-end,
+                              block-start span-inline-end;
+    }
+    .projmenu::backdrop { background: transparent; }
+  }
+  .pm-head { display: flex; justify-content: space-between; gap: var(--s-3);
+    padding: var(--s-2) var(--s-3); font: 500 var(--t-15)/1.3 var(--display);
+    border-bottom: 1px solid var(--line); margin-bottom: var(--s-1); }
+  .projmenu button { display: flex; width: 100%; justify-content: flex-start;
+    flex-direction: column; align-items: flex-start; gap: 2px;
+    min-height: 40px; padding: var(--s-2) var(--s-3); border: 0; background: transparent;
+    color: var(--ink); border-radius: var(--r-chip); text-align: left; }
+  .projmenu button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .projmenu button:disabled { color: var(--ink-3); }
+  
+  
+  .pm-sub { font-size: var(--t-12); color: var(--ink-3); font-weight: 400; }
+  button:disabled .pm-sub { color: var(--ink-3); }
+
+  
+  .ps-head { display: flex; align-items: center; gap: var(--s-3); flex-wrap: wrap; }
+  .ps-head h2 { margin: 0; overflow-wrap: anywhere; }
+  .ps-row { padding: var(--s-3) 0; border-bottom: 1px solid var(--line); }
+  .ps-row:last-child { border-bottom: 0; }
+  .ps-floor { display: block; font-weight: 600; margin-bottom: var(--s-1); }
+  .ps-acts { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+  
+  .ps-acts .btn { padding: 0 var(--s-3); }
+  
+  .ps-floors { max-height: min(46vh, 340px); overflow-y: auto; }
+  .ps-kit { display: block; margin: var(--s-3) 0 0; }
+  .ps-kit select { display: block; width: 100%; margin-top: var(--s-1); }
+  .ps-kitnote { margin: var(--s-1) 0 var(--s-3); }
+
+  .menu { position: relative; flex: none; }
+  .menu > summary { list-style: none; cursor: pointer; width: 32px; height: 32px;
+    display: grid; place-items: center; border-radius: var(--r-ctl); color: var(--ink-2); }
+  .menu > summary::-webkit-details-marker { display: none; }
+  .menu > summary:hover { background: var(--neutral-soft); color: var(--ink); }
+  .menu[open] > summary { background: var(--neutral-soft); color: var(--ink); }
+  .menu .sheet { position: absolute; right: 0; top: 36px; z-index: 5; min-width: 190px;
+    display: flex; flex-direction: column; padding: var(--s-1);
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--r-ctl); box-shadow: var(--e-2); }
+  .menu .sheet button { justify-content: flex-start; width: 100%; border: 0;
+    background: transparent; min-height: 36px; padding: 0 var(--s-3);
+    border-radius: var(--r-chip); color: var(--ink); text-align: left; }
+  .menu .sheet button:hover:not(:disabled) { background: var(--neutral-soft); }
+  .menu .sheet button:disabled { color: var(--ink-3); }
+
+  
+  .thumb { display: block; width: 100%; aspect-ratio: 4 / 3; margin-bottom: var(--s-3);
+    border: 1px solid var(--line); border-radius: var(--r-ctl);
+    background: var(--surface-2) center/contain no-repeat; }
+  
+  
+  
+  .first-steps { margin: 12px auto 0; padding-left: 20px; max-width: 32rem; text-align: left; color: var(--ink-2); font-size: 14px; line-height: 1.7; }
+  .first-steps b { color: var(--ink); }
+  .thumb--empty { display: flex; align-items: center; justify-content: center; gap: var(--s-2);
+    font-size: var(--t-13); color: var(--ink-3); aspect-ratio: auto; min-height: 44px;
+    background: none; border: 1px dashed var(--line-strong); }
+  .thumb--empty svg { flex: none; }
+  .panel.collapsed .fold .chev { transform: rotate(90deg); }
+  .panel.collapsed .phead { margin-bottom: 0; }
+  @media (prefers-reduced-motion: reduce) { .fold .chev { transition: none; } }
+
+  
+  .reuse-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; }
+  .reuse-opt { display: flex; align-items: baseline; gap: 12px; width: 100%; text-align: left;
+               padding: 12px 12px; background: var(--surface);
+               border: 1px solid var(--line-strong); border-radius: var(--r-ctl); cursor: pointer; }
+  .reuse-opt:hover { border-color: var(--accent); background: var(--surface-2); }
+  .reuse-opt[aria-pressed="true"] { border-color: var(--accent);
+                                    box-shadow: 0 0 0 3px var(--accent-soft); }
+  .reuse-opt b { font-weight: 600; }
+  .reuse-opt .meta { margin-left: auto; font-size: 12px; color: var(--ink-2); }
+  .reuse-empty { font-size: 13px; color: var(--ink-2); padding: 4px 0; }
+  
+  .just-added { box-shadow: 0 0 0 3px var(--accent-soft); border-color: var(--accent); }
+  
+  .floorrow.just-added { border-radius: var(--r-ctl); transition: box-shadow .6s ease; }
+
+  .hist-list { display: flex; flex-direction: column; gap: 16px; max-height: 60vh; overflow-y: auto; }
+  .hist-v { border-left: 2px solid var(--line-strong); padding-left: 12px; }
+  .hist-v h4 { margin: 0 0 2px; font-size: 13px; font-weight: 600; }
+  .hist-v .when { font-size: 12px; color: var(--ink-2); }
+  .hist-v ul { margin: 8px 0 0; padding-left: 16px; font-size: 12.5px; line-height: 1.6; }
+  .hist-v .same { font-size: 12.5px; color: var(--ink-2); margin-top: 8px; }
+  
+  
+  
+  .archive { margin-top: var(--s-5); padding-inline: max(var(--gutter), (100% - var(--page-max)) / 2); }
+  .archive > summary { cursor: pointer; font-size: 12px; color: var(--ink-2);
+                       padding: 8px 2px; list-style: none; }
+  .archive > summary::-webkit-details-marker { display: none; }
+  .archive > summary::before { content: '▸ '; color: var(--ink-3); }
+  .archive[open] > summary::before { content: '▾ '; }
+  .archive > summary:hover { color: var(--ink); }
+  .archive .panel { opacity: .78; }
+  .archive .panel:hover { opacity: 1; }
+
+  
+  .undo-notice { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 60;
+    width: min(560px, calc(100vw - 32px)); box-sizing: border-box;
+    display: flex; align-items: center; gap: 16px; padding: 12px 16px 15px;
+    background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 6px;
+    box-shadow: var(--e-2); overflow: hidden; font-size: 14px; line-height: 1.4; }
+  .undo-notice[hidden] { display: none; }
+  .undo-notice p { flex: 1; margin: 0; color: var(--ink-2); }
+  .undo-notice b { color: var(--ink); }
+  .undo-notice .un-undo { color: var(--accent); border-color: var(--accent); }
+  .undo-notice .un-bar { position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+    background: var(--paid); transform-origin: left center; }
+  @media (prefers-reduced-motion: reduce) { .undo-notice .un-bar { transition: none !important; } }
+  
+  .drop-cover { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; pointer-events: none;
+                background: color-mix(in oklab, var(--paper) 82%, transparent); }
+  .drop-cover[hidden] { display: none; }
+  .drop-cover > div { padding: var(--s-5) var(--s-6); border: 2px dashed var(--accent); border-radius: var(--r-ctl);
+                      background: var(--surface); color: var(--ink); font: 600 var(--t-17, 17px)/1.3 var(--sans); }
+</style>
+<!-- modulepreload, written by tools/build-site.mjs -->
+<link rel="modulepreload" href="./src/ask.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/supabase-client.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/api-origin.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/google-signin.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/auth-ui.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/captcha.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/buy.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/packs.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/store.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/palettes.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/house-style.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/versions.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/listing.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/artifacts.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/chrome.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/floor-context.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/events.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/compositor.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/formats.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/footer.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/spec-strip.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/patch.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/plan-trim.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/ink.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/recolour.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/text-runs.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/xmp.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/label-frame.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/sweep-fit.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/registration.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/review/eraser.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/model3d/theme3d.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-paths.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/published-withdraw.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/delete-flow.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/pdf.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/report.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/doc-style.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/render-history.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/room-schedule.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-style.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/mock-plan.js?v=a864c479afde" fetchpriority="low">
+<link rel="modulepreload" href="./src/project-name.js?v=a864c479afde" fetchpriority="low">
+</head>
+<body>
+<a class="skip" href="#list">Skip to content</a>
+
+<header class="app-header"></header>
+<script>/* THE HEADER AS IT WAS WHEN THE LAST PAGE WAS LEFT, in this page's first frame (keepHeader, src/chrome.js). */(function(){try{var h=document.querySelector("header.app-header"),s=JSON.parse(sessionStorage.getItem("pr.header")||"null");if(!h||!s||h.firstChild)return;var q=new URLSearchParams(location.search),f=location.pathname.split("/").pop()||"index.html";if(f==="index.html")f="projects.html";h.className=s.cls;h.innerHTML=s.html;if(s.floor!==(q.get("p")||"")+"/"+(q.get("f")||""))h.querySelectorAll(".crumbs,.pipeline").forEach(function(n){n.remove()});h.querySelectorAll(".pipeline a[data-href]").forEach(function(a){a.href=a.getAttribute("data-href");a.removeAttribute("data-href")});h.querySelectorAll(".pipeline a[href],.libnav a").forEach(function(a){if((a.getAttribute("href")||"").split("?")[0]===f)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});var o=s.mark,n=o&&h.querySelector("."+o.bar+" a[aria-current]");if(n&&!matchMedia("(prefers-reduced-motion: reduce)").matches){var b=h.getBoundingClientRect(),r=n.getBoundingClientRect();if(r.width&&Math.abs(r.left-b.left-o.x)>2){var m=document.createElement("i");m.className="nav-slide";m.setAttribute("aria-hidden","true");var E=Math.max(o.w,r.width)*1.25;m.style.cssText="top:"+(r.bottom-2)+"px;width:"+E+"px;transform:translateX("+(b.left+o.x)+"px) scaleX("+o.w/E+")";document.body.appendChild(m);h.classList.add("slide-"+o.bar);m.getBoundingClientRect();var L=r.left,X=r.width,s0=performance.now(),k=s0;m.style.transform="translateX("+L+"px) scaleX("+X/E+")";requestAnimationFrame(function step(){var t=h.querySelector("."+o.bar+" a[aria-current]"),q=t&&t.getBoundingClientRect(),now=performance.now();if(q&&q.width&&(q.left!==L||q.width!==X)){L=q.left;X=q.width;if(X>E){E=X;m.style.width=E+"px"}m.style.transform="translateX("+L+"px) scaleX("+X/E+")";m.style.top=q.bottom-2+"px";k=now}if((now-k<350||!h.hasAttribute("data-drawn")||document.fonts&&document.fonts.status!=="loaded")&&now-s0<2500)requestAnimationFrame(step);else{m.remove();h.classList.remove("slide-"+o.bar)}})}}}catch(e){}})();</script>
+<div class="page-head">
+  <h1>Projects</h1>
+  
+  <div class="actions">
+    
+    <input type="file" id="planFile" accept="application/pdf,image/png,image/jpeg,image/webp" hidden>
+    <button id="newProject" class="btn btn--primary">New project</button>
+  </div>
+</div>
+<main id="list" tabindex="-1"></main>
+<div id="dropCover" class="drop-cover" hidden aria-hidden="true"><div>Drop the plan to start a new project</div></div>
+
+
+<dialog id="reuseDlg">
+  <h3 id="reuseTitle" style="margin:0 0 8px">Reuse this plan</h3>
+  <p class="subtle" id="reuseLead" style="margin:0 0 16px"></p>
+  <div id="reuseList" class="reuse-list"></div>
+  <label class="fld" for="reuseNew" id="reuseNewLabel" style="margin-top:16px"></label>
+  <input type="text" id="reuseNew" placeholder="Project name">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="reuseCancel" class="btn btn--quiet">Cancel</button>
+    <button id="reuseGo" class="btn btn--primary">Copy floor</button>
+  </div>
+</dialog>
+
+
+<dialog id="nameDlg">
+  <h3 id="nameTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="nameLead" style="margin:0 0 16px"></p>
+  <label class="fld" for="nameField" id="nameLabel"></label>
+  <input type="text" id="nameField" autocomplete="off">
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="nameCancel" class="btn btn--quiet">Cancel</button>
+    <button id="nameGo" class="btn btn--primary"></button>
+  </div>
+</dialog>
+
+
+
+<dialog id="histDlg">
+  <h3 id="histTitle" style="margin:0 0 8px"></h3>
+  <p class="subtle" id="histLead" style="margin:0 0 16px"></p>
+  <div id="histList" class="hist-list"></div>
+  <div class="row" style="margin-top:16px; justify-content:flex-end">
+    <button id="histClose" class="btn btn--quiet">Close</button>
+  </div>
+</dialog>
+
+<script type="module">import{askConfirm as K,dropWhenFaded as Ie}from"./src/ask.js?v=a864c479afde";import{signOffName as qe,onAuthChange as De,authState as R}from"./src/auth.js?v=a864c479afde";import{openSignIn as Z}from"./src/auth-ui.js?v=a864c479afde";import{renderChrome as Re}from"./src/chrome.js?v=a864c479afde";import{track as G}from"./src/events.js?v=a864c479afde";await Re();import*as p from"./src/store.js?v=a864c479afde";import{composeAll as Me}from"./src/compositor.js?v=a864c479afde";import{labelsOnRender as He}from"./src/label-frame.js?v=a864c479afde";import{applyErases as Oe}from"./src/review/eraser.js?v=a864c479afde";import{getArtifactUrl as ee,scopeFor as M,styledKind as te,resolveStyled as oe,STYLED_KINDS as Be,deleteScope as ne,copyScope as Ue,deleteArtifact as _e,putArtifact as ae}from"./src/artifacts.js?v=a864c479afde";import{lookOfImage as Ke}from"./src/model3d/theme3d.js?v=a864c479afde";import{floorHref as H,floorStage as Ge}from"./src/floor-context.js?v=a864c479afde";import{diffVersions as We}from"./src/versions.js?v=a864c479afde";import{getSupabase as Ve}from"./src/supabase-client.js?v=a864c479afde";import{PUBLISHED_TABLE as Ye}from"./src/published-paths.js?v=a864c479afde";import{publishedAmong as ze,withdrawFloors as Xe}from"./src/published-withdraw.js?v=a864c479afde";import{deleteFlow as re,createUndoHold as Je}from"./src/delete-flow.js?v=a864c479afde";import{canvasesToPdfBlob as se}from"./src/pdf.js?v=a864c479afde";import{renderVerificationReport as ie}from"./src/report.js?v=a864c479afde";import{toast as z}from"./src/buy.js?v=a864c479afde";import{editCount as le}from"./src/render-history.js?v=a864c479afde";import{DOC_FONTS as Qe}from"./src/doc-style.js?v=a864c479afde";import{renderRoomSchedule as Ze}from"./src/room-schedule.js?v=a864c479afde";import{makeStyledMock as et}from"./src/mock-style.js?v=a864c479afde";import{makeMockLogo as tt}from"./src/mock-plan.js?v=a864c479afde";import{derived as ot,paletteFor as nt}from"./src/palettes.js?v=a864c479afde";import{DEFAULT_DISCLAIMER as at}from"./src/footer.js?v=a864c479afde";import{listingFor as ce}from"./src/listing.js?v=a864c479afde";import{suggestProjectName as rt,isPlanFile as st}from"./src/project-name.js?v=a864c479afde";const m=e=>document.getElementById(e);p.ensureSeed();const it={empty:"needs a plan",uploaded:"needs review",confirmed:"ready to style",styled:"rendered"},eo={empty:"new",uploaded:"busy",confirmed:"accent",styled:"confirmed"};function de(e){return e?.confirmedAt?new Date(e.confirmedAt).toLocaleDateString(void 0,{day:"numeric",month:"short",year:"numeric"}):"Not yet"}const b=e=>String(e??"").replace(/[&<>"]/g,t=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[t]);async function w(){const e=p.getKits(),t=m("list");t.innerHTML="",document.querySelectorAll("details.archive").forEach(a=>a.remove());const o=p.getProjects().filter(a=>!W.hidesProject(a.id)).map(W.drawnAs),r=o.filter(a=>!a.archived),n=o.filter(a=>a.archived);if(!r.length&&!n.length){const a=document.createElement("div");a.className="empty-state",a.innerHTML=`
+      <h2>Start your first project</h2>
+      <p class="subtle">A project is one home model. Three steps for each floor:</p>
+      <ol class="first-steps">
+        <li><b>Upload</b> the plan your architect drew.</li>
+        <li><b>Check</b> our drawing of it against your plan: every room and size. Free.</li>
+        <li><b>Style</b> it with your brand and download it in three formats. One credit a floor, in light and dark.</li>
+      </ol>
+      <div class="row" style="justify-content:center; margin-top:16px">
+        <button id="emptyNew" class="btn btn--primary">New project</button>
+      </div>
+      <p class="subtle" style="text-align:center; margin-top:8px">Or drop a plan file anywhere on this page.</p>`,t.append(a),m("emptyNew").onclick=()=>m("newProject").onclick(),m("newProject").hidden=!0;return}m("newProject").hidden=!1;for(const a of r)await be(a,e,t);if(n.length){const a=document.createElement("details");a.className="archive",a.innerHTML=`<summary>Archived (${n.length})</summary>`;const i=document.createElement("div");i.id="archivedList",a.append(i),t.after(a);for(const s of n)await be(s,e,i)}}async function lt(e,t){if(e){e.removeAttribute("data-done");try{await ct(e,t)}finally{e.dataset.done=""}}}async function ct(e,t){const o=t.floors||[];if(!o.length)return;const r={"styled-light":"light render","styled-dark":"dark render",styled:"render",wireframe:"our drawing · not rendered yet",source:"your plan · upload not finished"};for(const n of[te("light"),te("dark"),"styled","wireframe","source"])for(const a of o){const i=a.verified?.artifactScope||M(t.id,a.id);try{const s=await ee(i,n);if(!s)continue;e.style.backgroundImage=`url("${s}")`,e.classList.remove("thumb--empty"),e.textContent="";const f=document.createElement("span");f.className="tag";const d=o.length>1&&a!==o[0];f.textContent=(r[n]||n)+(d?` · ${a.name}`:""),e.append(f),e.setAttribute("role","img"),e.setAttribute("aria-label",`${t.name}, ${a.name}, ${r[n]||n}`);return}catch{}}}const ue='<svg class="go" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5"/></svg>';function dt(e,t){const o=["empty","uploaded","confirmed"].find(a=>t[a]);if(!o)return"All floors rendered";const r=t[o],n=`${r} floor${r>1?"s":""}`;return o==="empty"?`${n} need${r>1?"":"s"} a plan`:o==="uploaded"?`${n} need${r>1?"":"s"} review`:`${n} ready to style`}const fe=(e,t)=>e==="empty"?"idle":t?"ok":"warn",me=(e,t)=>`${it[e]}${t?` · ${de(t)}`:""}`;function ut(e,t,o){const r=e.querySelector(".pstatus .mark"),n=e.querySelector(".pstatus .sum");if(!o.length){r.className="dot dot--idle",n.textContent="No floors yet";return}if(o.length===1){const i=t.floors[0].verified;r.className=`dot dot--${fe(o[0],i)}`;const s=me(o[0],i);n.textContent=s.charAt(0).toUpperCase()+s.slice(1);return}const a=o.filter(i=>i==="styled").length;r.className="pips",r.innerHTML=o.map(i=>`<span class="pip${i==="styled"?" on":""}"></span>`).join(""),n.textContent=`${a} of ${o.length} rendered`,r.title=n.textContent}const ft='<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"><path d="M4 1.5h5.5L12 4v10.5H4z M9.5 1.5V4H12"/></svg>',he='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 3.5l2 2L6 12H4v-2z"/><path d="M9.5 4.5l2 2"/></svg>',pe='<svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 4.5h10M6.5 4.5V3h3v1.5M5 4.5l.6 8h4.8l.6-8"/></svg>',mt=(e,t)=>t?`Show ${e.floors.length} floor${e.floors.length>1?"s":""}`:"Hide floors",ye=(e,t,o)=>{e.textContent=mt(t,o),e.classList.toggle("is-said",o&&t.floors.length>1&&!t.archived)};async function be(e,t,o){{const r=t.find(l=>l.id===e.brandKitId)||t[0],n=e.floors.length<=1,a=n||e.archived,i=!n&&e.archived,s=document.createElement("section"),f=e.floors.length>1;s.className="panel"+(a?" collapsed":"")+(f?" panel--many":""),s.dataset.project=e.id;const d='<svg class="chev" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3l5 5-5 5"/></svg>',h=i?"button":"div";s.innerHTML=`
+      <button class="projMenuBtn btn btn--quiet btn--icon" popovertarget="pm-${e.id}"
+              style="anchor-name: --pm-${e.id}" title="Project menu"
+              aria-label="Project menu, ${b(e.name)}"><span aria-hidden="true">···</span></button>
+      <${h} class="fold${n?" fold--one":""}"${i?` aria-expanded="${!a}"`:""}>
+        <span class="phead">
+          <span class="pname">${b(e.name)}</span>
+          <span class="pcount">${e.floors.length} floor${e.floors.length>1?"s":""}</span>
+        </span>
+        <span class="thumb thumb--empty" data-thumb>${ft}No plan yet</span>
+        <!-- The status band is inside the disclosure button, and it can be:
+             pips, a summary and a chip are all text. Putting it here is what
+             lets the cue below it be the LAST thing in the button. -->
+        <span class="pstatus">
+          <span class="mark"></span>
+          <span class="sum"></span>
+          <span class="chip" title="Brand kit applied to every floor in this project">${b(r?.name||"no kit")}</span>
+          ${e.isSample?'<span class="chip warn" title="A demo plan, not your own work.">Sample</span>':""}
+        </span>
+        <!-- THE DISCLOSURE SAYS WHAT IT DOES, IN WORDS, AT THE FOOT.
+             A bare chevron at the top of the card told the user nothing about
+             what pressing it would produce — it is an icon for a state, not for
+             an outcome, and it sat where nothing else was interactive.
+             It now reads "Show 2 floors" and sits at the bottom of the card,
+             where actions live. The chevron stays beside the words as the state
+             indicator it always was.
+             It cannot go BELOW the next-action button: that button is a real
+             <button>, the disclosure is a real <button>, and one cannot be
+             nested in the other. So the card ends with its primary action and
+             the disclosure sits directly above it. -->
+        ${i?`<span class="foldcue">
+          <span class="foldtext"></span>
+          <span class="chevbox">${d}</span>
+        </span>`:""}
+      </${h}>
+      <!-- ADDING A FLOOR, WHERE THE FLOORS ARE. It was only in the project's
+           ··· menu, and a two-storey home is the ordinary case (the app review,
+           2026-09-30). The menu keeps its own for anyone who looks there.
+           On a single-floor card it takes the band the fold's cue has on the
+           others, with the floor's rename beside it, so the cards stay equal. -->
+      ${n&&e.floors.length?`<div class="onecue">
+        <button type="button" class="btn btn--quiet btn--sm addFloorRow">+ Add a floor</button>
+        <span class="onecue-acts">
+          <span class="onecue-name" aria-hidden="true">${b(e.floors[0].name)}</span>
+          <button type="button" class="fl-ren renFloor" title="Rename ${b(e.floors[0].name)}" aria-label="Rename ${b(e.floors[0].name)}">${he}</button>
+          <button type="button" class="fl-del delFloor" title="Remove ${b(e.floors[0].name)}" aria-label="Remove ${b(e.floors[0].name)} from ${b(e.name)}">${pe}</button>
+        </span>
+      </div>`:""}
+      <div class="nextup"></div>
+      ${n?"":`<div class="fold-body"><div>
+        <ul class="floorlist"></ul>
+        <button type="button" class="btn btn--quiet btn--sm addFloorRow">+ Add a floor</button>
+      </div></div>`}
+      <!-- Outside the fold: the menu's Project PDF reports here, and the menu
+           is reachable on a shut card now. -->
+      <div class="busy" role="status"></div>
+      <div class="projmenu" popover id="pm-${e.id}" style="position-anchor: --pm-${e.id}">
+        <div class="pm-head">${b(e.name)}<span class="pcount">${e.floors.length} floor${e.floors.length>1?"s":""}</span></div>
+        <button class="renameProj">Rename project…</button>
+        <button class="dlAll">Project PDF</button>
+        <button class="archiveBtn"></button>
+        <button class="settingsBtn">Project settings…</button>
+      </div>`,lt(s.querySelector("[data-thumb]"),e),i&&ye(s.querySelector(".foldtext"),e,a);const c=s.querySelector(".floorlist"),u=l=>l==="empty"?["Upload plan","extract.html"]:l==="uploaded"?["Continue review","review.html"]:l==="confirmed"?["Style it","studio.html"]:["Open Studio","studio.html"];let y=null;const $={},A=[];for(const l of e.floors){const L=l.verified,g=await Ge(e.id,l.id),[I,k]=u(g),Q={empty:0,uploaded:1,confirmed:2,styled:3};if((!y||Q[g]<Q[y.stage])&&(y={stage:g,label:I,page:k,floor:l}),$[g]=($[g]||0)+1,A.push(g),n)continue;const q=document.createElement("li");q.className="floorrow",q.dataset.floor=l.id;const T=document.createElement("a");T.className="floorlink",T.href=H(k,e.id,l.id),T.innerHTML=`
+        <span class="dot dot--${fe(g,L)}"></span>
+        <span class="fl-main">
+          <span class="fl-name">${b(l.name)}</span>
+          <span class="fl-meta">${me(g,L)}</span>
+        </span>
+        <span class="fl-next">${I}${g==="empty"?"":ue}</span>`,g==="empty"&&(T.href="#",T.title="Choose the plan file. If the sheet shows several floors, you will pick this floor on it.",T.onclick=Pe=>{Pe.preventDefault(),Ce(e.id,l.id)}),q.append(T);const x=document.createElement("button");x.type="button",x.className="fl-ren",x.title=`Rename ${l.name}`,x.setAttribute("aria-label",`Rename ${l.name}`),x.innerHTML=he,x.onclick=()=>O("floor",e,l),q.append(x);const N=document.createElement("button");N.type="button",N.className="fl-del",N.title=`Remove ${l.name}`,N.setAttribute("aria-label",`Remove ${l.name} from ${e.name}`),N.innerHTML=pe,N.onclick=()=>je(e,l),q.append(N),c.append(q)}if(ut(s,e,A),!n&&y&&y.stage!=="styled"&&c.querySelector(`[data-floor="${y.floor.id}"] .floorlink`)?.classList.add("is-next"),!n&&!e.archived&&y){const l=s.querySelector(".fold");l.style.cursor="pointer",l.onclick=()=>(c.querySelector(".floorlink.is-next")||c.querySelector(".floorlink"))?.click()}if(n){e.floors.length&&(s.querySelector(".renFloor").onclick=()=>O("floor",e,e.floors[0]),s.querySelector(".delFloor").onclick=()=>je(e,e.floors[0]));const l=s.querySelector(".fold--one");e.archived?l.classList.add("is-inert"):l.onclick=()=>s.querySelector(".nextbtn")?.click()}const C=async()=>{let l="Each floor gets its own plan, review and images. If one sheet shows several floors, upload it for each floor and pick that floor on it. A plain plan reads best: walls, doors, windows, names and dimensions. Furniture is fine; dense construction notes can be misread.",L=`Floor ${e.floors.length+1}`;for(;;){const g=await V({title:`Add a floor to "${e.name}"`,lead:l,label:"Floor name",value:L,confirm:"Add floor"});if(!g)return;if(e.floors.some(I=>I.name.trim().toLowerCase()===g.toLowerCase())){L=g,l=`Another floor of ${e.name} is already called ${g}.`;continue}p.addFloor(e.id,g),G("floor_added",{floors:e.floors.length+1}),w();return}};for(const l of s.querySelectorAll(".addFloorRow"))l.onclick=C;const j=e.floors.filter(l=>l.verified).length,S=s.querySelector(".dlAll");S.disabled=j===0,S.classList.toggle("btn--primary",j>0),S.innerHTML=`<span>Plan${f?"s":""} + verification report${f?"s":""} (PDF)</span><span class="pm-sub"></span>`,S.querySelector(".pm-sub").textContent=j===0?"Needs a confirmed floor":`${j} of ${e.floors.length} floor${f?"s":""} · two pages each`,S.title=j===0?"No floor is confirmed yet. Finish a review first.":"One PDF. Each floor gets its styled plan, then its verification report.",S.onclick=()=>yt(e,r,s);const E=s.querySelector("button.fold"),_=s.querySelector(".foldtext");E&&(E.onclick=()=>{const l=!s.classList.contains("collapsed");s.classList.toggle("collapsed",l),E.setAttribute("aria-expanded",String(!l)),ye(_,e,l),p.setProjectCollapsed(e.id,l)});const F=s.querySelector(".archiveBtn");F.innerHTML=e.archived?"Restore from archive":'<span>Archive</span><span class="pm-sub">You can undo this</span>',F.title=e.archived?"Move back into the working list":"Keep the project and its files, out of the working list",F.onclick=()=>{p.archiveProject(e.id,!e.archived),w()},s.querySelector(".settingsBtn").onclick=()=>{s.querySelector(".projmenu")?.hidePopover?.(),ht(e,r)},s.querySelector(".renameProj").onclick=()=>{s.querySelector(".projmenu")?.hidePopover?.(),O("project",e)};const P=s.querySelector(".nextup");if(e.archived){const l=document.createElement("button");l.className="btn btn--secondary nextbtn",l.textContent=`Restore ${e.name} from archive`,l.onclick=()=>{p.archiveProject(e.id,!1),w()},P.append(l)}else if(e.floors.length){if(y){const l=document.createElement("button");l.className="btn btn--secondary nextbtn",f?(l.textContent=`${dt(e,$)} · show floors`,l.onclick=()=>s.querySelector(".fold").click()):(l.textContent=`${y.label} · ${y.floor.name}`,y.stage!=="empty"&&l.insertAdjacentHTML("beforeend",ue),l.onclick=()=>{y.stage==="empty"?Ce(e.id,y.floor.id):location.href=H(y.page,e.id,y.floor.id)}),P.append(l)}}else{const l=document.createElement("button");l.className="btn btn--secondary nextbtn",l.textContent="Add a floor",l.onclick=C,P.append(l)}o.append(s)}}async function O(e,t,o=null){let r=e==="project"?t.name:o.name,n=e==="project"?"The new name is used on every floor’s images and files from now on. Images already downloaded keep the old one.":`A floor of ${t.name}. Its images and files take the new name from now on.`;for(;;){const a=await V({title:e==="project"?`Rename ${t.name}`:`Rename ${o.name}`,lead:n,label:e==="project"?"Project name":"Floor name",value:r,confirm:"Rename"});if(!a)return;const i=e==="project"?p.renameProject(t.id,a):p.renameFloor(t.id,o.id,a);if(i.ok){G(e==="project"?"project_renamed":"floor_renamed"),w();return}r=a,n=i.error}}function ht(e,t){const o=document.createElement("dialog");o.className="auth-dialog",o.innerHTML=`
+    <form method="dialog" class="auth-form">
+      <div class="ps-head"><h2>${b(e.name)}</h2><button type="button" class="btn btn--secondary btn--sm ps-rename">Rename</button></div>
+      <p class="subtle">${e.floors.length} floor${e.floors.length>1?"s":""}</p>
+      <!-- WHICH KIT, chosen here (the user-flow review, 2026-10-04). A project
+           kept the kit it was made with and nothing could change it; Studio
+           used the active kit instead, so it did not matter. Now Studio uses
+           the project's, so the project's has to be choosable. -->
+      <label class="ps-kit">Brand kit
+        <select class="ps-kitsel">${p.getKits().map(a=>`<option value="${b(a.id)}"${a.id===t?.id?" selected":""}>${b(a.name)}</option>`).join("")}</select>
+      </label>
+      <p class="subtle ps-kitnote">Its logo, name and colours go on every floor of this project.</p>
+      <div class="ps-floors"></div>
+      <div class="auth-actions">
+        <span class="act-aside"></span>
+        <button class="btn btn--secondary" value="close">Close</button>
+      </div>
+    </form>`;const r=o.querySelector(".ps-floors");o.querySelector(".ps-kitsel").onchange=a=>{const i=p.getProjects().find(s=>s.id===e.id)||e;i.brandKitId=e.brandKitId=a.target.value,p.saveProject(i),w()},o.querySelector(".ps-rename").onclick=async()=>{o.close(),await O("project",e)};for(const a of e.floors){const i=document.createElement("div");i.className="ps-row",i.innerHTML=`<span class="ps-floor">${b(a.name)}</span><span class="ps-acts"></span>`;const s=i.querySelector(".ps-acts"),f=(h,c)=>{const u=document.createElement("button");u.type="button",u.className="btn btn--secondary btn--sm",u.textContent=h,u.onclick=()=>{o.close(),c()},s.append(u)},d=document.querySelector(`[data-project="${e.id}"]`);if(f("Rename",()=>O("floor",e,a)),!a.verified){r.append(i);continue}f("Report",()=>bt(e,a,t,d,!0)),f("History",()=>wt(e,a)),f("Copy to project…",()=>kt(e,a,d)),r.append(i)}if(!e.floors.some(a=>a.verified)){const a=document.createElement("p");a.className="subtle",a.textContent="Reports, history and reuse appear here once a floor has been confirmed.",r.append(a)}const n=document.createElement("button");n.type="button",n.className="btn btn--destructive btn--sm",n.textContent="Delete project",n.onclick=()=>{o.close(),pt(e)},o.querySelector(".act-aside").replaceWith(n),n.classList.add("act-aside"),o.addEventListener("close",()=>Ie(o)),document.body.append(o),o.showModal()}async function pt(e){const t=e.floors.length;await re({published:()=>$e(e.floors),ask:o=>K({title:`Delete “${e.name}”?`,body:[`This removes ${t} floor${t>1?"s":""}, every uploaded plan and every render.`,ke(o.length,t),"It cannot be undone. To keep the files but clear the list, use Archive instead."],confirm:"Delete project",danger:!0}),takeDown:Se,commit:async()=>{const o=p.deleteProject(e.id);for(const r of o)await ne(r)},hold:o=>we({projectId:e.id,commit:o,title:`“${e.name}” deleted.`,sub:`Its ${t>1?`${t} floors`:"floor"} and renders go in a few seconds.`})})==="deleted"&&w()}const ge=8e3,W=Je({delay:ge,onClear:()=>{ve().hidden=!0},onDone:()=>w()});async function we({projectId:e,floorId:t=null,title:o,sub:r,commit:n}){await W.hold({projectId:e,floorId:t,commit:n}),w();const a=ve();a.querySelector(".un-title").textContent=o,a.querySelector(".un-sub").textContent=r;const i=a.querySelector(".un-bar");i.style.transition="none",i.style.transform="scaleX(1)",a.hidden=!1,requestAnimationFrame(()=>requestAnimationFrame(()=>{i.style.transition=`transform ${ge}ms linear`,i.style.transform="scaleX(0)"})),a.querySelector(".un-undo").focus({preventScroll:!0})}function ve(){let e=document.getElementById("undoNotice");return e||(e=document.createElement("div"),e.id="undoNotice",e.className="undo-notice",e.setAttribute("role","status"),e.hidden=!0,e.innerHTML='<p><b class="un-title"></b> <span class="un-sub"></span></p><button type="button" class="btn btn--secondary btn--sm un-undo">Undo</button><span class="un-bar" aria-hidden="true"></span>',e.querySelector(".un-undo").onclick=()=>W.undo(),document.body.append(e),e)}async function $e(e){const t=await ze(e.map(o=>o.id));return t.floors?t.floors:(await K({title:"Nothing was deleted",body:["We could not check whether this is shared as a 3D view, so nothing was removed. Try again in a moment."],confirm:"Close",cancel:null}),null)}const ke=(e,t)=>t===1?"Its 3D view is shared. Deleting takes it down, and the link and any embed on your website stop working.":`The 3D view of ${e} of its floors is shared. Deleting takes ${e===1?"it":"them"} down, and the links and any embeds on your website stop working.`;async function Se(e){if(!e.length)return!0;let t;try{t=await Xe(e)}catch(o){t={error:o?.message||"unknown error"}}return t.error?(await K({title:"Nothing was deleted",body:[`The shared 3D view could not be taken down (${t.error}), so nothing was removed. Try again in a moment.`],confirm:"Close",cancel:null}),!1):!0}async function je(e,t){const o=!!t.verified;await re({published:()=>$e([t]),ask:()=>K({title:`Remove “${t.name}”?`,body:[o?`This floor is confirmed. Removing it deletes its plan, its renders, and the sign-off${t.verified.confirmedBy?` by ${t.verified.confirmedBy}`:""} on ${de(t.verified)}.`:"This deletes its uploaded plan and any renders it has.",ke(1,1),"It is removed from your account too, on every device. It cannot be undone."],confirm:"Remove floor",danger:!0}),takeDown:Se,commit:async()=>{const r=p.removeFloor(e.id,t.id,{force:!0});r&&await ne(r)},hold:r=>we({projectId:e.id,floorId:t.id,commit:r,title:`“${t.name}” removed.`,sub:o?"Its plan, renders and sign-off go in a few seconds.":"Its plan and renders go in a few seconds."})})==="deleted"&&w()}let D=[],B=[];async function yt(e,t,o){const r=e.floors.filter(d=>d.verified),n=o.querySelector(".busy");if(!r.length){v(n,"No confirmed floors yet. Run Review first.","warn");return}D=[],B=[],v(n,"Composing floors…");const a=[];for(const d of r)a.push(...await gt(d,t,e)),v(n,`Composed ${d.name}…`);v(n,"Building PDF pack…");const i=await se(a),s=`${e.name.replaceAll(" ","-")}-plans-and-reports.pdf`;Ae(i,s);const f=[D.length?`with a placeholder for ${D.join(", ")}: open ${D.length>1?"each":"it"} in Studio and render it first.`:"",B.length?`Your kit is set to ${t?.palette?.theme==="dark"?"dark":"light"}, but only the other look is rendered for ${B.join(", ")}.`:""].filter(Boolean);f.length?v(n,D.length?`Downloaded, ${f.join(" ")}`:`Downloaded. ${f.join(" ")}`,"warn"):(v(n,""),z(`Downloaded ${s} · ${a.length} page${a.length>1?"s":""}`,"ok"))}async function bt(e,t,o,r,n){const a=r.querySelector(".busy");v(a,"Rendering report…"),await Le(o);const i=t.verified?.artifactScope||M(e.id,t.id),s=await Promise.all(["light","dark"].map(async u=>({look:u,n:await le(i,u).catch(()=>0)}))),f=o?.logoDataUrl?await U(o.logoDataUrl).catch(()=>null):null,d=ie({kit:o,projectName:e.name,floorName:t.name,verified:{...t.verified,specs:ce(e,t)||{}},edits:s,logo:f}),h=await se([d]),c=`${e.name.replaceAll(" ","-")}-${t.name.replaceAll(" ","-")}-verification.pdf`;Ae(h,c),v(a,""),z(`Downloaded ${c}`,"ok")}function v(e,t,o){if(e.textContent=t,e.classList.toggle("is-done",o==="done"),e.classList.toggle("is-warn",o==="warn"),e.classList.toggle("busy-x",o==="warn"),o==="warn"){const r=document.createElement("span");r.textContent=t;const n=document.createElement("button");n.type="button",n.setAttribute("aria-label","Dismiss"),n.textContent="×",n.onclick=()=>v(e,""),e.replaceChildren(r,n)}}async function gt(e,t,o){await Le(t);const r={...e.verified,specs:ce(o,e)||{}},n=e.specsHidden?null:r.specs,a=r.artifactScope||M(o.id,e.id),i=t?.palette?.theme==="dark"?"dark":"light",s=await oe(a,i),f=s?.url||null;s&&s.theme&&!s.exact&&B.push(`${e.name} (${s.theme})`);const d=p.projectAppearance(o),h=nt(t,s?.theme||i,d),c=d?.font||t?.font;c&&await Promise.all([400,600,700].map(k=>document.fonts.load(`${k} 20px "${c}"`)));const u=f?await U(f):et(h);if(f||D.push(e.name),s&&!s.theme&&f){const k=Ke(u);k&&k!==i&&B.push(`${e.name} (${k})`)}const y=ot(h),$=t.logoDataUrl?await U(t.logoDataUrl):tt(y.footerInk),A={companyName:t.companyName,tagline:t.tagline,font:c,canvasBg:h.background,labelInk:y.labelInk,footerInk:y.footerInk,disclaimerOn:t.disclaimerOn!==!1,disclaimerText:t.disclaimerText||at,logo:$},C=f?await ee(a,"wireframe").catch(()=>null):null,j=C?await U(C).catch(()=>null):null,S=j?Oe(j,r.erases):null,E=s?.theme==="dark"?"light":"dark",_=S&&s?.theme?await oe(a,E):null,F=_?.theme===E?await U(_.url).catch(()=>null):null,P=Me({planImage:u,labels:He(r.labels.filter(k=>k.name),S,u,F?[F]:[]),brand:A,specs:n,meta:{title:`${e.name} · ${o.name}`},freeMark:!!R()?.user&&R()?.clean===!1}),l=P.portrait||Object.values(P)[0],L=t.logoDataUrl?$:null,g=Ze({kit:t,projectName:o.name,floorName:e.name,verified:r,logo:L}),I=ie({kit:t,projectName:o.name,floorName:e.name,verified:r,logo:L,edits:s?.theme?[{look:s.theme,n:await le(a,s.theme).catch(()=>0)}]:[]});return[l,g,I]}async function Le(e){await Promise.all(Qe.map(o=>document.fonts.load(o).catch(()=>null)));const t=e?.font;t&&await Promise.all([400,600,700].map(o=>document.fonts.load(`${o} 20px "${t}"`)))}const U=e=>new Promise((t,o)=>{const r=new Image;r.onload=()=>t(r),r.onerror=o,r.src=e});function Ae(e,t){const o=document.createElement("a");o.href=URL.createObjectURL(e),o.download=t,o.click(),URL.revokeObjectURL(o.href)}function V({title:e,lead:t,label:o,value:r="",placeholder:n="",confirm:a="Create"}){const i=m("nameDlg"),s=m("nameField");return m("nameTitle").textContent=e,m("nameLead").textContent=t||"",m("nameLead").hidden=!t,m("nameLabel").textContent=o,m("nameGo").textContent=a,s.value=r,s.placeholder=n,new Promise(f=>{let d=null;m("nameCancel").onclick=()=>i.close(),m("nameGo").onclick=()=>{const h=s.value.trim();if(!h){s.focus();return}d=h,i.close()},i.onkeydown=h=>{h.key==="Enter"&&h.target===s&&(h.preventDefault(),m("nameGo").click()),h.key==="Escape"&&(h.preventDefault(),i.close())},i.addEventListener("close",()=>f(d),{once:!0}),i.showModal(),s.focus(),s.select()})}let Y=null;function Ce(e,t){Y={projectId:e,floorId:t},m("planFile").value="",m("planFile").click()}m("planFile").onchange=async()=>{const e=m("planFile").files[0];if(!e||!Y)return;const{projectId:t,floorId:o}=Y;Y=null,await ae(M(t,o),"pending",e),location.href=H("extract.html",t,o)};function wt(e,t){const o=m("histDlg"),r=m("histList"),n=t.versions||[];m("histTitle").textContent=`${t.name} · ${e.name}`,m("histLead").textContent=n.length>1?"Newest first. Each sign-off shows what changed from the one before it.":"Newest first.";const a=c=>c?new Date(c).toLocaleString(void 0,{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"}):"date unknown",i=n.map((c,u)=>({at:c.at,kind:"signoff",v:c,i:u})),s=t.verified?.openings?.confirmedAt;s&&i.push({at:s,kind:"openings"});const f={openings:"Windows and doors confirmed",published:"Shown on your website",updated:"Last updated on your website"},d=c=>{const u=document.createElement("div");if(u.className="hist-v",c.kind!=="signoff")return u.innerHTML=`<h4>${f[c.kind]}</h4><div class="when">${b(a(c.at))}</div>`,u;const{v:y,i:$}=c,A=$>0?We(n[$-1],y):[];return u.innerHTML=`<h4>Reviewed and confirmed · version ${$+1}${$===n.length-1?" (current)":""}</h4><div class="when">${b(y.by||"the account holder")} · ${b(a(y.at))}</div>`,$===0?u.innerHTML+='<div class="same">First sign-off.</div>':A.length?u.innerHTML+=`<ul>${A.map(C=>`<li>${b(C.text)}</li>`).join("")}</ul>`:u.innerHTML+='<div class="same">Re-confirmed with no change to the record.</div>',u},h=()=>r.replaceChildren(...i.map((c,u)=>({e:c,n:u,t:Date.parse(c.at)||0})).sort((c,u)=>u.t-c.t||u.n-c.n).map(({e:c})=>d(c)));h(),m("histClose").onclick=()=>o.close(),o.onkeydown=c=>{c.key==="Escape"&&(c.preventDefault(),o.close())},o.showModal(),m("histClose").focus(),vt(t.id).then(c=>{!c?.published_at||!o.open||(i.push({at:c.published_at,kind:"published"}),c.updated_at&&Date.parse(c.updated_at)-Date.parse(c.published_at)>6e4&&i.push({at:c.updated_at,kind:"updated"}),h())}).catch(()=>{})}async function vt(e){const t=await Ve();if(!t)return null;const{data:o}=await t.auth.getUser();if(!o?.user)return null;const{data:r,error:n}=await t.from(Ye).select("published_at, updated_at").eq("floor_id",e).maybeSingle();return n?null:r}m("newProject").onclick=async()=>{if(!R().user){Z("in","Sign in to start a project, so it is saved to your account.","info");return}const e=await V({title:"New project",lead:"One project is one home model. Its floors share a brand kit.",label:"Project name",placeholder:"e.g. The Aspen",confirm:"Create project"});if(!e)return;const t=p.createProject(e,p.getActiveKit()?.id);G("project_created");const o=t?.floors?.[0];if(o){location.href=H("extract.html",t.id,o.id);return}w()};async function $t(e){if(!st(e)){z("That file is not a plan this can read. Use a PDF, PNG, JPG or WebP.","warn");return}if(!R().user){Z("in","Sign in to start a project, so it is saved to your account.","info");return}const t=await V({title:"New project",lead:`From ${e.name}. One project is one home model. Its floors share a brand kit.`,label:"Project name",value:rt(e.name),placeholder:"e.g. The Aspen",confirm:"Create project"});if(!t)return;const o=p.createProject(t,p.getActiveKit()?.id);G("project_created");const r=o?.floors?.[0];if(!r){w();return}await ae(M(o.id,r.id),"pending",e),location.href=H("extract.html",o.id,r.id)}{const e=n=>[...n.dataTransfer?.types||[]].includes("Files"),t=()=>document.querySelector("dialog[open]");let o=0;const r=n=>{m("dropCover").hidden=!n};addEventListener("dragenter",n=>{!e(n)||t()||(o++,r(!0))}),addEventListener("dragover",n=>{!e(n)||t()||(n.preventDefault(),n.dataTransfer.dropEffect="copy")}),addEventListener("dragleave",n=>{e(n)&&(o=Math.max(0,o-1),o||r(!1))}),addEventListener("drop",n=>{if(!e(n)||(n.preventDefault(),o=0,r(!1),t()))return;const a=n.dataTransfer.files[0];a&&$t(a)})}function kt(e,t,o){const r=m("reuseDlg"),n=m("reuseList"),a=m("reuseNew"),i=p.getProjects().filter(d=>d.id!==e.id&&!d.archived);m("reuseTitle").textContent=`Copy "${t.name}" to another project`,m("reuseLead").textContent="Put this confirmed floor into another project: the same model on a different lot. Its plan, labels and figures come with it. Nothing to upload, nothing to review again.",n.innerHTML="",a.value="";let s=null;const f=(d,h)=>{s=d,a.value="";for(const c of n.querySelectorAll(".reuse-opt"))c.setAttribute("aria-pressed","false");h&&h.setAttribute("aria-pressed","true")};if(m("reuseNewLabel").textContent=i.length?"Or start a new project":"Name the new project",!i.length){const d=document.createElement("p");d.className="reuse-empty",d.textContent="This is your only project so far.",n.append(d)}for(const d of i){const h=document.createElement("button");h.type="button",h.className="reuse-opt",h.setAttribute("aria-pressed","false");const c=d.floors.length;h.innerHTML=`<b>${b(d.name)}</b><span class="meta">${c} floor${c===1?"":"s"}</span>`,h.onclick=()=>f(d,h),n.append(h)}a.oninput=()=>{if(a.value.trim()){s=null;for(const d of n.querySelectorAll(".reuse-opt"))d.setAttribute("aria-pressed","false")}},m("reuseCancel").onclick=()=>r.close(),r.onkeydown=d=>{d.key==="Escape"&&(d.preventDefault(),r.close())},m("reuseGo").onclick=async()=>{const d=a.value.trim();if(!s&&!d){a.focus();return}r.close(),await St(e,t,o,s,d)},r.showModal(),(n.querySelector(".reuse-opt")||a).focus()}async function St(e,t,o,r,n){const a=o.querySelector(".busy")||o;v(a,"Copying the verified plan…");let i=r;if(!i){i=p.createProject(n,e.brandKitId);const u=i?.floors?.[0]?.id;u&&p.removeFloor(i.id,u)}if(!i){v(a,"Could not create that project.","warn");return}const s=await qe()||t.verified?.confirmedBy||p.getActiveKit()?.companyName,f=p.reuseFloor(e.id,t.id,i.id,s);if(!f){v(a,"Could not reuse that floor.","warn");return}const d=await Ue(f.sourceScope,f.scope);if(!(i.brandKitId===e.brandKitId))for(const u of Be)await _e(f.scope,u);await w();const c=document.querySelector(`[data-project="${i.id}"]`);if(c){c.classList.add("just-added"),c.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});const u=c.querySelector(".busy");u&&v(u,`"${t.name}" reused. ${d} image${d===1?"":"s"} copied, ready to style.`,"done")}}async function jt(){const e=new URLSearchParams(location.search),t=e.get("p"),o=e.get("f");if(!t||!p.getProjects().find(s=>s.id===t))return;const n=document.querySelector(`[data-project="${t}"]`);if(!n)return;n.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});const i=(o?n.querySelector(`.floorrow[data-floor="${o}"]`):null)||n;i.classList.add("just-added"),setTimeout(()=>i.classList.remove("just-added"),2400)}w().then(jt);const Te=()=>p.getProjects().map(e=>`${e.id}:${e.updatedAt||""}:${e.archived?1:0}:`+(e.floors||[]).map(t=>t.id).join(",")).join("|"),xe=e=>`${e.sync?.ok??""}|${e.sync?.restored??""}`;let Ne=xe(R()),Ee=Te(),X=null,J=!1;const Fe=()=>{if(X){J=!0;return}X=Promise.resolve(w()).finally(()=>{X=null,J&&(J=!1,Fe())})};De(e=>{const t=xe(e);if(t===Ne)return;Ne=t;const o=Te(),r=Number(e.sync?.restored||0)>0;o===Ee&&!r||(Ee=o,Fe())});
+</script>
+</body>
+</html>
